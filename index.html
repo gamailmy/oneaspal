@@ -786,14 +786,14 @@
               </div>
 
               {currentUser.role!=='Admin' && (
-                <div className="absolute bottom-0 left-0 right-0 bg-white/60 backdrop-blur-2xl border-t border-white/40 px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] flex justify-around items-center z-30 shadow-[0_-4px_30px_rgba(0,0,0,0.05)]">
+                <div className="absolute bottom-0 left-0 right-0 bg-white/70 backdrop-blur-xl border-t border-white/60 px-4 py-2.5 flex justify-around items-center z-30">
                   <button onClick={()=>setActiveTab('home')} className={`p-2 rounded-xl transition ${activeTab==='home'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Home /></button>
                   <button onClick={()=>setActiveTab('events')} className={`p-2 rounded-xl transition ${activeTab==='events'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Calendar /></button>
                   <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl transition ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Bike /></button>
                   <button onClick={()=>setActiveTab('members')} className={`p-2 rounded-xl transition ${activeTab==='members'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Users /></button>
                   <button onClick={()=>setActiveTab('profile')} className={`p-2 rounded-xl transition ${activeTab==='profile'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.User /></button>
                 </div>
-              )}            
+              )} 
             </>
           )}
 
