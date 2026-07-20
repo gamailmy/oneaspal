@@ -77,7 +77,6 @@
       CheckCircle2: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>,
       Lock: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
       LogOut: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
-      Reply: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>,
       Download: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
       Share2: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>,
       UserPlus: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>,
@@ -116,21 +115,24 @@
       const [bikes, setBikes] = useState([]);
       const [editingBike, setEditingBike] = useState(null); const [showEditBikeModal, setShowEditBikeModal] = useState(false);
       const [events, setEvents] = useState([{ id: 1, title: 'Touring Kemerdekaan 2026', date: '17 Agustus 2026', destination: 'Puncak Bogor', distance: '120 Km', meetingPoint: 'SPBU Veteran', joined: 42, isJoined: false, tag: 'Nasional' }]);
-      const [showAddEventModal, setShowAddEventModal] = useState(false); const [newEvent, setNewEvent] = useState({ title: '', date: '', destination: '', distance: '', meetingPoint: '', tag: 'Nasional' });
-      const [chatGroups, setChatGroups] = useState([{ id: 'all', name: '📢 Koordinasi Utama', desc: 'Informasi resmi & agenda dari Road Captain', icon: '📢', creator: 'Sistem' }, { id: 'bengkel', name: '🔧 Tips & Modifikasi', desc: 'Sharing racun aksesoris & setelan mesin', icon: '🔧', creator: 'Rian' }]);
-      const [chatMessages, setChatMessages] = useState([{ id: 1, groupId: 'all', user: 'Rian (Road Captain)', text: 'Touring tanggal 17 Agustus nanti siap-siap ya guys!', time: '09:30', replyToId: null }, { id: 2, groupId: 'all', user: 'Budi (ZX-25R)', text: 'Siap cap! Rem baru ganti langsung tancap gas.', time: '09:45', replyToId: 1 }]);
-      const [activeGroupId, setActiveGroupId] = useState(null); const [showAddGroupModal, setShowAddGroupModal] = useState(false); const [newGroup, setNewGroup] = useState({ name: '', desc: '', icon: '💬' }); const [newMessage, setNewMessage] = useState(''); const [replyToMessage, setReplyToMessage] = useState(null); 
-      const [members, setMembers] = useState([]);
       const [announcements, setAnnouncements] = useState([{ id: 1, title: 'Selamat Datang Rider!', content: 'Selamat bergabung di One Aspal Club. Pastikan data motor dan profil kalian sudah lengkap. Safety riding!', date: '10 Jan 2026', author: 'Admin' }]);
-      const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false); const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' }); const [editingAnnouncement, setEditingAnnouncement] = useState(null); const [showEditAnnouncementModal, setShowEditAnnouncementModal] = useState(false);
+      const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false); const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
       const [showAdminConfirmModal, setShowAdminConfirmModal] = useState(false); const [adminConfirmData, setAdminConfirmData] = useState(null); const [selectedClassName, setSelectedClassName] = useState('Rider Addict');
-      const [showAddMemberModal, setShowAddMemberModal] = useState(false); const [newMember, setNewMember] = useState({ name: '', role: 'Prospect', bike: '', avatar: '🧑', simVerified: false });
       const [editingProfile, setEditingProfile] = useState(null); const [showEditProfileModal, setShowEditProfileModal] = useState(false);
       const [editingTouringMember, setEditingTouringMember] = useState(null); const [showEditTouringModal, setShowEditTouringModal] = useState(false); const [selectedTouringRole, setSelectedTouringRole] = useState('');
       const [userGears, setUserGears] = useState({});
-      const [editingGear, setEditingGear] = useState(null);
-      const [showEditGearModal, setShowEditGearModal] = useState(false);
+      const [editingGear, setEditingGear] = useState(null); const [showEditGearModal, setShowEditGearModal] = useState(false);
       const [adminCreds, setAdminCreds] = useState({ username: '', password: '' });
+      
+      const [members, setMembers] = useState([]);
+      
+      // Forum States
+      const [forumThreads, setForumThreads] = useState([]);
+      const [activeThreadId, setActiveThreadId] = useState(null);
+      const [newThreadMsg, setNewThreadMsg] = useState('');
+      const [replyMsg, setReplyMsg] = useState('');
+      const [showCreateThreadModal, setShowCreateThreadModal] = useState(false);
+      const forumChatRef = useRef(null);
 
       const touringRoles = ['Road Captain (RC)', 'Vorijder (VO)', 'Sweeper (SW)', 'Safety Officer (SO)', 'Technical Officer (TO)', 'Medical Officer (MO)'];
 
@@ -138,10 +140,8 @@
       useEffect(() => { fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true').then(r=>r.json()).then(d=>d.current_weather&&setWeather(d.current_weather)).catch(e=>console.error(e)); }, []);
       
       useEffect(() => {
-        fetch(API_URL + '?action=getMembers')
-          .then(r => r.json())
-          .then(res => { if(res.status === 'success') setMembers(res.data); })
-          .catch(e => console.error("Gagal fetch members:", e));
+        fetch(API_URL + '?action=getMembers').then(r => r.json()).then(res => { if(res.status === 'success') setMembers(res.data); }).catch(e => console.error("Gagal fetch members:", e));
+        fetch(API_URL + '?action=getThreads').then(r => r.json()).then(res => { if(res.status === 'success') setForumThreads(res.data); }).catch(e => console.error("Gagal fetch threads:", e));
       }, []);
 
       useEffect(() => {
@@ -151,22 +151,12 @@
             const session = JSON.parse(storedSession);
             if (session.expiresAt > Date.now()) {
               const timeLeft = session.expiresAt - Date.now();
-              setCurrentUser(session.user);
-              setBikes(session.bikes || []);
-              setUserGears(session.gears || {});
+              setCurrentUser(session.user); setBikes(session.bikes || []); setUserGears(session.gears || {});
               setActiveTab(session.user.role === 'Admin' ? 'admin_dashboard' : 'home');
-              
               if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-              logoutTimerRef.current = setTimeout(() => {
-                out(false);
-                addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info');
-              }, timeLeft);
-            } else {
-              localStorage.removeItem('oac_session');
-            }
-          } catch (e) {
-            localStorage.removeItem('oac_session');
-          }
+              logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, timeLeft);
+            } else { localStorage.removeItem('oac_session'); }
+          } catch (e) { localStorage.removeItem('oac_session'); }
         }
       }, []);
 
@@ -178,32 +168,18 @@
         if (stored) {
           try {
             const session = JSON.parse(stored);
-            const updatedSession = {
-              user: newUser || session.user,
-              bikes: newBikes || session.bikes || [],
-              gears: newGears || session.gears || {},
-              expiresAt: session.expiresAt
-            };
+            const updatedSession = { user: newUser || session.user, bikes: newBikes || session.bikes || [], gears: newGears || session.gears || {}, expiresAt: session.expiresAt };
             localStorage.setItem('oac_session', JSON.stringify(updatedSession));
           } catch (e) {}
         }
       };
 
       const setSession = (user, userBikes = [], gears = {}) => {
-        const session = {
-          user, bikes: userBikes, gears,
-          expiresAt: Date.now() + SESSION_DURATION
-        };
+        const session = { user, bikes: userBikes, gears, expiresAt: Date.now() + SESSION_DURATION };
         localStorage.setItem('oac_session', JSON.stringify(session));
-        setCurrentUser(user);
-        setBikes(userBikes);
-        setUserGears(gears);
-        
+        setCurrentUser(user); setBikes(userBikes); setUserGears(gears);
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-        logoutTimerRef.current = setTimeout(() => {
-          out(false);
-          addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info');
-        }, SESSION_DURATION);
+        logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, SESSION_DURATION);
       };
 
       const handleLogin = async (e) => { 
@@ -214,9 +190,7 @@
             const res = await response.json();
             if(res.status === 'success'){
               const adminUser = { name:'Hendra (Super Admin)', role:'Admin', avatar:'👑', id:'ADMIN-SYS', dbId:'admin', city:'Jakarta' };
-              setSession(adminUser, [], {});
-              setActiveTab('admin_dashboard');
-              addN('Selamat Datang, Admin Pengelola! ⚡','success');
+              setSession(adminUser, [], {}); setActiveTab('admin_dashboard'); addN('Selamat Datang, Admin Pengelola! ⚡','success');
             } else { addN(`Gagal Login: ${res.message}`,'error'); }
           } catch(err) { addN('Gagal terhubung ke server.','error'); }
         } else {
@@ -225,21 +199,15 @@
             const res = await response.json();
             if(res.status === 'success'){
               const u = res.member; const userBikes = res.bikes || []; const gears = res.gears || {};
-              const memberUser = {
-                name:u.name, role:u.role, avatar:u.gender === 'Perempuan' || u.gender === 'PEREMPUAN' ? '👩' : '👨', 
-                id:u.id, dbId:u.id, memberId: u.memberId, city:u.city || '-', gender: u.gender, phone: u.phone, email: u.email, ridingStatus: u.ridingStatus, className: u.className, touringRole: u.touringRole
-              };
-              setSession(memberUser, userBikes, gears);
-              setActiveTab('home'); 
-              addN(`Login berhasil. Selamat datang, ${u.name}! 🏍️`,'success');
+              const memberUser = { name:u.name, role:u.role, avatar:u.gender === 'Perempuan' || u.gender === 'PEREMPUAN' ? '👩' : '👨', id:u.id, dbId:u.id, memberId: u.memberId, city:u.city || '-', gender: u.gender, phone: u.phone, email: u.email, ridingStatus: u.ridingStatus, className: u.className, touringRole: u.touringRole };
+              setSession(memberUser, userBikes, gears); setActiveTab('home'); addN(`Login berhasil. Selamat datang, ${u.name}! 🏍️`,'success');
             } else { addN(`Gagal Login: ${res.message}`,'error'); }
           } catch(err) { addN('Gagal terhubung ke server.','error'); }
         }
       };
       
       const handleReg = (e) => { 
-        e.preventDefault(); 
-        let err=''; 
+        e.preventDefault(); let err=''; 
         if(!/^[A-Z ]{3,20}$/.test(regName.trim()))err='Nama Lengkap harus 3-20 huruf kapital!'; 
         else if(!regCity)err='Kota Asal wajib dipilih!'; 
         else if(!/^08[0-9]{8,10}$/.test(regPhone))err='No HP harus diawali "08", terdiri dari 10-12 angka!'; 
@@ -252,7 +220,6 @@
         else if(!/^[A-Z]{1,2}[0-9]{3,4}[A-Z]{2,3}$/.test(regBikePlate) || regBikePlate.length < 7 || regBikePlate.length > 8)err='Plat Nomor 7-8 digit (Contoh: B1234ABC)!'; 
         else if(!regBikeCategory)err='Jenis Motor wajib dipilih!'; 
         else if(!regBikeEngine)err='Kapasitas (CC) wajib dipilih!'; 
-        
         if(err){addN(`Pendaftaran Kurang Lengkap: ${err}`,'error');return;} 
         const fullEmail = regEmail + regEmailDomain;
         setConfirmRegData({name:regName,gender:regGender,city:regCity,phone:regPhone,email:fullEmail,ridingStatus:regRidingStatus,username:regUsername,bikeBrand:regBikeBrand,bikeModel:regBikeModel,bikePlate:regBikePlate,bikeCategory:regBikeCategory,bikeEngine:regBikeEngine?`${regBikeEngine}cc`:'-'}); 
@@ -275,8 +242,8 @@
       const out = (showMsg = true) => { 
         localStorage.removeItem('oac_session');
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-        setCurrentUser(null);setBikes([]);setUserGears({});
-        setUsername('');setPassword('');setActiveGroupId(null);setReplyToMessage(null);setShowNotifPanel(false);setShowPublicPage(true);
+        setCurrentUser(null);setBikes([]);setUserGears({});setActiveThreadId(null);
+        setUsername('');setPassword('');setShowNotifPanel(false);setShowPublicPage(true);
         if (showMsg) addN('Anda telah keluar dari aplikasi.','info');
       };
       
@@ -286,31 +253,15 @@
         e.preventDefault(); if(!editingProfile.name){addN('Nama tidak boleh kosong!','error');return;} 
         const fullEmail = editingProfile.email + editingProfile.emailDomain;
         const profileToUpdate = { ...editingProfile, email: fullEmail, id: currentUser.id };
-        
         try {
           const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateProfile', ...profileToUpdate }) });
           const res = await response.json();
           if(res.status === 'success') {
-            const newUserData = {
-              ...currentUser, 
-              name: editingProfile.name, 
-              avatar: editingProfile.avatar, 
-              city: editingProfile.city, 
-              phone: editingProfile.phone, 
-              gender: editingProfile.gender,
-              email: fullEmail,
-              ridingStatus: editingProfile.ridingStatus
-            };
-            setCurrentUser(newUserData);
-            updateSessionData(newUserData, null, null); 
-            setShowEditProfileModal(false); setEditingProfile(null); 
-            addN('Profil berhasil diperbarui! ✨','success'); 
-          } else {
-            addN('Gagal update profil: ' + res.message, 'error');
-          }
-        } catch(err) {
-          addN('Gagal terhubung ke server.','error');
-        }
+            const newUserData = { ...currentUser, name: editingProfile.name, avatar: editingProfile.avatar, city: editingProfile.city, phone: editingProfile.phone, gender: editingProfile.gender, email: fullEmail, ridingStatus: editingProfile.ridingStatus };
+            setCurrentUser(newUserData); updateSessionData(newUserData, null, null); 
+            setShowEditProfileModal(false); setEditingProfile(null); addN('Profil berhasil diperbarui! ✨','success'); 
+          } else { addN('Gagal update profil: ' + res.message, 'error'); }
+        } catch(err) { addN('Gagal terhubung ke server.','error'); }
       };
       
       const upGear = async (e) => {
@@ -318,11 +269,7 @@
         try {
           const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateGear', userId: currentUser.id, ...editingGear }) });
           const res = await response.json();
-          if(res.status === 'success') { 
-            setUserGears(res.gears); 
-            updateSessionData(null, null, res.gears); 
-            setShowEditGearModal(false); setEditingGear(null); addN('Safety gear berhasil diperbarui! 🛡️','success'); 
-          }
+          if(res.status === 'success') { setUserGears(res.gears); updateSessionData(null, null, res.gears); setShowEditGearModal(false); setEditingGear(null); addN('Safety gear berhasil diperbarui! 🛡️','success'); }
         } catch(err) { addN('Gagal mengupdate gear ke server.','error'); }
       };
 
@@ -336,15 +283,7 @@
         } catch(err) { addN('Gagal terhubung ke server.','error'); }
       };
 
-      const togRSVP = (id) => setEvents(events.map(ev=>ev.id===id?{...ev,isJoined:!ev.isJoined,joined:!ev.isJoined?ev.joined+1:ev.joined-1}:ev));
-      const mkChat = (e) => { e.preventDefault(); if(!newGroup.name){addN('Nama tema obrolan wajib diisi!','error');return;} const cg={id:`g_${Date.now()}`,name:newGroup.name,desc:newGroup.desc||'Tanpa deskripsi',icon:newGroup.icon,creator:currentUser.name}; setChatGroups([...chatGroups,cg]); setShowAddGroupModal(false); setNewGroup({name:'',desc:'',icon:'💬'}); addN(`Tema obrolan '${cg.name}' berhasil dibuat! 💬`,'success'); };
-      const sMsg = (e) => { e.preventDefault(); if(!newMessage.trim()||!activeGroupId)return; const m={id:Date.now(),groupId:activeGroupId,user:currentUser.name,text:newMessage,time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),replyToId:replyToMessage?replyToMessage.id:null}; setChatMessages([...chatMessages,m]); setNewMessage(''); setReplyToMessage(null); setTimeout(()=>{const cb=document.getElementById('cb');if(cb)cb.scrollTop=cb.scrollHeight;},100); };
-      const selRep = (m) => { setReplyToMessage(m); if(chatInputRef.current)chatInputRef.current.focus(); };
-      const addEvt = (e) => { e.preventDefault(); if(!newEvent.title||!newEvent.destination||!newEvent.date){addN('Mohon isi field wajib!','error');return;} const c={id:Date.now(),...newEvent,joined:0,isJoined:false}; setEvents([c,...events]); setShowAddEventModal(false); setNewEvent({title:'',date:'',destination:'',distance:'',meetingPoint:'',tag:'Nasional'}); addN(`Event '${c.title}' dipublished! 📅`,'success'); };
-      const addAnn = (e) => { e.preventDefault(); if(!newAnnouncement.title||!newAnnouncement.content){addN('Judul dan isi pengumuman wajib diisi!','error');return;} const c={id:Date.now(),title:newAnnouncement.title,content:newAnnouncement.content,date:new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}),author:currentUser.name}; setAnnouncements([c,...announcements]); setShowAddAnnouncementModal(false); setNewAnnouncement({title:'',content:''}); addN(`Pengumuman '${c.title}' berhasil di-publish! 📢`,'success'); };
-      const delAnn = (id) => { setAnnouncements(announcements.filter(a=>a.id!==id)); addN('Pengumuman telah dihapus.','info'); };
       const reqA = (t,m) => { setAdminConfirmData({type:t,member:m}); if(t==='approve') setSelectedClassName('Rider Addict'); setShowAdminConfirmModal(true); };
-      
       const exA = async () => { 
         if(!adminConfirmData)return; const {type,member}=adminConfirmData; 
         if(type==='approve'){
@@ -373,30 +312,54 @@
         } catch (err) { addN('Gagal mengupdate penugasan ke server.','error'); }
       };
 
-      const agm = chatMessages.filter(m=>m.groupId===activeGroupId); const ago = chatGroups.find(g=>g.id===activeGroupId); const un = notifications.filter(n=>!n.read).length; 
-      const mb = bikes.filter(b=>b.userId == currentUser?.id); 
+      // FORUM FUNCTIONS
+      const createThread = async (e) => {
+        e.preventDefault();
+        if(!newThreadMsg.trim()) return;
+        try {
+          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'createThread', user: currentUser.name, message: newThreadMsg }) });
+          const res = await response.json();
+          if(res.status === 'success') {
+            setForumThreads([...forumThreads, res.thread]);
+            setNewThreadMsg(''); setShowCreateThreadModal(false);
+            addN('Topik obrolan berhasil dibuat! 💬','success');
+          }
+        } catch(err) { addN('Gagal membuat topik.','error'); }
+      };
+
+      const postReply = async (e) => {
+        e.preventDefault();
+        if(!replyMsg.trim() || !activeThreadId) return;
+        try {
+          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'postReply', threadId: activeThreadId, user: currentUser.name, message: replyMsg }) });
+          const res = await response.json();
+          if(res.status === 'success') {
+            setForumThreads([...forumThreads, res.reply]);
+            setReplyMsg('');
+            setTimeout(()=>{ if(forumChatRef.current) forumChatRef.current.scrollTop = forumChatRef.current.scrollHeight; },100);
+          }
+        } catch(err) { addN('Gagal mengirim balasan.','error'); }
+      };
+
+      const activeThreadMessages = forumThreads.filter(m => m.threadId === activeThreadId);
+      const topicList = forumThreads.filter(m => m.isTopic === true);
       const mpd = currentUser; 
+      const mb = bikes.filter(b=>b.userId == currentUser?.id); 
       const tA = members.filter(m=>m.status==='approved').length; const tP = members.filter(m=>m.status==='pending').length; const tR = members.filter(m=>m.status==='rejected').length;
       const totalRegistrants = members.length; 
-      
+      const un = notifications.filter(n=>!n.read).length; 
+      const wd = weather ? getW(weather.weathercode) : null;
+      const qrData = mpd ? encodeURIComponent(`Nama: ${mpd.name}\nID Anggota: ${mpd.memberId}`) : '';
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
+
       const captureCard = async () => {
         if(!cardRef.current) return null;
         const imgs = cardRef.current.querySelectorAll('img');
-        await Promise.all(Array.from(imgs).map(img => {
-          if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
-          return new Promise(resolve => {
-            img.onload = resolve;
-            img.onerror = resolve;
-          });
-        }));
+        await Promise.all(Array.from(imgs).map(img => { if (img.complete && img.naturalWidth !== 0) return Promise.resolve(); return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; }); }));
         return await html2canvas(cardRef.current, { scale: 3, backgroundColor: null, useCORS: true, allowTaint: false, logging: false });
       };
       const dlCard = async () => { try { const c = await captureCard(); if (!c) return; const l = document.createElement('a'); l.download = 'Kartu_Anggota_OAC.png'; l.href = c.toDataURL('image/png'); l.click(); addN('Kartu anggota berhasil diunduh! 📥','success'); } catch(e) { console.error(e); addN('Gagal mengunduh kartu.','error'); } };
       const shCard = async () => { try { const c = await captureCard(); if (!c) return; c.toBlob(async(b) => { const f = new File([b], 'Kartu_Anggota_OAC.png', {type:'image/png'}); if(navigator.share && navigator.canShare && navigator.canShare({files:[f]})) { await navigator.share({title:'Kartu Anggota One Aspal Club', files:[f]}); addN('Kartu berhasil dibagikan! 🚀','success'); } else { dlCard(); } }, 'image/png'); } catch(e) { if(e.name !== 'AbortError') addN('Gagal membagikan kartu.','error'); } };
-      const wd = weather ? getW(weather.weathercode) : null;
-
-      const qrData = mpd ? encodeURIComponent(`Nama: ${mpd.name}\nID Anggota: ${mpd.memberId}`) : '';
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
 
       const SummaryCards = () => (
         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -421,7 +384,7 @@
                   <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-5 shadow-lg text-white relative overflow-hidden"><div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x=1/2"></div><div className="relative z-10 flex justify-between items-center"><div><div className="flex items-center space-x-2 text-amber-400 mb-1"><I.Clock /><p className="text-[10px] font-bold uppercase tracking-widest">Waktu Sekarang</p></div><h3 className="text-4xl font-black font-mono tracking-wider">{currentTime||'--:--:--'}</h3><p className="text-xs text-slate-400 font-semibold mt-1">WIB (Asia/Jakarta)</p></div><div className="text-right border-l border-white/10 pl-5"><div className="flex items-center justify-end space-x-2 text-amber-400 mb-1"><p className="text-[10px] font-bold uppercase tracking-widest">Cuaca</p><I.CloudSun /></div>{weather?(<><h3 className="text-4xl font-black">{Math.round(weather.temperature)}°C</h3><p className="text-xs text-slate-400 font-semibold mt-1">{wd.emoji} {wd.desc}</p></>):(<><h3 className="text-4xl font-black">--°C</h3><p className="text-xs text-slate-400 font-semibold mt-1">Memuat...</p></>)}</div></div></div>
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Info className="text-amber-500 w-5 h-5" /><span>Profile Club</span></h3><p className="text-xs text-slate-600 font-medium leading-relaxed"><b>One Aspal Club (OAC)</b> adalah komunitas pecinta motor premium yang bermarkas di jalan raya. Kami mengutamakan keselamatan, etika berkendara, dan persaudaraan tanpa batas antar pengguna motor sport, adventure, dan klasik di seluruh Indonesia.</p></div>
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Award className="text-amber-500 w-5 h-5" /><span>Visi & Misi</span></h3><div className="space-y-3"><div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3"><p className="text-[10px] font-black text-amber-600 uppercase mb-1">Visi</p><p className="text-xs text-slate-700 font-semibold">Menjadi komunitas berkendara paling solid, aman, dan dihormati di Indonesia.</p></div><div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">Misi</p><ul className="text-xs text-slate-700 font-semibold space-y-1.5 list-disc list-inside"><li>Membangun kekeluargaan antar anggota tanpa batas golongan.</li><li>Meningkatkan budaya safety riding dan kesadaran hukum lalu lintas.</li><li>Mengadakan kegiatan touring tahunan dan aksi sosial.</li></ul></div></div></div>
-                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Progres Anggota</span></h3><div className="grid grid-cols-2 gap-3"><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div></div></div>
+                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span> Anggota</span></h3><div className="grid grid-cols-2 gap-3"><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div></div></div>
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Calendar className="text-amber-500 w-5 h-5" /><span>Agenda Kegiatan</span></h3><div className="space-y-3">{events.map(ev=>(<div key={ev.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 flex items-center justify-between shadow-sm"><div className="flex-1"><span className="text-[10px] bg-rose-100 text-rose-600 font-bold px-2 py-0.5 rounded-full">{ev.tag}</span><h4 className="font-bold text-xs text-slate-900 mt-1">{ev.title}</h4><p className="text-[10px] text-slate-500 font-semibold flex items-center space-x-1 mt-0.5"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination} • {ev.date}</span></p></div><div className="text-right border-l border-slate-100 pl-3"><p className="text-lg font-black text-slate-800">{ev.joined}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Peserta</p></div></div>))}</div></div>
                   
                   <div className="space-y-3 pt-4">
@@ -488,8 +451,8 @@
 
                           <FormSelect label="Status Berkendara" value={regRidingStatus} onChange={(e)=>setRegRidingStatus(e.target.value)} required>
                             <option value="">Pilih Status...</option>
-                            <option value="Pengendara Motor">PENGENDARA (Rider)</option>
-                            <option value="Penumpang Motor">PENUMPANG (Passenger)</option>
+                            <option value="Pengendara Motor">Pengendara Motor</option>
+                            <option value="Penumpang Motor">Penumpang Motor</option>
                           </FormSelect>
 
                           <div className="grid grid-cols-2 gap-3">
@@ -536,11 +499,62 @@
                       <div className="space-y-4">
                         {announcements.length>0 && (<div className="space-y-3">{announcements.map(an=>(<div key={an.id} className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm"><div className="flex justify-between items-start"><h4 className="font-black text-sm text-slate-900 flex items-center"><I.Megaphone className="w-4 h-4 text-amber-500 mr-2" /> {an.title}</h4><span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full uppercase animate-pulse">Baru</span></div><p className="text-xs text-slate-600 font-medium mt-1.5 leading-relaxed">{an.content}</p><p className="text-[9px] text-slate-400 font-bold mt-2">{an.date} • oleh {an.author}</p></div>))}</div>)}
                         <div className="bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 flex flex-col h-[450px] shadow-sm overflow-hidden">
-                          {!activeGroupId ? (<div className="flex flex-col h-full"><div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200/50"><div className="flex items-center space-x-2"><I.MessageSquare className="text-amber-500" /><h3 className="text-sm font-bold text-slate-900">Grup Diskusi</h3></div><button onClick={()=>setShowAddGroupModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-2.5 py-1 rounded-full flex items-center space-x-1"><I.Plus /><span>Buat</span></button></div><div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-none">{chatGroups.map(g=>(<div key={g.id} onClick={()=>setActiveGroupId(g.id)} className="p-3 bg-white/80 border border-slate-200/30 rounded-2xl flex items-center justify-between hover:border-amber-500/30 cursor-pointer transition shadow-sm"><div className="flex items-center space-x-3"><span className="text-2xl w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">{g.icon}</span><div><h4 className="font-extrabold text-xs text-slate-900">{g.name}</h4><p className="text-[10px] text-slate-500 font-medium line-clamp-1">{g.desc}</p></div></div><I.ChevronRight className="text-slate-400" /></div>))}</div></div>) : (<div className="flex flex-col h-full"><div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200/50"><div className="flex items-center space-x-2"><button onClick={()=>{setActiveGroupId(null);setReplyToMessage(null);}} className="p-1 rounded-lg hover:bg-slate-100 text-slate-600"><I.ArrowLeft /></button><h3 className="text-xs font-bold text-slate-900 flex items-center space-x-1"><span>{ago?.icon}</span><span>{ago?.name}</span></h3></div></div><div id="cb" className="flex-1 overflow-y-auto space-y-3 mb-2 pr-1 text-xs scrollbar-none">{agm.map(m=>{const me=m.user===currentUser.name; const rt=m.replyToId?chatMessages.find(x=>x.id===m.replyToId):null; return (<div key={m.id} className={`flex ${me?'justify-end':'justify-start'}`}><div className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${me?'bg-gradient-to-tr from-slate-800 to-amber-600 text-white rounded-br-none':'bg-white/80 border border-slate-200/40 text-slate-800 rounded-bl-none'}`}>{m.replyToId && <div className={`p-2 rounded-xl mb-2 text-[10px] ${me?'bg-white/20 border-l-4 border-white/60':'bg-amber-50/70 border-l-4 border-amber-400'}`}>{rt?<><span className={`font-extrabold block mb-0.5 ${me?'text-white/90':'text-amber-600'}`}>@{rt.user}</span><span className={`truncate block font-medium ${me?'text-white/80':'text-slate-700'}`}>"{rt.text}"</span></>:<span className="italic font-semibold">[Pesan dihapus]</span>}</div>}{!me&&<span className="font-bold text-amber-600 text-[10px] block mb-1">{m.user}</span>}<p className={`text-xs leading-relaxed font-medium ${me?'text-white':'text-slate-700'}`}>{m.text}</p><div className="flex items-center justify-end space-x-2 mt-1.5"><span className={`text-[9px] font-semibold ${me?'text-white/70':'text-slate-400'}`}>{m.time}</span>{!me && <button onClick={()=>selRep(m)} className="p-0.5 rounded hover:bg-amber-100 text-slate-400 hover:text-amber-600"><I.Reply className="w-3 h-3" /></button>}</div></div></div>);})}</div>{replyToMessage && <div className="bg-amber-50/90 border-t border-x border-amber-200/50 p-2.5 rounded-t-2xl flex justify-between items-center text-[10px] text-slate-600"><div className="truncate pr-4 font-semibold">Membalas <span className="font-bold text-amber-600">@{replyToMessage.user}</span></div><button onClick={()=>setReplyToMessage(null)} className="p-1 text-slate-400 hover:text-slate-700 font-black text-xs">✕</button></div>}<form onSubmit={sMsg} className="flex space-x-2"><input type="text" ref={chatInputRef} value={newMessage} onChange={(e)=>setNewMessage(e.target.value)} placeholder={`Kirim pesan...`} className="flex-1 bg-white/90 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none" /><button type="submit" className="bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-white p-2.5 rounded-xl shadow-md shadow-slate-900/20"><I.Send /></button></form></div>)}
+                          {!activeThreadId ? (
+                            <div className="flex flex-col h-full">
+                              <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200/50">
+                                <div className="flex items-center space-x-2"><I.MessageSquare className="text-amber-500" /><h3 className="text-sm font-bold text-slate-900">Forum Obrolan</h3></div>
+                                <button onClick={()=>setShowCreateThreadModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-2.5 py-1 rounded-full flex items-center space-x-1"><I.Plus /><span>Topik</span></button>
+                              </div>
+                              <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-none">
+                                {topicList.length > 0 ? topicList.map(t => (
+                                  <div key={t.id} onClick={()=>setActiveThreadId(t.threadId)} className="p-3 bg-white/80 border border-slate-200/30 rounded-2xl flex items-center justify-between hover:border-amber-500/30 cursor-pointer transition shadow-sm">
+                                    <div className="flex items-center space-x-3">
+                                      <span className="text-2xl w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">💬</span>
+                                      <div>
+                                        <h4 className="font-extrabold text-xs text-slate-900 line-clamp-1">{t.message}</h4>
+                                        <p className="text-[10px] text-slate-500 font-medium">Dibuat oleh {t.user}</p>
+                                      </div>
+                                    </div>
+                                    <I.ChevronRight className="text-slate-400" />
+                                  </div>
+                                )) : <div className="text-center py-10 text-slate-400 text-xs italic">Belum ada topik obrolan.</div>}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col h-full">
+                              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200/50">
+                                <div className="flex items-center space-x-2">
+                                  <button onClick={()=>setActiveThreadId(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-600"><I.ArrowLeft /></button>
+                                  <h3 className="text-xs font-bold text-slate-900 flex items-center space-x-1 truncate max-w-[200px]">{forumThreads.find(t=>t.threadId===activeThreadId && t.isTopic)?.message}</h3>
+                                </div>
+                              </div>
+                              <div ref={forumChatRef} className="flex-1 overflow-y-auto space-y-3 mb-2 pr-1 text-xs scrollbar-none">
+                                {activeThreadMessages.map(m => {
+                                  const me = m.user === currentUser.name;
+                                  return (
+                                    <div key={m.id} className={`flex ${me?'justify-end':'justify-start'}`}>
+                                      <div className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${me?'bg-gradient-to-tr from-slate-800 to-amber-600 text-white rounded-br-none':'bg-white/80 border border-slate-200/40 text-slate-800 rounded-bl-none'}`}>
+                                        {m.isTopic && <span className="block text-[9px] font-bold text-amber-500 mb-1">TOPIK UTAMA</span>}
+                                        {!me && <span className="font-bold text-amber-600 text-[10px] block mb-1">{m.user}</span>}
+                                        <p className={`text-xs leading-relaxed font-medium ${me?'text-white':'text-slate-700'}`}>{m.message}</p>
+                                        <div className="flex items-center justify-end space-x-2 mt-1.5">
+                                          <span className={`text-[9px] font-semibold ${me?'text-white/70':'text-slate-400'}`}>{m.timestamp}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <form onSubmit={postReply} className="flex space-x-2">
+                                <input type="text" value={replyMsg} onChange={(e)=>setReplyMsg(e.target.value)} placeholder={`Balas pesan...`} className="flex-1 bg-white/90 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none" required />
+                                <button type="submit" className="bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-white p-2.5 rounded-xl shadow-md shadow-slate-900/20"><I.Send /></button>
+                              </form>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
-                    {activeTab==='events' && ( <div className="space-y-4"><h3 className="text-lg font-black text-slate-900">Event Mendatang</h3>{events.map(ev=>(<div key={ev.id} className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm"><h4 className="font-extrabold text-sm text-slate-900">{ev.title}</h4><p className="text-[11px] text-slate-500 mt-1 font-medium flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination}</span></p><div className="mt-4 flex justify-between items-center"><span className="text-xs font-bold text-slate-500">{ev.joined} Peserta</span><button onClick={()=>togRSVP(ev.id)} className={`text-[11px] font-bold px-4 py-2 rounded-xl transition active:scale-95 ${ev.isJoined?'bg-rose-50 text-rose-600 border border-rose-200':'bg-slate-900 text-white shadow-md shadow-slate-900/20'}`}>{ev.isJoined?'Batal':'Ikut Serta'}</button></div></div>))}</div> )}
+                    {activeTab==='events' && ( <div className="space-y-4"><h3 className="text-lg font-black text-slate-900">Event Mendatang</h3>{events.map(ev=>(<div key={ev.id} className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm"><h4 className="font-extrabold text-sm text-slate-900">{ev.title}</h4><p className="text-[11px] text-slate-500 mt-1 font-medium flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination}</span></p><div className="mt-4 flex justify-between items-center"><span className="text-xs font-bold text-slate-500">{ev.joined} Peserta</span><button onClick={()=>setEvents(events.map(e=>e.id===ev.id?{...e,isJoined:!e.isJoined,joined:!e.isJoined?e.joined+1:e.joined-1}:e))} className={`text-[11px] font-bold px-4 py-2 rounded-xl transition active:scale-95 ${ev.isJoined?'bg-rose-50 text-rose-600 border border-rose-200':'bg-slate-900 text-white shadow-md shadow-slate-900/20'}`}>{ev.isJoined?'Batal':'Ikut Serta'}</button></div></div>))}</div> )}
                     {activeTab==='garage' && ( 
                       <div className="space-y-4">
                         <h3 className="text-lg font-black text-slate-900">Garasi Saya</h3>
@@ -645,15 +659,9 @@
                           <div className="flex justify-between items-center">
                             <h4 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.User className="text-amber-500 w-5 h-5" /> <span>Data Diri</span></h4>
                             <button onClick={()=>{ 
-                              let emailUser = mpd.email || '';
-                              let emailDomain = '@gmail.com';
-                              if (mpd.email && mpd.email.includes('@')) {
-                                const parts = mpd.email.split('@');
-                                emailUser = parts[0];
-                                emailDomain = '@' + parts[1];
-                              }
-                              setEditingProfile({ ...mpd, email: emailUser, emailDomain: emailDomain }); 
-                              setShowEditProfileModal(true);
+                              let emailUser = mpd.email || ''; let emailDomain = '@gmail.com';
+                              if (mpd.email && mpd.email.includes('@')) { const parts = mpd.email.split('@'); emailUser = parts[0]; emailDomain = '@' + parts[1]; }
+                              setEditingProfile({ ...mpd, email: emailUser, emailDomain: emailDomain }); setShowEditProfileModal(true);
                             }} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1"><I.Edit className="w-3 h-3" /> <span>Edit Data</span></button>
                           </div>
                           <div className="space-y-2 text-xs text-slate-600 font-medium">
@@ -672,9 +680,8 @@
                   <div className="space-y-6">
                     <h3 className="text-lg font-black text-slate-900">Dashboard Admin</h3>
                     <SummaryCards />
-                    <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={()=>delAnn(a.id)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div>
+                    <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div>
                     <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar gender={m.gender} size="w-9 h-9" textSize="text-base" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-100 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div>
-                    <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900">Kelola Event</h4><button onClick={()=>setShowAddEventModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1"><I.Plus /><span>Tambah</span></button></div>{events.map(ev=>(<div key={ev.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2 flex items-center justify-between"><div><h5 className="font-bold text-xs text-slate-900">{ev.title}</h5><p className="text-[10px] text-slate-500 font-medium">{ev.date} • {ev.joined} Peserta</p></div><span className="text-[10px] bg-rose-100 text-rose-600 font-bold px-2 py-0.5 rounded-full">{ev.tag}</span></div>))}</div>
                     
                     <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm">
                       <div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900">Data Lengkap Anggota & Safety Gear</h4></div>
@@ -755,6 +762,18 @@
                     {touringRoles.map(r=><option key={r} value={r}>{r}</option>)}
                   </FormSelect>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Update Penugasan</button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {showCreateThreadModal && (
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4" onClick={()=>setShowCreateThreadModal(false)}>
+              <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.MessageSquare className="w-5 h-5 text-amber-500" /> Buat Topik Obrolan</h3>
+                <form onSubmit={createThread} className="space-y-3">
+                  <textarea value={newThreadMsg} onChange={(e)=>setNewThreadMsg(e.target.value)} placeholder="Tulis judul atau isi topik obrolan..." rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea>
+                  <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Publikasi Topik</button>
                 </form>
               </div>
             </div>
@@ -845,8 +864,8 @@
 
                   <FormSelect label="Status Berkendara" value={editingProfile.ridingStatus || ''} onChange={(e)=>setEditingProfile({...editingProfile, ridingStatus: e.target.value})} required>
                     <option value="">Pilih Status...</option>
-                    <option value="Pengendara Motor">Pengendara Motor</option>
-                    <option value="Penumpang Motor">Penumpang Motor</option>
+                    <option value="Pengendara Motor">Pengendara</option>
+                    <option value="Penumpang Motor">Penumpang</option>
                   </FormSelect>
 
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button>
@@ -855,29 +874,11 @@
             </div>
           )}
           
-          {showAddGroupModal && (
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4" onClick={()=>setShowAddGroupModal(false)}>
-              <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
-                <h3 className="text-lg font-black text-slate-900 mb-4">Buat Tema Obrolan</h3>
-                <form onSubmit={mkChat} className="space-y-3"><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Nama Tema</label><input type="text" value={newGroup.name} onChange={(e)=>setNewGroup({...newGroup,name:e.target.value})} placeholder="Contoh: Touring Bogor" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" /></div><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Deskripsi Singkat</label><input type="text" value={newGroup.desc} onChange={(e)=>setNewGroup({...newGroup,desc:e.target.value})} placeholder="Deskripsi obrolan" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" /></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Buat Grup</button></form>
-              </div>
-            </div>
-          )}
-          
-          {showAddEventModal && (
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4" onClick={()=>setShowAddEventModal(false)}>
-              <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
-                <h3 className="text-lg font-black text-slate-900 mb-4">Tambah Event Baru</h3>
-                <form onSubmit={addEvt} className="space-y-3"><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Judul Event</label><input type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent,title:e.target.value})} placeholder="Contoh: Touring Akhir Tahun" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" /></div><div className="grid grid-cols-2 gap-2"><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Tanggal</label><input type="text" value={newEvent.date} onChange={(e)=>setNewEvent({...newEvent,date:e.target.value})} placeholder="25 Des 2026" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" /></div><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Tag</label><select value={newEvent.tag} onChange={(e)=>setNewEvent({...newEvent,tag:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none"><option>Nasional</option><option>Lokal</option><option>Sosial</option></select></div></div><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Tujuan</label><input type="text" value={newEvent.destination} onChange={(e)=>setNewEvent({...newEvent,destination:e.target.value})} placeholder="Contoh: Bandung" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" /></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Publish Event</button></form>
-              </div>
-            </div>
-          )}
-          
           {showAddAnnouncementModal && (
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4" onClick={()=>setShowAddAnnouncementModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Megaphone className="w-5 h-5 text-amber-500" /> Buat Pengumuman</h3>
-                <form onSubmit={addAnn} className="space-y-3"><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Judul Pengumuman</label><input type="text" value={newAnnouncement.title} onChange={(e)=>setNewAnnouncement({...newAnnouncement,title:e.target.value})} placeholder="Contoh: Touring Ditunda" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" required /></div><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Isi Pengumuman</label><textarea value={newAnnouncement.content} onChange={(e)=>setNewAnnouncement({...newAnnouncement,content:e.target.value})} placeholder="Tulis isi pengumuman di sini..." rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Publish Pengumuman</button></form>
+                <form onSubmit={(e)=>{e.preventDefault(); if(!newAnnouncement.title||!newAnnouncement.content){addN('Judul dan isi wajib diisi!','error');return;} setAnnouncements([{id:Date.now(),title:newAnnouncement.title,content:newAnnouncement.content,date:new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}),author:currentUser.name},...announcements]); setShowAddAnnouncementModal(false); setNewAnnouncement({title:'',content:''}); addN('Pengumuman dipublish!','success');}} className="space-y-3"><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Judul</label><input type="text" value={newAnnouncement.title} onChange={(e)=>setNewAnnouncement({...newAnnouncement,title:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" required /></div><div><label className="text-[11px] font-bold text-slate-500 block mb-1">Isi</label><textarea value={newAnnouncement.content} onChange={(e)=>setNewAnnouncement({...newAnnouncement,content:e.target.value})} rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Publish</button></form>
               </div>
             </div>
           )}
@@ -889,3 +890,4 @@
   </script>
 </body>
 </html>
+    
