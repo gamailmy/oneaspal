@@ -17,13 +17,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   
-  <style>
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #ffffff; }
     body { font-family: 'Plus Jakarta Sans', sans-serif; overscroll-behavior: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
     input, textarea, select { -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
     ::-webkit-scrollbar { display: none; }
     .scrollbar-none::-webkit-scrollbar { display: none; } .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
     .card-font { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    /* PERBAIKAN IOS STANDALONE (SAFE AREA INSETS) */
+    #root {
+      padding-top: env(safe-area-inset-top);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      /* Kita hapus padding-bottom agar layar lebih luas ke bawah */
+    }
+
     @keyframes slideDownBounce { 0% { transform: translateY(-100px); opacity: 0; } 60% { transform: translateY(10px); opacity: 1; } 80% { transform: translateY(-5px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
     @keyframes shrinkBar { 0% { width: 100%; } 100% { width: 0%; } }
     .toast-animate { animation: slideDownBounce 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
@@ -780,14 +789,14 @@
               </div>
 
               {currentUser.role!=='Admin' && (
-                <div className="absolute bottom-0 left-0 right-0 bg-white/70 backdrop-blur-xl border-t border-white/60 px-4 py-2.5 flex justify-around items-center z-30">
+                <div className="absolute bottom-0 left-0 right-0 bg-white/60 backdrop-blur-2xl border-t border-white/40 px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] flex justify-around items-center z-30 shadow-[0_-4px_30px_rgba(0,0,0,0.05)]">
                   <button onClick={()=>setActiveTab('home')} className={`p-2 rounded-xl transition ${activeTab==='home'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Home /></button>
                   <button onClick={()=>setActiveTab('events')} className={`p-2 rounded-xl transition ${activeTab==='events'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Calendar /></button>
                   <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl transition ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Bike /></button>
                   <button onClick={()=>setActiveTab('members')} className={`p-2 rounded-xl transition ${activeTab==='members'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Users /></button>
                   <button onClick={()=>setActiveTab('profile')} className={`p-2 rounded-xl transition ${activeTab==='profile'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.User /></button>
                 </div>
-              )} 
+              )}
             </>
           )}
 
