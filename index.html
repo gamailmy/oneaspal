@@ -7,32 +7,30 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
-  <title>One Aspal Club - Riding and Touring Community</title>
+  <title>One Aspal Club - Premium Riding Community</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
-    <style>
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #ffffff; }
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #0f172a; }
     body { font-family: 'Plus Jakarta Sans', sans-serif; overscroll-behavior: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
     input, textarea, select { -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
     ::-webkit-scrollbar { display: none; }
     .scrollbar-none::-webkit-scrollbar { display: none; } .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
     .card-font { font-family: 'Plus Jakarta Sans', sans-serif; }
-    
-    /* PERBAIKAN IOS STANDALONE (SAFE AREA INSETS) */
     #root {
       padding-top: env(safe-area-inset-top);
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
-      /* Kita hapus padding-bottom agar layar lebih luas ke bawah */
     }
-
     @keyframes slideDownBounce { 0% { transform: translateY(-100px); opacity: 0; } 60% { transform: translateY(10px); opacity: 1; } 80% { transform: translateY(-5px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
     @keyframes shrinkBar { 0% { width: 100%; } 100% { width: 0%; } }
     .toast-animate { animation: slideDownBounce 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
@@ -44,14 +42,25 @@
     @keyframes breathBtn { 0%, 100% { transform: scale(1); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 0 0 0 rgba(59, 130, 246, 0.5); } 50% { transform: scale(1.03); box-shadow: 0 20px 40px -5px rgba(59, 130, 246, 0.6), 0 0 0 12px rgba(59, 130, 246, 0); } }
     .animate-breath-btn { animation: breathBtn 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: transform, box-shadow; }
   </style>
-  
 </head>
 <body class="bg-gradient-to-br from-slate-100 via-slate-50 to-amber-50 text-slate-800 flex justify-center items-center">
   <div id="root" class="w-full max-w-md h-[100dvh] md:h-[840px] md:my-6 md:rounded-[48px] md:shadow-[0_24px_70px_rgba(0,0,0,0.12)] md:border-[10px] md:border-white/90 overflow-hidden relative bg-white/60 backdrop-blur-xl"></div>
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
     
-    const API_URL = "https://script.google.com/macros/s/AKfycbwsqVNGYypcmCJ-EOhXLffjYqbrFb6Am2m8wKpj9vjZJR_yiHwuTrKFsLP2VgRoHncH/exec"; 
+    // === KONFIGURASI FIREBASE ANDA ===
+    const firebaseConfig = {
+    apiKey: "AIzaSyC_Lp9IMTfC0D1pSFeDbjW2ugyg22tFfTc",
+    authDomain: "oneaspalclub.firebaseapp.com",
+    databaseURL: "https://oneaspalclub-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "oneaspalclub",
+    storageBucket: "oneaspalclub.firebasestorage.app",
+    messagingSenderId: "310756119151",
+    appId: "1:310756119151:web:da5d0ccbc43dad23c5b39a"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
     const LOGO_URL = "https://z-cdn-media.chatglm.cn/files/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png?auth_key=1884486945-d15859bfa28c4cb08677f689560edf17-0-b48a62cb422e6271eb4aeb9096a34227";
     const SESSION_DURATION = 30 * 60 * 1000; 
 
@@ -138,8 +147,8 @@
       const [members, setMembers] = useState([]);
       
       // Forum States
-      const [forumThreads, setForumThreads] = useState([]);
-      const [activeThreadId, setActiveThreadId] = useState(null);
+      const [forumTopics, setForumTopics] = useState([]);
+      const [activeThread, setActiveThread] = useState(null); // { id, ...data, replies: [] }
       const [newThreadMsg, setNewThreadMsg] = useState('');
       const [replyMsg, setReplyMsg] = useState('');
       const [showCreateThreadModal, setShowCreateThreadModal] = useState(false);
@@ -153,22 +162,51 @@
       useEffect(() => { const t = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })), 1000); return () => clearInterval(t); }, []);
       useEffect(() => { fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true').then(r=>r.json()).then(d=>d.current_weather&&setWeather(d.current_weather)).catch(e=>console.error(e)); }, []);
       
+      // LISTENER REAL-TIME FIREBASE
       useEffect(() => {
-        fetch(API_URL + '?action=getMembers').then(r => r.json()).then(res => { if(res.status === 'success') setMembers(res.data); }).catch(e => console.error("Gagal fetch members:", e));
-        fetch(API_URL + '?action=getThreads').then(r => r.json()).then(res => { if(res.status === 'success') setForumThreads(res.data); }).catch(e => console.error("Gagal fetch threads:", e));
-      }, []);
+        // Fetch Members Real-time
+        const membersRef = db.ref('members');
+        membersRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          const membersArray = data ? Object.keys(data).map(key => {
+            const m = data[key];
+            const bikes = m.bikes ? Object.keys(m.bikes).map(bKey => ({ id: bKey, ...m.bikes[bKey] })) : [];
+            return { id: key, ...m, bikes };
+          }) : [];
+          setMembers(membersArray);
+        });
 
-      useEffect(() => {
+        // Fetch Forum Topics Real-time
+        const threadsRef = db.ref('threads');
+        threadsRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          const topicsArray = data ? Object.keys(data).map(key => {
+            const t = data[key];
+            const replies = t.replies ? Object.keys(t.replies).map(rKey => ({ id: rKey, ...t.replies[rKey] })) : [];
+            return { id: key, ...t, replies: replies.sort((a,b) => a.timestamp - b.timestamp) };
+          }).sort((a,b) => b.timestamp - a.timestamp) : [];
+          setForumTopics(topicsArray);
+          
+          // Update active thread if it exists
+          if (activeThread) {
+            const updatedActive = topicsArray.find(t => t.id === activeThread.id);
+            if (updatedActive) {
+              setActiveThread(updatedActive);
+              setTimeout(()=>{ if(forumChatRef.current) forumChatRef.current.scrollTop = forumChatRef.current.scrollHeight; },100);
+            }
+          }
+        });
+
+        // Session Check
         const storedSession = localStorage.getItem('oac_session');
         if (storedSession) {
           try {
             const session = JSON.parse(storedSession);
             if (session.expiresAt > Date.now()) {
-              const timeLeft = session.expiresAt - Date.now();
               setCurrentUser(session.user); setBikes(session.bikes || []); setUserGears(session.gears || {});
               setActiveTab(session.user.role === 'Admin' ? 'admin_dashboard' : 'home');
               if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-              logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, timeLeft);
+              logoutTimerRef.current = setTimeout(() => out(false), session.expiresAt - Date.now());
             } else { localStorage.removeItem('oac_session'); }
           } catch (e) { localStorage.removeItem('oac_session'); }
         }
@@ -199,24 +237,29 @@
       const handleLogin = async (e) => { 
         e.preventDefault(); 
         if(loginRole==='admin'){
-          try {
-            const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'adminLogin', username, password }) });
-            const res = await response.json();
-            if(res.status === 'success'){
+          db.ref('settings').once('value').then((snapshot) => {
+            const settings = snapshot.val();
+            if(username === settings.admin_username && password === settings.admin_password){
               const adminUser = { name:'Hendra (Super Admin)', role:'Admin', avatar:'👑', id:'ADMIN-SYS', dbId:'admin', city:'Jakarta' };
               setSession(adminUser, [], {}); setActiveTab('admin_dashboard'); addN('Selamat Datang, Admin Pengelola! ⚡','success');
-            } else { addN(`Gagal Login: ${res.message}`,'error'); }
-          } catch(err) { addN('Gagal terhubung ke server.','error'); }
+            } else { addN('Kredensial admin salah!','error'); }
+          });
         } else {
-          try {
-            const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'login', username, password }) });
-            const res = await response.json();
-            if(res.status === 'success'){
-              const u = res.member; const userBikes = res.bikes || []; const gears = res.gears || {};
-              const memberUser = { name:u.name, role:u.role, avatar:u.gender === 'Perempuan' || u.gender === 'PEREMPUAN' ? '👩' : '👨', id:u.id, dbId:u.id, memberId: u.memberId, city:u.city || '-', gender: u.gender, phone: u.phone, email: u.email, ridingStatus: u.ridingStatus, className: u.className, touringRole: u.touringRole };
-              setSession(memberUser, userBikes, gears); setActiveTab('home'); addN(`Login berhasil. Selamat datang, ${u.name}! 🏍️`,'success');
-            } else { addN(`Gagal Login: ${res.message}`,'error'); }
-          } catch(err) { addN('Gagal terhubung ke server.','error'); }
+          db.ref('members').orderByChild('username').equalTo(username).once('value').then((snapshot) => {
+            if(snapshot.exists()){
+              const userData = snapshot.val();
+              const userKey = Object.keys(userData)[0];
+              const u = userData[userKey];
+              if(u.password === password){
+                if(u.status === 'approved'){
+                  const memberUser = { name:u.name, role:u.role, avatar:u.gender === 'Perempuan' || u.gender === 'PEREMPUAN' ? '👩' : '👨', id:userKey, dbId:userKey, memberId: u.memberId, city:u.city || '-', gender: u.gender, phone: u.phone, email: u.email, ridingStatus: u.ridingStatus, className: u.className, touringRole: u.touringRole };
+                  const userBikes = u.bikes ? Object.keys(u.bikes).map(key => ({id:key, ...u.bikes[key]})) : [];
+                  setSession(memberUser, userBikes, u.gears || {});
+                  setActiveTab('home'); addN(`Login berhasil. Selamat datang, ${u.name}! 🏍️`,'success');
+                } else { addN(`Akun berstatus: ${u.status}`,'error'); }
+              } else { addN('Password salah!','error'); }
+            } else { addN('Username tidak ditemukan','error'); }
+          });
         }
       };
       
@@ -242,154 +285,149 @@
       
       const finalReg = async () => { 
         if(!confirmRegData) return; 
-        const payload = { action: 'register', name:regName, gender:regGender, city:regCity, phone:regPhone, email: regEmail + regEmailDomain, ridingStatus:regRidingStatus, username:regUsername, password:regPassword, bikeBrand:regBikeBrand, bikeModel:regBikeModel, bikePlate:regBikePlate, bikeCategory:regBikeCategory, bikeEngine:regBikeEngine };
-        try {
-          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-          const res = await response.json();
-          if(res.status === 'success'){
-            addN('Pendaftaran Berhasil! Data terkirim ke Admin untuk verifikasi.','success');
-            setAuthMode('login');setLoginRole('member');setUsername('');setPassword('');setRegName('');setRegUsername('');setRegPassword('');setRegGender('Laki-laki');setRegPhone('');setRegCity('');setRegEmail('');setRegEmailDomain('@gmail.com');setRegRidingStatus('');setRegBikeBrand('');setRegBikeModel('');setRegBikePlate('');setRegBikeCategory('Sport');setRegBikeEngine('');setShowConfirmRegModal(false);setConfirmRegData(null);setShowPublicPage(true);
-          } else { addN(`Gagal Daftar: ${res.message}`,'error'); setShowConfirmRegModal(false); }
-        } catch(err) { addN('Gagal terhubung ke server.','error'); }
+        const fullEmail = regEmail + regEmailDomain;
+        const newMemberRef = db.ref('members').push();
+        const newId = newMemberRef.key;
+        
+        await newMemberRef.set({
+          memberId: `PND-${new Date().getFullYear()}-${newId.slice(-4)}`,
+          name: regName, gender: regGender, city: regCity, phone: regPhone,
+          email: fullEmail, ridingStatus: regRidingStatus,
+          username: regUsername, password: regPassword,
+          role: 'Prospect', status: 'pending', createdAt: Date.now(),
+          bikes: {
+            [db.ref().push().key]: {
+              name: `${regBikeBrand} ${regBikeModel}`, plate: regBikePlate,
+              type: regBikeCategory, engine: `${regBikeEngine}cc`
+            }
+          },
+          gears: { helmetBrand: '', helmetModel: '', jacketMaterial: '', jacketModel: '', shoeType: '', shoeModel: '' }
+        });
+
+        addN('Pendaftaran Berhasil! Tunggu Admin.','success');
+        setAuthMode('login'); setLoginRole('member'); setUsername(''); setPassword('');
+        setRegName(''); setRegUsername(''); setRegPassword(''); setRegPhone(''); setRegCity('');
+        setRegEmail(''); setRegRidingStatus(''); setRegBikeBrand(''); setRegBikeModel('');
+        setRegBikePlate(''); setRegBikeCategory('Sport'); setRegBikeEngine('');
+        setShowConfirmRegModal(false); setConfirmRegData(null); setShowPublicPage(true);
       };
       
       const out = (showMsg = true) => { 
         localStorage.removeItem('oac_session');
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-        setCurrentUser(null);setBikes([]);setUserGears({});setActiveThreadId(null);
+        setCurrentUser(null);setBikes([]);setUserGears({});setActiveThread(null);
         setUsername('');setPassword('');setShowNotifPanel(false);setShowPublicPage(true);
         if (showMsg) addN('Anda telah keluar dari aplikasi.','info');
       };
       
-      const upBike = (e) => { e.preventDefault(); if(!editingBike.name||!editingBike.plate){addN('Data motor tidak boleh kosong!','error');return;} const em={Sport:'🏍️',Adventure:'🚵',Matic:'🛵',Classic:'🚲',Bebek:'🏍️',Vespa:'🛵'}; const ub={...editingBike,image:em[editingBike.type]||'🏍️'}; setBikes(bikes.map(b=>b.id===ub.id?ub:b)); setShowEditBikeModal(false);setEditingBike(null);addN('Data motor berhasil diperbarui! 🏍️','success'); };
+      const upBike = (e) => { 
+        e.preventDefault(); 
+        if(!editingBike.name||!editingBike.plate){addN('Data motor tidak boleh kosong!','error');return;} 
+        const bikeRef = db.ref('members/' + currentUser.id + '/bikes/' + editingBike.id);
+        bikeRef.update({ name: editingBike.name, plate: editingBike.plate, type: editingBike.type, engine: editingBike.engine });
+        setBikes(bikes.map(b=>b.id===editingBike.id?editingBike:b)); 
+        setShowEditBikeModal(false);setEditingBike(null);addN('Data motor berhasil diperbarui! 🏍️','success'); 
+      };
       
       const upProf = async (e) => { 
         e.preventDefault(); if(!editingProfile.name){addN('Nama tidak boleh kosong!','error');return;} 
         const fullEmail = editingProfile.email + editingProfile.emailDomain;
-        const profileToUpdate = { ...editingProfile, email: fullEmail, id: currentUser.id };
-        try {
-          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateProfile', ...profileToUpdate }) });
-          const res = await response.json();
-          if(res.status === 'success') {
-            const newUserData = { ...currentUser, name: editingProfile.name, avatar: editingProfile.avatar, city: editingProfile.city, phone: editingProfile.phone, gender: editingProfile.gender, email: fullEmail, ridingStatus: editingProfile.ridingStatus };
-            setCurrentUser(newUserData); updateSessionData(newUserData, null, null); 
-            setShowEditProfileModal(false); setEditingProfile(null); addN('Profil berhasil diperbarui! ✨','success'); 
-          } else { addN('Gagal update profil: ' + res.message, 'error'); }
-        } catch(err) { addN('Gagal terhubung ke server.','error'); }
+        await db.ref('members/' + currentUser.id).update({
+          name: editingProfile.name, gender: editingProfile.gender, city: editingProfile.city,
+          phone: editingProfile.phone, email: fullEmail, ridingStatus: editingProfile.ridingStatus
+        });
+        const newUserData = { ...currentUser, name: editingProfile.name, city: editingProfile.city, email: fullEmail, ridingStatus: editingProfile.ridingStatus };
+        setCurrentUser(newUserData); updateSessionData(newUserData, null, null); 
+        setShowEditProfileModal(false); addN('Profil berhasil diperbarui! ✨','success'); 
       };
       
       const upGear = async (e) => {
         e.preventDefault();
-        try {
-          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateGear', userId: currentUser.id, ...editingGear }) });
-          const res = await response.json();
-          if(res.status === 'success') { setUserGears(res.gears); updateSessionData(null, null, res.gears); setShowEditGearModal(false); setEditingGear(null); addN('Safety gear berhasil diperbarui! 🛡️','success'); }
-        } catch(err) { addN('Gagal mengupdate gear ke server.','error'); }
+        await db.ref('members/' + currentUser.id + '/gears').update(editingGear);
+        setUserGears(editingGear); updateSessionData(null, null, editingGear);
+        setShowEditGearModal(false); addN('Safety gear berhasil diperbarui! 🛡️','success');
       };
 
       const updateAdminCreds = async (e) => {
         e.preventDefault();
-        try {
-          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateAdminCreds', ...adminCreds }) });
-          const res = await response.json();
-          if(res.status === 'success') { addN('Kredensial Admin berhasil diupdate!','success'); setAdminCreds({ username: '', password: '' }); }
-          else addN('Gagal update kredensial.','error');
-        } catch(err) { addN('Gagal terhubung ke server.','error'); }
+        await db.ref('settings').update(adminCreds);
+        addN('Kredensial Admin berhasil diupdate!','success'); setAdminCreds({ username: '', password: '' });
       };
 
       const reqA = (t,m) => { setAdminConfirmData({type:t,member:m}); if(t==='approve') setSelectedClassName('Rider Addict'); setShowAdminConfirmModal(true); };
       const exA = async () => { 
-        if(!adminConfirmData)return; const {type,member}=adminConfirmData; 
-        if(type==='approve'){
-          try {
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action:'approveMember', id: member.id, className: selectedClassName }) });
-            setMembers(members.map(m=>{if(m.id==member.id){const nm=`OAC-${new Date().getFullYear()}-${String(m.id).slice(-4)}`;return{...m,status:'approved',memberId:nm,className:selectedClassName, role:'Member'};}return m;}));
-            addN(`Anda menyetujui pendaftaran ${member.name}. Kredensial tersimpan.`,'success');
-          } catch(err){ addN('Gagal terhubung ke server untuk approve.','error'); }
-        } else if(type==='reject'){
-          try {
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action:'rejectMember', id: member.id }) });
-            setMembers(members.map(m=>m.id==member.id?{...m,status:'rejected'}:m));
-            addN(`Anda menolak pendaftaran ${member.name}.`,'error');
-          } catch(err){ addN('Gagal terhubung ke server.','error'); }
+        if(!adminConfirmData) return; 
+        const { type, member } = adminConfirmData; 
+        const memberRef = db.ref('members/' + member.id);
+        
+        if(type === 'approve'){
+          const nm = `OAC-${new Date().getFullYear()}-${String(member.id).slice(-4)}`;
+          await memberRef.update({ status: 'approved', memberId: nm, role: 'Member', className: selectedClassName });
+          addN(`Anda menyetujui pendaftaran ${member.name}.`,'success');
+        } else if(type === 'reject'){
+          await memberRef.update({ status: 'rejected' });
+          addN(`Anda menolak pendaftaran ${member.name}.`,'error');
+        } else if(type === 'delete'){
+          await memberRef.remove();
+          addN('Anggota dihapus.','info');
         }
         setShowAdminConfirmModal(false); setAdminConfirmData(null); 
       };
       
       const editTouring = async (e) => { 
-        e.preventDefault(); if(!editingTouringMember) return; 
-        try {
-          await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateTouringRole', id: editingTouringMember.id, touringRole: selectedTouringRole }) });
-          setMembers(members.map(m => m.id == editingTouringMember.id ? {...m, touringRole: selectedTouringRole} : m));
-          setShowEditTouringModal(false); setEditingTouringMember(null); 
-          addN(`Penugasan touring ${selectedTouringRole || 'dihapus'} berhasil diperbarui! 🎖️`,'success'); 
-        } catch (err) { addN('Gagal mengupdate penugasan ke server.','error'); }
+        e.preventDefault(); 
+        await db.ref('members/' + editingTouringMember.id).update({ touringRole: selectedTouringRole });
+        setShowEditTouringModal(false); addN('Penugasan diperbarui! 🎖️','success');
       };
 
-      // FORUM FUNCTIONS
+      // FORUM FUNCTIONS (REAL-TIME)
       const createThread = async (e) => {
         e.preventDefault();
         if(!newThreadMsg.trim()) return;
-        try {
-          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'createThread', user: currentUser.name, message: newThreadMsg }) });
-          const res = await response.json();
-          if(res.status === 'success') {
-            setForumThreads([...forumThreads, res.thread]);
-            setNewThreadMsg(''); setShowCreateThreadModal(false);
-            addN('Topik obrolan berhasil dibuat! 💬','success');
-          }
-        } catch(err) { addN('Gagal membuat topik.','error'); }
+        const newThreadRef = db.ref('threads').push();
+        await newThreadRef.set({
+          user: currentUser.name, message: newThreadMsg,
+          timestamp: Date.now(), isTopic: true, replies: {}
+        });
+        setNewThreadMsg(''); setShowCreateThreadModal(false);
+        addN('Topik obrolan dibuat! 💬','success');
       };
 
       const postReply = async (e) => {
         e.preventDefault();
-        if(!replyMsg.trim() || !activeThreadId) return;
-        try {
-          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'postReply', threadId: activeThreadId, user: currentUser.name, message: replyMsg }) });
-          const res = await response.json();
-          if(res.status === 'success') {
-            setForumThreads([...forumThreads, res.reply]);
-            setReplyMsg('');
-            setTimeout(()=>{ if(forumChatRef.current) forumChatRef.current.scrollTop = forumChatRef.current.scrollHeight; },100);
-          }
-        } catch(err) { addN('Gagal mengirim balasan.','error'); }
+        if(!replyMsg.trim() || !activeThread) return;
+        const repliesRef = db.ref('threads/' + activeThread.id + '/replies').push();
+        await repliesRef.set({
+          user: currentUser.name, message: replyMsg, timestamp: Date.now()
+        });
+        setReplyMsg('');
       };
 
       const handleEditThread = async (e) => {
         e.preventDefault();
-        try {
-          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'editThread', id: editingThreadId, message: editingThreadMsg }) });
-          const res = await response.json();
-          if(res.status === 'success') {
-            setForumThreads(forumThreads.map(t => t.id === editingThreadId ? {...t, message: editingThreadMsg} : t));
-            setShowEditThreadModal(false); setEditingThreadId(null);
-            addN('Pesan berhasil diperbarui! ✨','success');
-          }
-        } catch(err) { addN('Gagal mengupdate pesan.','error'); }
+        // Jika edit topik utama
+        if (activeThread && editingThreadId === activeThread.id) {
+          await db.ref('threads/' + activeThread.id).update({ message: editingThreadMsg });
+        } else if (activeThread) {
+          // Jika edit reply
+          await db.ref('threads/' + activeThread.id + '/replies/' + editingThreadId).update({ message: editingThreadMsg });
+        }
+        setShowEditThreadModal(false); addN('Pesan diperbarui! ✨','success');
       };
 
       const handleDeleteThread = async (id, isTopic, threadId) => {
-        const confirmDelete = window.confirm(isTopic ? "Hapus topik ini dan semua balasannya?" : "Hapus pesan ini?");
-        if (!confirmDelete) return;
-        try {
-          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteThread', id: id, deleteAll: isTopic }) });
-          const res = await response.json();
-          if(res.status === 'success') {
-            if (isTopic) {
-              setForumThreads(forumThreads.filter(t => t.threadId !== threadId));
-              setActiveThreadId(null);
-            } else {
-              setForumThreads(forumThreads.filter(t => t.id !== id));
-            }
-            addN('Pesan berhasil dihapus! 🗑️','info');
-          }
-        } catch(err) { addN('Gagal menghapus pesan.','error'); }
+        if (!window.confirm(isTopic ? "Hapus topik ini dan semua balasannya?" : "Hapus pesan ini?")) return;
+        if (isTopic) {
+          await db.ref('threads/' + threadId).remove();
+          setActiveThread(null);
+        } else {
+          await db.ref('threads/' + threadId + '/replies/' + id).remove();
+        }
+        addN('Pesan dihapus! 🗑️','info');
       };
 
-      const activeThreadMessages = forumThreads.filter(m => m.threadId === activeThreadId);
-      const topicList = forumThreads.filter(m => m.isTopic === true);
       const mpd = currentUser; 
-      const mb = bikes.filter(b=>b.userId == currentUser?.id); 
+      const mb = bikes; 
       const tA = members.filter(m=>m.status==='approved').length; const tP = members.filter(m=>m.status==='pending').length; const tR = members.filter(m=>m.status==='rejected').length;
       const totalRegistrants = members.length; 
       const un = notifications.filter(n=>!n.read).length; 
@@ -415,23 +453,22 @@
         </div>
       );
 
-      // Reusable Forum Component (iOS Glass Theme)
       const renderForum = () => (
         <div className="bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-2xl border border-white/40 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-4 flex flex-col h-[500px] overflow-hidden">
-          {!activeThreadId ? (
+          {!activeThread ? (
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/30">
                 <div className="flex items-center space-x-2"><I.MessageSquare className="text-slate-700" /><h3 className="text-sm font-bold text-slate-800">Forum Obrolan</h3></div>
                 <button onClick={()=>setShowCreateThreadModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-md active:scale-95 transition"><I.Plus /><span>Topik</span></button>
               </div>
               <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-none">
-                {topicList.length > 0 ? topicList.map(t => (
-                  <div key={t.id} onClick={()=>setActiveThreadId(t.threadId)} className="p-4 bg-white/50 backdrop-blur-md border border-white/60 rounded-3xl flex items-center justify-between hover:bg-white/70 cursor-pointer transition shadow-sm">
+                {forumTopics.length > 0 ? forumTopics.map(t => (
+                  <div key={t.id} onClick={()=>setActiveThread(t)} className="p-4 bg-white/50 backdrop-blur-md border border-white/60 rounded-3xl flex items-center justify-between hover:bg-white/70 cursor-pointer transition shadow-sm">
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center">💬</span>
                       <div>
                         <h4 className="font-extrabold text-xs text-slate-900 line-clamp-1">{t.message}</h4>
-                        <p className="text-[10px] text-slate-500 font-medium">Oleh {t.user} • {t.timestamp}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Oleh {t.user} • {new Date(t.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} • {t.replies ? t.replies.length : 0} Balasan</p>
                       </div>
                     </div>
                     <I.ChevronRight className="text-slate-400" />
@@ -443,12 +480,30 @@
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/30">
                 <div className="flex items-center space-x-2">
-                  <button onClick={()=>setActiveThreadId(null)} className="p-1 rounded-full hover:bg-white/50 text-slate-700"><I.ArrowLeft /></button>
-                  <h3 className="text-xs font-bold text-slate-800 flex items-center space-x-1 truncate max-w-[200px]">{forumThreads.find(t=>t.threadId===activeThreadId && t.isTopic)?.message}</h3>
+                  <button onClick={()=>setActiveThread(null)} className="p-1 rounded-full hover:bg-white/50 text-slate-700"><I.ArrowLeft /></button>
+                  <h3 className="text-xs font-bold text-slate-800 flex items-center space-x-1 truncate max-w-[200px]">{activeThread.message}</h3>
                 </div>
               </div>
               <div ref={forumChatRef} className="flex-1 overflow-y-auto space-y-3 mb-2 pr-1 text-xs scrollbar-none">
-                {activeThreadMessages.map(m => {
+                {/* Render Topic Message */}
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] p-3 shadow-md bg-white/60 backdrop-blur-lg text-slate-900 border border-white/70 rounded-3xl rounded-bl-lg">
+                    <span className="block text-[10px] font-bold text-blue-500 mb-1">{activeThread.user}</span>
+                    <span className="block text-[9px] font-bold text-amber-500 mb-1">TOPIK UTAMA</span>
+                    <p className="text-xs leading-relaxed">{activeThread.message}</p>
+                    <div className="flex items-center justify-end space-x-2 mt-1">
+                      <span className="text-[9px] text-slate-400">{new Date(activeThread.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</span>
+                      {currentUser.role === 'Admin' && (
+                        <div className="flex space-x-1">
+                          <button onClick={() => { setEditingThreadId(activeThread.id); setEditingThreadMsg(activeThread.message); setShowEditThreadModal(true); }} className="text-[9px] text-slate-400 hover:text-blue-500">Edit</button>
+                          <button onClick={() => handleDeleteThread(activeThread.id, true, activeThread.id)} className="text-[9px] text-slate-400 hover:text-rose-500">Hapus</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {/* Render Replies */}
+                {activeThread.replies && activeThread.replies.map(m => {
                   const me = m.user === currentUser.name;
                   return (
                     <div key={m.id} className={`flex ${me?'justify-end':'justify-start'}`}>
@@ -456,11 +511,11 @@
                         {!me && <span className="block text-[10px] font-bold text-blue-500 mb-1">{m.user}</span>}
                         <p className="text-xs leading-relaxed">{m.message}</p>
                         <div className="flex items-center justify-end space-x-2 mt-1">
-                          <span className={`text-[9px] ${me?'text-white/70':'text-slate-400'}`}>{m.timestamp}</span>
+                          <span className={`text-[9px] ${me?'text-white/70':'text-slate-400'}`}>{new Date(m.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</span>
                           {currentUser.role === 'Admin' && (
                             <div className="flex space-x-1">
                               <button onClick={() => { setEditingThreadId(m.id); setEditingThreadMsg(m.message); setShowEditThreadModal(true); }} className={`text-[9px] ${me?'text-white/80 hover:text-white':'text-slate-400 hover:text-blue-500'}`}>Edit</button>
-                              <button onClick={() => handleDeleteThread(m.id, m.isTopic, m.threadId)} className={`text-[9px] ${me?'text-white/80 hover:text-white':'text-slate-400 hover:text-rose-500'}`}>Hapus</button>
+                              <button onClick={() => handleDeleteThread(m.id, false, activeThread.id)} className={`text-[9px] ${me?'text-white/80 hover:text-white':'text-slate-400 hover:text-rose-500'}`}>Hapus</button>
                             </div>
                           )}
                         </div>
@@ -613,7 +668,7 @@
                     {activeTab==='garage' && ( 
                       <div className="space-y-4">
                         <h3 className="text-lg font-black text-slate-900">Garasi Saya</h3>
-                        {mb.length>0?mb.map(b=>(<div key={b.id} className="bg-white/50 border border-white/60 rounded-2xl p-4 flex items-center space-x-4 shadow-sm"><span className="text-5xl">{b.image}</span><div className="flex-1"><h4 className="font-bold text-sm text-slate-900">{b.name}</h4><p className="text-[11px] text-slate-500 font-semibold">{b.plate} • {b.type} • {b.engine}</p></div><button onClick={()=>{setEditingBike(b);setShowEditBikeModal(true);}} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition active:scale-95"><I.Edit className="w-5 h-5" /></button></div>)):<div className="text-center py-10 text-slate-400 text-xs italic">Motor belum terdaftar di garasi.</div>}
+                        {mb.length>0?mb.map(b=>(<div key={b.id} className="bg-white/50 border border-white/60 rounded-2xl p-4 flex items-center space-x-4 shadow-sm"><span className="text-5xl">🏍️</span><div className="flex-1"><h4 className="font-bold text-sm text-slate-900">{b.name}</h4><p className="text-[11px] text-slate-500 font-semibold">{b.plate} • {b.type} • {b.engine}</p></div><button onClick={()=>{setEditingBike(b);setShowEditBikeModal(true);}} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition active:scale-95"><I.Edit className="w-5 h-5" /></button></div>)):<div className="text-center py-10 text-slate-400 text-xs italic">Motor belum terdaftar di garasi.</div>}
                         <div className="bg-white/50 border border-white/60 rounded-2xl p-4 shadow-sm">
                           <div className="flex justify-between items-center mb-3"><h4 className="font-bold text-sm text-slate-900 flex items-center"><I.ShieldCheck className="w-4 h-4 text-amber-500 mr-2" /> Safety Gear</h4><button onClick={()=>{ setEditingGear(userGears || {}); setShowEditGearModal(true); }} className="text-[10px] bg-blue-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Edit className="w-3 h-3" /> <span>Edit Gear</span></button></div>
                           <div className="space-y-3 text-xs text-slate-600 font-medium">
@@ -645,7 +700,7 @@
                               {m.bikes && m.bikes.length > 0 ? (
                                 m.bikes.map(bike => (
                                   <div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2 mb-1">
-                                    <span className="text-xl">{bike.image}</span>
+                                    <span className="text-xl">🏍️</span>
                                     <div className="flex-1">
                                       <p className="font-bold text-slate-800 text-[11px]">{bike.name}</p>
                                       <p className="text-slate-500 text-[9px]">{bike.plate} • {bike.type} • {bike.engine}</p>
@@ -757,7 +812,7 @@
                               <div className="flex items-center space-x-1"><I.Mail className="w-3 h-3 text-slate-400" /><span className="font-semibold truncate">{m.email}</span></div>
                               <div className="flex items-center space-x-1 col-span-2"><I.Bike className="w-3 h-3 text-amber-500" /><span className="font-semibold">{m.ridingStatus}</span></div>
                             </div>
-                            {m.bikes && m.bikes.length > 0 ? ( m.bikes.map(bike => (<div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2"><span className="text-2xl">{bike.image}</span><div className="flex-1"><p className="font-bold text-slate-800 text-[11px]">{bike.name}</p><p className="text-slate-500">{bike.plate} • {bike.type} • {bike.engine}</p></div></div>)) ) : ( <div className="text-center text-[10px] text-slate-400 italic py-1">Belum ada motor terdaftar</div> )}
+                            {m.bikes && m.bikes.length > 0 ? ( m.bikes.map(bike => (<div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2"><span className="text-2xl">🏍️</span><div className="flex-1"><p className="font-bold text-slate-800 text-[11px]">{bike.name}</p><p className="text-slate-500">{bike.plate} • {bike.type} • {bike.engine}</p></div></div>)) ) : ( <div className="text-center text-[10px] text-slate-400 italic py-1">Belum ada motor terdaftar</div> )}
                             {m.touringRole && <div className="flex items-center space-x-1 mb-1 bg-amber-50 p-1.5 rounded-lg"><I.Award className="w-3 h-3 text-amber-600" /><span className="font-bold text-amber-700">{m.touringRole}</span></div>}
                             <div className="grid grid-cols-3 gap-2 text-[9px] mt-2">
                               <div className={`p-1.5 rounded-lg flex flex-col items-center text-center ${m.gears?.helmetBrand ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}><span className="font-bold uppercase">Helm</span><span className="truncate w-full">{m.gears?.helmetBrand || 'Kosong'}</span></div>
