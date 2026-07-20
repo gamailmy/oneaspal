@@ -36,6 +36,9 @@
     // === GANTI DENGAN URL WEB APP APPS SCRIPT ANDA ===
     const API_URL = "https://script.google.com/macros/s/AKfycbwsqVNGYypcmCJ-EOhXLffjYqbrFb6Am2m8wKpj9vjZJR_yiHwuTrKFsLP2VgRoHncH/exec"; 
     const LOGO_URL = "https://z-cdn-media.chatglm.cn/files/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png?auth_key=1884486945-d15859bfa28c4cb08677f689560edf17-0-b48a62cb422e6271eb4aeb9096a34227";
+    
+    // KONFIGURASI SESSION (30 Menit)
+    const SESSION_DURATION = 30 * 60 * 1000; 
 
     const GlassLogo = ({ size = "w-28 h-28", animate = false }) => (
       <div className={`${size} mx-auto flex items-center justify-center relative`}>
@@ -102,7 +105,7 @@
       const [authMode, setAuthMode] = useState('login'); const [loginRole, setLoginRole] = useState('member'); const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [activeTab, setActiveTab] = useState('home'); const [showPublicPage, setShowPublicPage] = useState(true); 
       const [toast, setToast] = useState({ show: false, message: '', type: 'success' }); const [notifications, setNotifications] = useState([]); const [showNotifPanel, setShowNotifPanel] = useState(false);
       const [currentTime, setCurrentTime] = useState(''); const [weather, setWeather] = useState(null);
-      const chatInputRef = useRef(null); const cardRef = useRef(null); 
+      const chatInputRef = useRef(null); const cardRef = useRef(null); const logoutTimerRef = useRef(null);
       const [regName, setRegName] = useState(''); const [regUsername, setRegUsername] = useState(''); const [regPassword, setRegPassword] = useState(''); const [regGender, setRegGender] = useState('Laki-laki'); const [regPhone, setRegPhone] = useState(''); const [regCity, setRegCity] = useState(''); const [regBikeBrand, setRegBikeBrand] = useState(''); const [regBikeModel, setRegBikeModel] = useState(''); const [regBikePlate, setRegBikePlate] = useState(''); const [regBikeCategory, setRegBikeCategory] = useState('Sport'); const [regBikeEngine, setRegBikeEngine] = useState('');
       const [showConfirmRegModal, setShowConfirmRegModal] = useState(false); const [confirmRegData, setConfirmRegData] = useState(null);
       const [bikes, setBikes] = useState([]);
@@ -122,26 +125,88 @@
       const [userGears, setUserGears] = useState({});
       const [editingGear, setEditingGear] = useState(null);
       const [showEditGearModal, setShowEditGearModal] = useState(false);
-      
       const [adminCreds, setAdminCreds] = useState({ username: '', password: '' });
 
       const touringRoles = ['Road Captain (RC)', 'Vorijder (VO)', 'Sweeper (SW)', 'Safety Officer (SO)', 'Technical Officer (TO)', 'Medical Officer (MO)'];
 
       useEffect(() => { const t = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })), 1000); return () => clearInterval(t); }, []);
       useEffect(() => { fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true').then(r=>r.json()).then(d=>d.current_weather&&setWeather(d.current_weather)).catch(e=>console.error(e)); }, []);
-
+      
+      // Fetch data anggota secara realtime untuk halaman publik
       useEffect(() => {
-        if (currentUser) {
-          fetch(API_URL + '?action=getMembers')
-            .then(r => r.json())
-            .then(res => { if(res.status === 'success') setMembers(res.data); })
-            .catch(e => console.error("Gagal fetch members:", e));
+        fetch(API_URL + '?action=getMembers')
+          .then(r => r.json())
+          .then(res => { if(res.status === 'success') setMembers(res.data); })
+          .catch(e => console.error("Gagal fetch members:", e));
+      }, []);
+
+      // SESSION MANAGEMENT: Cek sesi tersisa saat aplikasi di-refresh
+      useEffect(() => {
+        const storedSession = localStorage.getItem('oac_session');
+        if (storedSession) {
+          try {
+            const session = JSON.parse(storedSession);
+            if (session.expiresAt > Date.now()) {
+              const timeLeft = session.expiresAt - Date.now();
+              setCurrentUser(session.user);
+              setBikes(session.bikes || []);
+              setUserGears(session.gears || {});
+              setActiveTab(session.user.role === 'Admin' ? 'admin_dashboard' : 'home');
+              
+              // Set timer untuk auto-logout berdasarkan sisa waktu
+              if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+              logoutTimerRef.current = setTimeout(() => {
+                out(false);
+                addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info');
+              }, timeLeft);
+            } else {
+              localStorage.removeItem('oac_session');
+            }
+          } catch (e) {
+            localStorage.removeItem('oac_session');
+          }
         }
-      }, [currentUser]);
+      }, []);
 
       const getW = (c) => { if(c===0)return{emoji:'☀️',desc:'Cerah'}; if([1,2].includes(c))return{emoji:'🌤️',desc:'Berawan Sebagian'}; if(c===3)return{emoji:'☁️',desc:'Mendung'}; if([45,48].includes(c))return{emoji:'🌫️',desc:'Berkabut'}; if([51,53,55,56,57].includes(c))return{emoji:'🌦️',desc:'Gerimis'}; if([61,63,65,66,67].includes(c))return{emoji:'🌧️',desc:'Hujan'}; if([71,73,75,77].includes(c))return{emoji:'❄️',desc:'Salju'}; if([80,81,82].includes(c))return{emoji:'🌦️',desc:'Hujan Lokal'}; if([95,96,99].includes(c))return{emoji:'⛈️',desc:'Badai Petir'}; return{emoji:'🌡️',desc:'Cuaca Normal'} };
       const addN = (m, t='info') => { setNotifications(p=>[{id:Date.now(),message:m,type:t,time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),read:false},...p]); setToast({show:true,message:m,type:t}); setTimeout(()=>setToast({show:false,message:'',type:'success'}),3000); };
       
+      // Fungsi untuk update data sesi di local storage
+      const updateSessionData = (newUser, newBikes, newGears) => {
+        const stored = localStorage.getItem('oac_session');
+        if (stored) {
+          try {
+            const session = JSON.parse(stored);
+            const updatedSession = {
+              user: newUser || session.user,
+              bikes: newBikes || session.bikes || [],
+              gears: newGears || session.gears || {},
+              expiresAt: session.expiresAt
+            };
+            localStorage.setItem('oac_session', JSON.stringify(updatedSession));
+          } catch (e) {}
+        }
+      };
+
+      // Fungsi Setup Sesi Login
+      const setSession = (user, userBikes = [], gears = {}) => {
+        const session = {
+          user, bikes: userBikes, gears,
+          expiresAt: Date.now() + SESSION_DURATION
+        };
+        localStorage.setItem('oac_session', JSON.stringify(session));
+        setCurrentUser(user);
+        setBikes(userBikes);
+        setUserGears(gears);
+        
+        // Set timer auto-logout
+        if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+        logoutTimerRef.current = setTimeout(() => {
+          out(false);
+          addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info');
+        }, SESSION_DURATION);
+      };
+
       const handleLogin = async (e) => { 
         e.preventDefault(); 
         if(loginRole==='admin'){
@@ -149,8 +214,10 @@
             const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'adminLogin', username, password }) });
             const res = await response.json();
             if(res.status === 'success'){
-              setCurrentUser(res.member);
-              setActiveTab('admin_dashboard');addN('Selamat Datang, Admin Pengelola! ⚡','success');
+              const adminUser = { name:'Hendra (Super Admin)', role:'Admin', avatar:'👑', id:'ADMIN-SYS', dbId:'admin', city:'Jakarta' };
+              setSession(adminUser, [], {});
+              setActiveTab('admin_dashboard');
+              addN('Selamat Datang, Admin Pengelola! ⚡','success');
             } else { addN(`Gagal Login: ${res.message}`,'error'); }
           } catch(err) { addN('Gagal terhubung ke server.','error'); }
         } else {
@@ -159,9 +226,13 @@
             const res = await response.json();
             if(res.status === 'success'){
               const u = res.member; const userBikes = res.bikes || []; const gears = res.gears || {};
-              setCurrentUser({ name:u.name, role:u.role, avatar:u.gender === 'Perempuan' || u.gender === 'PEREMPUAN' ? '👩' : '👨', id:u.id, dbId:u.id, memberId: u.memberId, city:u.city || '-', gender: u.gender, phone: u.phone, className: u.className, touringRole: u.touringRole });
-              setBikes(userBikes); setUserGears(gears);
-              setActiveTab('home'); addN(`Login berhasil. Selamat datang, ${u.name}! 🏍️`,'success');
+              const memberUser = {
+                name:u.name, role:u.role, avatar:u.gender === 'Perempuan' || u.gender === 'PEREMPUAN' ? '👩' : '👨', 
+                id:u.id, dbId:u.id, memberId: u.memberId, city:u.city || '-', gender: u.gender, phone: u.phone, className: u.className, touringRole: u.touringRole
+              };
+              setSession(memberUser, userBikes, gears);
+              setActiveTab('home'); 
+              addN(`Login berhasil. Selamat datang, ${u.name}! 🏍️`,'success');
             } else { addN(`Gagal Login: ${res.message}`,'error'); }
           } catch(err) { addN('Gagal terhubung ke server.','error'); }
         }
@@ -182,13 +253,22 @@
         } catch(err) { addN('Gagal terhubung ke server.','error'); }
       };
       
-      const out = () => { setCurrentUser(null);setUsername('');setPassword('');setActiveGroupId(null);setReplyToMessage(null);setShowNotifPanel(false);setShowPublicPage(true);addN('Anda telah keluar dari aplikasi.','info'); };
+      const out = (showMsg = true) => { 
+        localStorage.removeItem('oac_session');
+        if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+        setCurrentUser(null);setBikes([]);setUserGears({});
+        setUsername('');setPassword('');setActiveGroupId(null);setReplyToMessage(null);setShowNotifPanel(false);setShowPublicPage(true);
+        if (showMsg) addN('Anda telah keluar dari aplikasi.','info');
+      };
       
       const upBike = (e) => { e.preventDefault(); if(!editingBike.name||!editingBike.plate){addN('Data motor tidak boleh kosong!','error');return;} const em={Sport:'🏍️',Adventure:'🚵',Matic:'🛵',Classic:'🚲',Bebek:'🏍️',Vespa:'🛵'}; const ub={...editingBike,image:em[editingBike.type]||'🏍️'}; setBikes(bikes.map(b=>b.id===ub.id?ub:b)); setShowEditBikeModal(false);setEditingBike(null);addN('Data motor berhasil diperbarui! 🏍️','success'); };
+      
       const upProf = (e) => { 
         e.preventDefault(); if(!editingProfile.name){addN('Nama tidak boleh kosong!','error');return;} 
-        setCurrentUser({...currentUser, name:editingProfile.name, avatar:editingProfile.avatar, city:editingProfile.city, phone:editingProfile.phone, gender:editingProfile.gender});
-        setShowEditProfileModal(false); setEditingProfile(null); addN('Profil berhasil diperbarhi! (Perubahan tersimpan lokal di app) ✨','success'); 
+        const newUserData = {...currentUser, name:editingProfile.name, avatar:editingProfile.avatar, city:editingProfile.city, phone:editingProfile.phone, gender:editingProfile.gender};
+        setCurrentUser(newUserData);
+        updateSessionData(newUserData, null, null); // Update local storage sesi
+        setShowEditProfileModal(false); setEditingProfile(null); addN('Profil berhasil diperbarui! ✨','success'); 
       };
       
       const upGear = async (e) => {
@@ -196,7 +276,11 @@
         try {
           const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateGear', userId: currentUser.id, ...editingGear }) });
           const res = await response.json();
-          if(res.status === 'success') { setUserGears(res.gears); setShowEditGearModal(false); setEditingGear(null); addN('Safety gear berhasil diperbarui! 🛡️','success'); }
+          if(res.status === 'success') { 
+            setUserGears(res.gears); 
+            updateSessionData(null, null, res.gears); // Update local storage sesi
+            setShowEditGearModal(false); setEditingGear(null); addN('Safety gear berhasil diperbarui! 🛡️','success'); 
+          }
         } catch(err) { addN('Gagal mengupdate gear ke server.','error'); }
       };
 
@@ -293,9 +377,9 @@
                 <div className="p-6 space-y-6 pb-10">
                   <div className="text-center pt-4"><GlassLogo size="w-32 h-32" animate={true} /><h2 className="text-2xl font-black tracking-wider text-slate-900 uppercase mt-6">ONE <span className="text-amber-500">ASPAL CLUB</span></h2><p className="text-xs text-slate-500 font-semibold mt-1">One Road, One Brotherhood</p></div>
                   <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-5 shadow-lg text-white relative overflow-hidden"><div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div><div className="relative z-10 flex justify-between items-center"><div><div className="flex items-center space-x-2 text-amber-400 mb-1"><I.Clock /><p className="text-[10px] font-bold uppercase tracking-widest">Waktu Sekarang</p></div><h3 className="text-4xl font-black font-mono tracking-wider">{currentTime||'--:--:--'}</h3><p className="text-xs text-slate-400 font-semibold mt-1">WIB (Asia/Jakarta)</p></div><div className="text-right border-l border-white/10 pl-5"><div className="flex items-center justify-end space-x-2 text-amber-400 mb-1"><p className="text-[10px] font-bold uppercase tracking-widest">Cuaca</p><I.CloudSun /></div>{weather?(<><h3 className="text-4xl font-black">{Math.round(weather.temperature)}°C</h3><p className="text-xs text-slate-400 font-semibold mt-1">{wd.emoji} {wd.desc}</p></>):(<><h3 className="text-4xl font-black">--°C</h3><p className="text-xs text-slate-400 font-semibold mt-1">Memuat...</p></>)}</div></div></div>
-                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Info className="text-amber-500 w-5 h-5" /><span>Profile OneAspal</span></h3><p className="text-xs text-slate-600 font-medium leading-relaxed"><b>One Aspal Club (OAC)</b> adalah komunitas pecinta motor premium yang bermarkas di jalan raya. Kami mengutamakan keselamatan, etika berkendara, dan persaudaraan tanpa batas antar pengguna motor sport, adventure, dan klasik di seluruh Indonesia.</p></div>
+                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Info className="text-amber-500 w-5 h-5" /><span>Profile Club</span></h3><p className="text-xs text-slate-600 font-medium leading-relaxed"><b>One Aspal Club (OAC)</b> adalah komunitas pecinta motor premium yang bermarkas di jalan raya. Kami mengutamakan keselamatan, etika berkendara, dan persaudaraan tanpa batas antar pengguna motor sport, adventure, dan klasik di seluruh Indonesia.</p></div>
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Award className="text-amber-500 w-5 h-5" /><span>Visi & Misi</span></h3><div className="space-y-3"><div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3"><p className="text-[10px] font-black text-amber-600 uppercase mb-1">Visi</p><p className="text-xs text-slate-700 font-semibold">Menjadi komunitas berkendara paling solid, aman, dan dihormati di Indonesia.</p></div><div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">Misi</p><ul className="text-xs text-slate-700 font-semibold space-y-1.5 list-disc list-inside"><li>Membangun kekeluargaan antar anggota tanpa batas golongan.</li><li>Meningkatkan budaya safety riding dan kesadaran hukum lalu lintas.</li><li>Mengadakan kegiatan touring tahunan dan aksi sosial.</li></ul></div></div></div>
-                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Verifikasi Anggota</span></h3><div className="grid grid-cols-2 gap-3"><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div></div></div>
+                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Progres Anggota</span></h3><div className="grid grid-cols-2 gap-3"><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div></div></div>
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Calendar className="text-amber-500 w-5 h-5" /><span>Agenda Kegiatan</span></h3><div className="space-y-3">{events.map(ev=>(<div key={ev.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 flex items-center justify-between shadow-sm"><div className="flex-1"><span className="text-[10px] bg-rose-100 text-rose-600 font-bold px-2 py-0.5 rounded-full">{ev.tag}</span><h4 className="font-bold text-xs text-slate-900 mt-1">{ev.title}</h4><p className="text-[10px] text-slate-500 font-semibold flex items-center space-x-1 mt-0.5"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination} • {ev.date}</span></p></div><div className="text-right border-l border-slate-100 pl-3"><p className="text-lg font-black text-slate-800">{ev.joined}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Peserta</p></div></div>))}</div></div>
                   
                   <div className="space-y-3 pt-4">
@@ -375,7 +459,7 @@
                 <div className="flex items-center space-x-2.5"><GlassLogoMini /><div><h1 className="text-sm font-black tracking-wider text-slate-900 uppercase flex items-center">ONE <span className="text-amber-500 ml-1">ASPAL</span></h1><span className="text-[10px] text-slate-500 font-semibold block -mt-1">{currentUser.role==='Admin'?'Sistem Backend':`ID: ${currentUser.memberId || currentUser.id}`}</span></div></div>
                 <div className="flex items-center space-x-2 relative">
                   <button onClick={()=>setShowNotifPanel(!showNotifPanel)} className="relative p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition text-slate-600"><I.Bell />{un>0&&<span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">{un}</span>}</button>
-                  <button onClick={out} className="p-2 rounded-full bg-rose-50 border border-rose-200 hover:bg-rose-100 transition text-rose-600" title="Keluar"><I.LogOut /></button>
+                  <button onClick={()=>out()} className="p-2 rounded-full bg-rose-50 border border-rose-200 hover:bg-rose-100 transition text-rose-600" title="Keluar"><I.LogOut /></button>
                   {showNotifPanel && ( <div className="absolute top-12 right-0 w-80 max-h-[70vh] bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 flex flex-col overflow-hidden"><div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"><h3 className="font-bold text-sm text-slate-900">Pusat Notifikasi</h3><button onClick={()=>setNotifications(notifications.map(n=>({...n,read:true})))} className="text-[10px] font-bold text-amber-500 hover:underline">Tandai dibaca</button></div><div className="flex-1 overflow-y-auto scrollbar-none bg-white">{notifications.length===0?<div className="p-8 text-center text-xs text-slate-400 font-medium">Tidak ada notifikasi</div>:notifications.map(n=>(<div key={n.id} className={`p-3 border-b border-slate-50 flex items-start space-x-3 transition ${!n.read?'bg-amber-50/40':'bg-white'}`}><div className="mt-0.5">{n.type==='success'&&<I.CheckCircle2 className="text-emerald-500 w-4 h-4" />}{n.type==='error'&&<I.XCircle className="text-rose-500 w-4 h-4" />}{n.type==='info'&&<I.Info className="text-blue-500 w-4 h-4" />}</div><div className="flex-1"><p className={`text-xs leading-relaxed ${!n.read?'text-slate-900 font-semibold':'text-slate-600 font-medium'}`}>{n.message}</p><p className="text-[9px] text-slate-400 mt-1 font-semibold">{n.time}</p></div>{!n.read&&<div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>}</div>))}</div></div> )}
                 </div>
               </div>
@@ -407,7 +491,6 @@
                       </div> 
                     )}
                     
-                    {/* HALAMAN ANGGOTA CLUB (DENGAN INFO MOTOR) */}
                     {activeTab==='members' && ( 
                       <div className="space-y-4">
                         <h3 className="text-lg font-black text-slate-900">Anggota Club</h3>
@@ -424,8 +507,6 @@
                                 {m.touringRole && <p className="text-[10px] text-amber-600 font-bold mt-1 flex items-center"><I.Award className="w-3 h-3 mr-1"/> {m.touringRole}</p>}
                               </div>
                             </div>
-                            
-                            {/* Detail Motor Anggota */}
                             <div className="mt-2 pt-2 border-t border-slate-100">
                               {m.bikes && m.bikes.length > 0 ? (
                                 m.bikes.map(bike => (
@@ -441,7 +522,6 @@
                                 <div className="text-center text-[10px] text-slate-400 italic py-1">Belum ada motor terdaftar</div>
                               )}
                             </div>
-
                           </div>
                         ))}
                       </div> 
@@ -452,13 +532,10 @@
                         <h3 className="text-lg font-black text-slate-900">Profil & Pengaturan</h3>
                         <div className="flex flex-col items-center">
                           <div className="w-full animate-breath mb-4">
-                            {/* Desain Kartu Anggota Elegan, Font Kecil, Presisi */}
                             <div ref={cardRef} className="w-full relative rounded-[20px] overflow-hidden shadow-2xl border border-slate-700 card-font" style={{background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', height: '240px'}}>
                               <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/20 rounded-full blur-2xl"></div>
                               <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl"></div>
-                              
                               <div className="relative z-10 p-5 h-full flex flex-col justify-between text-white">
-                                {/* Header Kartu */}
                                 <div className="flex justify-between items-center">
                                   <div className="pr-3">
                                     <h1 className="text-base font-black tracking-wider uppercase text-amber-400 leading-none">ONE ASPAL</h1>
@@ -468,8 +545,6 @@
                                     <img crossOrigin="anonymous" src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" />
                                   </div>
                                 </div>
-
-                                {/* Body Kartu */}
                                 <div className="my-2">
                                   <p className="text-[8px] uppercase tracking-widest text-slate-500 font-bold mb-0.5">Anggota</p>
                                   <h2 className="text-lg font-extrabold tracking-wide drop-shadow-sm uppercase truncate leading-tight">{mpd.name}</h2>
@@ -480,8 +555,6 @@
                                     </span>
                                   </div>
                                 </div>
-
-                                {/* Footer Kartu */}
                                 <div className="flex justify-between items-end border-t border-white/10 pt-2.5">
                                   <div className="flex flex-col space-y-0.5">
                                     <div>
@@ -490,7 +563,6 @@
                                     </div>
                                     <p className="text-[8px] text-slate-500 font-semibold">Valid Thru 12/26</p>
                                   </div>
-                                  {/* QR Code Presisi */}
                                   <div className="bg-white p-1 rounded-md shadow-md flex flex-col items-center justify-center">
                                     <img crossOrigin="anonymous" src={qrUrl} alt="QR" className="w-11 h-11 object-contain" />
                                     <p className="text-[6px] text-slate-800 font-bold mt-0.5">SCAN ME</p>
@@ -696,4 +768,4 @@
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
-</html>    
+</html>
