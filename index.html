@@ -132,6 +132,9 @@
       const [newThreadMsg, setNewThreadMsg] = useState('');
       const [replyMsg, setReplyMsg] = useState('');
       const [showCreateThreadModal, setShowCreateThreadModal] = useState(false);
+      const [editingThreadId, setEditingThreadId] = useState(null);
+      const [editingThreadMsg, setEditingThreadMsg] = useState('');
+      const [showEditThreadModal, setShowEditThreadModal] = useState(false);
       const forumChatRef = useRef(null);
 
       const touringRoles = ['Road Captain (RC)', 'Vorijder (VO)', 'Sweeper (SW)', 'Safety Officer (SO)', 'Technical Officer (TO)', 'Medical Officer (MO)'];
@@ -341,6 +344,37 @@
         } catch(err) { addN('Gagal mengirim balasan.','error'); }
       };
 
+      const handleEditThread = async (e) => {
+        e.preventDefault();
+        try {
+          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'editThread', id: editingThreadId, message: editingThreadMsg }) });
+          const res = await response.json();
+          if(res.status === 'success') {
+            setForumThreads(forumThreads.map(t => t.id === editingThreadId ? {...t, message: editingThreadMsg} : t));
+            setShowEditThreadModal(false); setEditingThreadId(null);
+            addN('Pesan berhasil diperbarui! ✨','success');
+          }
+        } catch(err) { addN('Gagal mengupdate pesan.','error'); }
+      };
+
+      const handleDeleteThread = async (id, isTopic, threadId) => {
+        const confirmDelete = window.confirm(isTopic ? "Hapus topik ini dan semua balasannya?" : "Hapus pesan ini?");
+        if (!confirmDelete) return;
+        try {
+          const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteThread', id: id, deleteAll: isTopic }) });
+          const res = await response.json();
+          if(res.status === 'success') {
+            if (isTopic) {
+              setForumThreads(forumThreads.filter(t => t.threadId !== threadId));
+              setActiveThreadId(null);
+            } else {
+              setForumThreads(forumThreads.filter(t => t.id !== id));
+            }
+            addN('Pesan berhasil dihapus! 🗑️','info');
+          }
+        } catch(err) { addN('Gagal menghapus pesan.','error'); }
+      };
+
       const activeThreadMessages = forumThreads.filter(m => m.threadId === activeThreadId);
       const topicList = forumThreads.filter(m => m.isTopic === true);
       const mpd = currentUser; 
@@ -370,6 +404,69 @@
         </div>
       );
 
+      // Reusable Forum Component (iOS Glass Theme)
+      const renderForum = () => (
+        <div className="bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-2xl border border-white/40 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-4 flex flex-col h-[500px] overflow-hidden">
+          {!activeThreadId ? (
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/30">
+                <div className="flex items-center space-x-2"><I.MessageSquare className="text-slate-700" /><h3 className="text-sm font-bold text-slate-800">Forum Obrolan</h3></div>
+                <button onClick={()=>setShowCreateThreadModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-md active:scale-95 transition"><I.Plus /><span>Topik</span></button>
+              </div>
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-none">
+                {topicList.length > 0 ? topicList.map(t => (
+                  <div key={t.id} onClick={()=>setActiveThreadId(t.threadId)} className="p-4 bg-white/50 backdrop-blur-md border border-white/60 rounded-3xl flex items-center justify-between hover:bg-white/70 cursor-pointer transition shadow-sm">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center">💬</span>
+                      <div>
+                        <h4 className="font-extrabold text-xs text-slate-900 line-clamp-1">{t.message}</h4>
+                        <p className="text-[10px] text-slate-500 font-medium">Oleh {t.user} • {t.timestamp}</p>
+                      </div>
+                    </div>
+                    <I.ChevronRight className="text-slate-400" />
+                  </div>
+                )) : <div className="text-center py-10 text-slate-500 text-xs italic">Belum ada topik obrolan.</div>}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/30">
+                <div className="flex items-center space-x-2">
+                  <button onClick={()=>setActiveThreadId(null)} className="p-1 rounded-full hover:bg-white/50 text-slate-700"><I.ArrowLeft /></button>
+                  <h3 className="text-xs font-bold text-slate-800 flex items-center space-x-1 truncate max-w-[200px]">{forumThreads.find(t=>t.threadId===activeThreadId && t.isTopic)?.message}</h3>
+                </div>
+              </div>
+              <div ref={forumChatRef} className="flex-1 overflow-y-auto space-y-3 mb-2 pr-1 text-xs scrollbar-none">
+                {activeThreadMessages.map(m => {
+                  const me = m.user === currentUser.name;
+                  return (
+                    <div key={m.id} className={`flex ${me?'justify-end':'justify-start'}`}>
+                      <div className={`max-w-[80%] p-3 shadow-md ${me?'bg-[#007AFF] text-white rounded-3xl rounded-br-lg':'bg-white/60 backdrop-blur-lg text-slate-900 border border-white/70 rounded-3xl rounded-bl-lg'}`}>
+                        {!me && <span className="block text-[10px] font-bold text-blue-500 mb-1">{m.user}</span>}
+                        <p className="text-xs leading-relaxed">{m.message}</p>
+                        <div className="flex items-center justify-end space-x-2 mt-1">
+                          <span className={`text-[9px] ${me?'text-white/70':'text-slate-400'}`}>{m.timestamp}</span>
+                          {currentUser.role === 'Admin' && (
+                            <div className="flex space-x-1">
+                              <button onClick={() => { setEditingThreadId(m.id); setEditingThreadMsg(m.message); setShowEditThreadModal(true); }} className={`text-[9px] ${me?'text-white/80 hover:text-white':'text-slate-400 hover:text-blue-500'}`}>Edit</button>
+                              <button onClick={() => handleDeleteThread(m.id, m.isTopic, m.threadId)} className={`text-[9px] ${me?'text-white/80 hover:text-white':'text-slate-400 hover:text-rose-500'}`}>Hapus</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <form onSubmit={postReply} className="flex space-x-2 bg-white/50 backdrop-blur-lg p-2 rounded-3xl border border-white/60">
+                <input type="text" value={replyMsg} onChange={(e)=>setReplyMsg(e.target.value)} placeholder={`Balas pesan...`} className="flex-1 bg-white/70 border border-white/80 rounded-full px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30" required />
+                <button type="submit" className="bg-[#007AFF] text-white p-2.5 rounded-full shadow-md active:scale-90 transition"><I.Send /></button>
+              </form>
+            </div>
+          )}
+        </div>
+      );
+
       return (
         <div className="w-full max-w-md h-full flex flex-col overflow-hidden relative">
           {toast.show && (<div className="absolute top-5 left-4 right-4 z-[100] toast-animate pointer-events-none"><div className={`bg-white/90 backdrop-blur-xl border shadow-2xl rounded-2xl overflow-hidden ${toast.type==='error'?'border-rose-200/50':toast.type==='info'?'border-blue-200/50':'border-emerald-200/50'}`}><div className="flex items-center p-4 space-x-3"><div className={`flex-shrink-0 p-2 rounded-full ${toast.type==='error'?'bg-rose-100 text-rose-600':toast.type==='info'?'bg-blue-100 text-blue-600':'bg-emerald-100 text-emerald-600'}`}>{toast.type==='error'&&<I.XCircle />}{toast.type==='info'&&<I.Info />}{toast.type==='success'&&<I.CheckCircle2 />}</div><p className="flex-1 text-sm font-bold text-slate-900">{toast.message}</p></div><div className="h-1 w-full bg-slate-100/50"><div className={`h-full toast-progress ${toast.type==='error'?'bg-rose-500':toast.type==='info'?'bg-blue-500':'bg-emerald-500'}`}></div></div></div></div>)}
@@ -384,7 +481,7 @@
                   <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-5 shadow-lg text-white relative overflow-hidden"><div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x=1/2"></div><div className="relative z-10 flex justify-between items-center"><div><div className="flex items-center space-x-2 text-amber-400 mb-1"><I.Clock /><p className="text-[10px] font-bold uppercase tracking-widest">Waktu Sekarang</p></div><h3 className="text-4xl font-black font-mono tracking-wider">{currentTime||'--:--:--'}</h3><p className="text-xs text-slate-400 font-semibold mt-1">WIB (Asia/Jakarta)</p></div><div className="text-right border-l border-white/10 pl-5"><div className="flex items-center justify-end space-x-2 text-amber-400 mb-1"><p className="text-[10px] font-bold uppercase tracking-widest">Cuaca</p><I.CloudSun /></div>{weather?(<><h3 className="text-4xl font-black">{Math.round(weather.temperature)}°C</h3><p className="text-xs text-slate-400 font-semibold mt-1">{wd.emoji} {wd.desc}</p></>):(<><h3 className="text-4xl font-black">--°C</h3><p className="text-xs text-slate-400 font-semibold mt-1">Memuat...</p></>)}</div></div></div>
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Info className="text-amber-500 w-5 h-5" /><span>Profile Club</span></h3><p className="text-xs text-slate-600 font-medium leading-relaxed"><b>One Aspal Club (OAC)</b> adalah komunitas pecinta motor premium yang bermarkas di jalan raya. Kami mengutamakan keselamatan, etika berkendara, dan persaudaraan tanpa batas antar pengguna motor sport, adventure, dan klasik di seluruh Indonesia.</p></div>
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Award className="text-amber-500 w-5 h-5" /><span>Visi & Misi</span></h3><div className="space-y-3"><div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3"><p className="text-[10px] font-black text-amber-600 uppercase mb-1">Visi</p><p className="text-xs text-slate-700 font-semibold">Menjadi komunitas berkendara paling solid, aman, dan dihormati di Indonesia.</p></div><div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">Misi</p><ul className="text-xs text-slate-700 font-semibold space-y-1.5 list-disc list-inside"><li>Membangun kekeluargaan antar anggota tanpa batas golongan.</li><li>Meningkatkan budaya safety riding dan kesadaran hukum lalu lintas.</li><li>Mengadakan kegiatan touring tahunan dan aksi sosial.</li></ul></div></div></div>
-                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span> Anggota</span></h3><div className="grid grid-cols-2 gap-3"><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div></div></div>
+                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Infografis Anggota</span></h3><div className="grid grid-cols-2 gap-3"><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div><div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div></div></div>
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Calendar className="text-amber-500 w-5 h-5" /><span>Agenda Kegiatan</span></h3><div className="space-y-3">{events.map(ev=>(<div key={ev.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 flex items-center justify-between shadow-sm"><div className="flex-1"><span className="text-[10px] bg-rose-100 text-rose-600 font-bold px-2 py-0.5 rounded-full">{ev.tag}</span><h4 className="font-bold text-xs text-slate-900 mt-1">{ev.title}</h4><p className="text-[10px] text-slate-500 font-semibold flex items-center space-x-1 mt-0.5"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination} • {ev.date}</span></p></div><div className="text-right border-l border-slate-100 pl-3"><p className="text-lg font-black text-slate-800">{ev.joined}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Peserta</p></div></div>))}</div></div>
                   
                   <div className="space-y-3 pt-4">
@@ -498,60 +595,7 @@
                     {activeTab==='home' && (
                       <div className="space-y-4">
                         {announcements.length>0 && (<div className="space-y-3">{announcements.map(an=>(<div key={an.id} className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm"><div className="flex justify-between items-start"><h4 className="font-black text-sm text-slate-900 flex items-center"><I.Megaphone className="w-4 h-4 text-amber-500 mr-2" /> {an.title}</h4><span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full uppercase animate-pulse">Baru</span></div><p className="text-xs text-slate-600 font-medium mt-1.5 leading-relaxed">{an.content}</p><p className="text-[9px] text-slate-400 font-bold mt-2">{an.date} • oleh {an.author}</p></div>))}</div>)}
-                        <div className="bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 flex flex-col h-[450px] shadow-sm overflow-hidden">
-                          {!activeThreadId ? (
-                            <div className="flex flex-col h-full">
-                              <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200/50">
-                                <div className="flex items-center space-x-2"><I.MessageSquare className="text-amber-500" /><h3 className="text-sm font-bold text-slate-900">Forum Obrolan</h3></div>
-                                <button onClick={()=>setShowCreateThreadModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-2.5 py-1 rounded-full flex items-center space-x-1"><I.Plus /><span>Topik</span></button>
-                              </div>
-                              <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-none">
-                                {topicList.length > 0 ? topicList.map(t => (
-                                  <div key={t.id} onClick={()=>setActiveThreadId(t.threadId)} className="p-3 bg-white/80 border border-slate-200/30 rounded-2xl flex items-center justify-between hover:border-amber-500/30 cursor-pointer transition shadow-sm">
-                                    <div className="flex items-center space-x-3">
-                                      <span className="text-2xl w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">💬</span>
-                                      <div>
-                                        <h4 className="font-extrabold text-xs text-slate-900 line-clamp-1">{t.message}</h4>
-                                        <p className="text-[10px] text-slate-500 font-medium">Dibuat oleh {t.user}</p>
-                                      </div>
-                                    </div>
-                                    <I.ChevronRight className="text-slate-400" />
-                                  </div>
-                                )) : <div className="text-center py-10 text-slate-400 text-xs italic">Belum ada topik obrolan.</div>}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col h-full">
-                              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200/50">
-                                <div className="flex items-center space-x-2">
-                                  <button onClick={()=>setActiveThreadId(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-600"><I.ArrowLeft /></button>
-                                  <h3 className="text-xs font-bold text-slate-900 flex items-center space-x-1 truncate max-w-[200px]">{forumThreads.find(t=>t.threadId===activeThreadId && t.isTopic)?.message}</h3>
-                                </div>
-                              </div>
-                              <div ref={forumChatRef} className="flex-1 overflow-y-auto space-y-3 mb-2 pr-1 text-xs scrollbar-none">
-                                {activeThreadMessages.map(m => {
-                                  const me = m.user === currentUser.name;
-                                  return (
-                                    <div key={m.id} className={`flex ${me?'justify-end':'justify-start'}`}>
-                                      <div className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${me?'bg-gradient-to-tr from-slate-800 to-amber-600 text-white rounded-br-none':'bg-white/80 border border-slate-200/40 text-slate-800 rounded-bl-none'}`}>
-                                        {m.isTopic && <span className="block text-[9px] font-bold text-amber-500 mb-1">TOPIK UTAMA</span>}
-                                        {!me && <span className="font-bold text-amber-600 text-[10px] block mb-1">{m.user}</span>}
-                                        <p className={`text-xs leading-relaxed font-medium ${me?'text-white':'text-slate-700'}`}>{m.message}</p>
-                                        <div className="flex items-center justify-end space-x-2 mt-1.5">
-                                          <span className={`text-[9px] font-semibold ${me?'text-white/70':'text-slate-400'}`}>{m.timestamp}</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                              <form onSubmit={postReply} className="flex space-x-2">
-                                <input type="text" value={replyMsg} onChange={(e)=>setReplyMsg(e.target.value)} placeholder={`Balas pesan...`} className="flex-1 bg-white/90 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none" required />
-                                <button type="submit" className="bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-white p-2.5 rounded-xl shadow-md shadow-slate-900/20"><I.Send /></button>
-                              </form>
-                            </div>
-                          )}
-                        </div>
+                        {renderForum()}
                       </div>
                     )}
                     {activeTab==='events' && ( <div className="space-y-4"><h3 className="text-lg font-black text-slate-900">Event Mendatang</h3>{events.map(ev=>(<div key={ev.id} className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm"><h4 className="font-extrabold text-sm text-slate-900">{ev.title}</h4><p className="text-[11px] text-slate-500 mt-1 font-medium flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination}</span></p><div className="mt-4 flex justify-between items-center"><span className="text-xs font-bold text-slate-500">{ev.joined} Peserta</span><button onClick={()=>setEvents(events.map(e=>e.id===ev.id?{...e,isJoined:!e.isJoined,joined:!e.isJoined?e.joined+1:e.joined-1}:e))} className={`text-[11px] font-bold px-4 py-2 rounded-xl transition active:scale-95 ${ev.isJoined?'bg-rose-50 text-rose-600 border border-rose-200':'bg-slate-900 text-white shadow-md shadow-slate-900/20'}`}>{ev.isJoined?'Batal':'Ikut Serta'}</button></div></div>))}</div> )}
@@ -714,6 +758,12 @@
                       ))}
                     </div>
 
+                    {/* Admin Forum Section */}
+                    <div className="bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 shadow-sm mt-4">
+                      <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.MessageSquare className="w-4 h-4 text-amber-500" /> <span>Forum Obrolan Anggota</span></h4>
+                      {renderForum()}
+                    </div>
+
                     <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm">
                       <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.ShieldCheck className="w-4 h-4 text-amber-500" /> <span>Pengaturan Akses Admin</span></h4>
                       <form onSubmit={updateAdminCreds} className="space-y-3">
@@ -774,6 +824,18 @@
                 <form onSubmit={createThread} className="space-y-3">
                   <textarea value={newThreadMsg} onChange={(e)=>setNewThreadMsg(e.target.value)} placeholder="Tulis judul atau isi topik obrolan..." rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Publikasi Topik</button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {showEditThreadModal && (
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4" onClick={()=>setShowEditThreadModal(false)}>
+              <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Edit className="w-5 h-5 text-amber-500" /> Edit Pesan</h3>
+                <form onSubmit={handleEditThread} className="space-y-3">
+                  <textarea value={editingThreadMsg} onChange={(e)=>setEditingThreadMsg(e.target.value)} rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea>
+                  <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button>
                 </form>
               </div>
             </div>
@@ -864,8 +926,8 @@
 
                   <FormSelect label="Status Berkendara" value={editingProfile.ridingStatus || ''} onChange={(e)=>setEditingProfile({...editingProfile, ridingStatus: e.target.value})} required>
                     <option value="">Pilih Status...</option>
-                    <option value="Pengendara Motor">Pengendara</option>
-                    <option value="Penumpang Motor">Penumpang</option>
+                    <option value="Pengendara Motor">Pengendara Motor</option>
+                    <option value="Penumpang Motor">Penumpang Motor</option>
                   </FormSelect>
 
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button>
@@ -890,4 +952,3 @@
   </script>
 </body>
 </html>
-    
