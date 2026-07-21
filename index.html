@@ -7,7 +7,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
-  <title>One Aspal Club - Premium Riding Community</title>
+  <title>One Aspal Club - Riding and Touring Community</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -50,13 +50,13 @@
     
     // === KONFIGURASI FIREBASE ANDA ===
     const firebaseConfig = {
-    apiKey: "AIzaSyC_Lp9IMTfC0D1pSFeDbjW2ugyg22tFfTc",
-    authDomain: "oneaspalclub.firebaseapp.com",
-    databaseURL: "https://oneaspalclub-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "oneaspalclub",
-    storageBucket: "oneaspalclub.firebasestorage.app",
-    messagingSenderId: "310756119151",
-    appId: "1:310756119151:web:da5d0ccbc43dad23c5b39a"
+      apiKey: "AIzaSyC_Lp9IMTfC0D1pSFeDbjW2ugyg22tFfTc",
+      authDomain: "oneaspalclub.firebaseapp.com",
+      databaseURL: "https://oneaspalclub-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "oneaspalclub",
+      storageBucket: "oneaspalclub.firebasestorage.app",
+      messagingSenderId: "310756119151",
+      appId: "1:310756119151:web:da5d0ccbc43dad23c5b39a"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -148,7 +148,7 @@
       
       // Forum States
       const [forumTopics, setForumTopics] = useState([]);
-      const [activeThread, setActiveThread] = useState(null); // { id, ...data, replies: [] }
+      const [activeThread, setActiveThread] = useState(null);
       const [newThreadMsg, setNewThreadMsg] = useState('');
       const [replyMsg, setReplyMsg] = useState('');
       const [showCreateThreadModal, setShowCreateThreadModal] = useState(false);
@@ -187,17 +187,17 @@
           }).sort((a,b) => b.timestamp - a.timestamp) : [];
           setForumTopics(topicsArray);
           
-          // Update active thread if it exists
           if (activeThread) {
             const updatedActive = topicsArray.find(t => t.id === activeThread.id);
             if (updatedActive) {
               setActiveThread(updatedActive);
               setTimeout(()=>{ if(forumChatRef.current) forumChatRef.current.scrollTop = forumChatRef.current.scrollHeight; },100);
+            } else {
+              setActiveThread(null); // Topic was deleted
             }
           }
         });
 
-        // Session Check
         const storedSession = localStorage.getItem('oac_session');
         if (storedSession) {
           try {
@@ -240,7 +240,7 @@
           db.ref('settings').once('value').then((snapshot) => {
             const settings = snapshot.val();
             if(username === settings.admin_username && password === settings.admin_password){
-              const adminUser = { name:'Hendra (Super Admin)', role:'Admin', avatar:'👑', id:'ADMIN-SYS', dbId:'admin', city:'Jakarta' };
+              const adminUser = { name:'Doddy H (Super Admin)', role:'Admin', avatar:'👑', id:'ADMIN-SYS', dbId:'admin', city:'Jakarta' };
               setSession(adminUser, [], {}); setActiveTab('admin_dashboard'); addN('Selamat Datang, Admin Pengelola! ⚡','success');
             } else { addN('Kredensial admin salah!','error'); }
           });
@@ -380,13 +380,13 @@
         setShowEditTouringModal(false); addN('Penugasan diperbarui! 🎖️','success');
       };
 
-      // FORUM FUNCTIONS (REAL-TIME)
+      // --- OPTIMIZED FORUM FUNCTIONS (REAL-TIME) ---
       const createThread = async (e) => {
         e.preventDefault();
         if(!newThreadMsg.trim()) return;
         const newThreadRef = db.ref('threads').push();
         await newThreadRef.set({
-          user: currentUser.name, message: newThreadMsg,
+          user: currentUser.name, userId: currentUser.id, message: newThreadMsg,
           timestamp: Date.now(), isTopic: true, replies: {}
         });
         setNewThreadMsg(''); setShowCreateThreadModal(false);
@@ -396,20 +396,23 @@
       const postReply = async (e) => {
         e.preventDefault();
         if(!replyMsg.trim() || !activeThread) return;
-        const repliesRef = db.ref('threads/' + activeThread.id + '/replies').push();
-        await repliesRef.set({
-          user: currentUser.name, message: replyMsg, timestamp: Date.now()
-        });
+        const newReplyRef = db.ref('threads/' + activeThread.id + '/replies').push();
+        
+        // Optimistic UI Update (Langsung tampil di layar)
+        const tempReply = { id: newReplyRef.key, user: currentUser.name, userId: currentUser.id, message: replyMsg, timestamp: Date.now() };
+        setActiveThread(prev => ({ ...prev, replies: [...prev.replies, tempReply] }));
         setReplyMsg('');
+        setTimeout(()=>{ if(forumChatRef.current) forumChatRef.current.scrollTop = forumChatRef.current.scrollHeight; }, 100);
+
+        // Push ke Firebase
+        await newReplyRef.set(tempReply);
       };
 
       const handleEditThread = async (e) => {
         e.preventDefault();
-        // Jika edit topik utama
         if (activeThread && editingThreadId === activeThread.id) {
           await db.ref('threads/' + activeThread.id).update({ message: editingThreadMsg });
         } else if (activeThread) {
-          // Jika edit reply
           await db.ref('threads/' + activeThread.id + '/replies/' + editingThreadId).update({ message: editingThreadMsg });
         }
         setShowEditThreadModal(false); addN('Pesan diperbarui! ✨','success');
@@ -458,7 +461,7 @@
           {!activeThread ? (
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/30">
-                <div className="flex items-center space-x-2"><I.MessageSquare className="text-slate-700" /><h3 className="text-sm font-bold text-slate-800">Forum Obrolan</h3></div>
+                <div className="flex items-center space-x-2"><I.MessageSquare className="text-slate-700" /><h3 className="text-sm font-bold text-slate-800">Forum Koordinasi</h3></div>
                 <button onClick={()=>setShowCreateThreadModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-md active:scale-95 transition"><I.Plus /><span>Topik</span></button>
               </div>
               <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-none">
@@ -826,7 +829,7 @@
 
                     {/* Admin Forum Section */}
                     <div className="bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 shadow-sm mt-4">
-                      <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.MessageSquare className="w-4 h-4 text-amber-500" /> <span>Forum Obrolan Anggota</span></h4>
+                      <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.MessageSquare className="w-4 h-4 text-amber-500" /> <span>Forum Koordinasi Anggota</span></h4>
                       {renderForum()}
                     </div>
 
@@ -1018,3 +1021,4 @@
   </script>
 </body>
 </html>
+    
