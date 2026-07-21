@@ -51,6 +51,25 @@
     .animate-breath-btn { animation: breathBtn 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: transform, box-shadow; }
     @keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
     .animate-msg-in { animation: msgIn 0.3s ease-out forwards; }
+    
+    /* Animasi Progress Bar Modern */
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .progress-bar-modern {
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+    }
+    .progress-bar-modern::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0; width: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transform: translateX(-100%);
+      animation: shimmer 2s infinite;
+    }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-100 via-slate-50 to-amber-50 text-slate-800 flex justify-center items-center">
@@ -230,6 +249,11 @@
       const cardRef = useRef(null); 
       const logoutTimerRef = useRef(null);
       const fileInputRef = useRef(null);
+      
+      // State untuk Splash Screen
+      const [showSplash, setShowSplash] = useState(true);
+      const [splashFading, setSplashFading] = useState(false);
+
       const [regName, setRegName] = useState(''); const [regUsername, setRegUsername] = useState(''); const [regPassword, setRegPassword] = useState(''); const [regGender, setRegGender] = useState('Laki-laki'); const [regPhone, setRegPhone] = useState(''); const [regCity, setRegCity] = useState(''); const [regEmail, setRegEmail] = useState(''); const [regEmailDomain, setRegEmailDomain] = useState('@gmail.com'); const [regRidingStatus, setRegRidingStatus] = useState(''); const [regBikeBrand, setRegBikeBrand] = useState(''); const [regBikeModel, setRegBikeModel] = useState(''); const [regBikePlate, setRegBikePlate] = useState(''); const [regBikeCategory, setRegBikeCategory] = useState('Sport'); const [regBikeEngine, setRegBikeEngine] = useState('');
       const [showConfirmRegModal, setShowConfirmRegModal] = useState(false); const [confirmRegData, setConfirmRegData] = useState(null);
       const [bikes, setBikes] = useState([]);
@@ -260,6 +284,13 @@
       const [photoTab, setPhotoTab] = useState('avatar');
 
       const touringRoles = ['Road Captain (RC)', 'Vorijder (VO)', 'Sweeper (SW)', 'Safety Officer (SO)', 'Technical Officer (TO)', 'Medical Officer (MO)'];
+
+      useEffect(() => { 
+        // Timer Splash Screen
+        const fadeTimer = setTimeout(() => setSplashFading(true), 2200);
+        const removeTimer = setTimeout(() => setShowSplash(false), 2800);
+        return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); };
+      }, []);
 
       useEffect(() => { const t = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })), 1000); return () => clearInterval(t); }, []);
       useEffect(() => { fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true').then(r=>r.json()).then(d=>d.current_weather&&setWeather(d.current_weather)).catch(e=>console.error(e)); }, []);
@@ -602,6 +633,12 @@
       const tP = members.filter(m=>m.status==='pending').length; 
       const tR = members.filter(m=>m.status==='rejected').length;
       const totalRegistrants = members.length; 
+      
+      // Hitung Capaian Target Quota
+      const TARGET_QUOTA = 20;
+      const quotaPercent = Math.min(100, (tA / TARGET_QUOTA) * 100);
+      const remainingQuota = Math.max(0, TARGET_QUOTA - tA);
+
       const un = notifications.filter(n=>!n.read).length; 
       const wd = weather ? getW(weather.weathercode) : null;
       const qrData = mpd ? encodeURIComponent(`Nama: ${mpd.name}\nID Anggota: ${mpd.memberId}`) : '';
@@ -743,6 +780,22 @@
 
       return (
         <div className="w-full max-w-md h-full flex flex-col overflow-hidden relative">
+          
+          {/* === SPLASH SCREEN === */}
+          {showSplash && (
+            <div className={`absolute inset-0 z-[200] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center transition-opacity duration-700 ${splashFading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <div className="absolute w-48 h-48 bg-amber-500/20 rounded-full blur-3xl animate-glow-pulse"></div>
+              <div className="relative mb-6 animate-scale-in">
+                <GlassLogo size="w-28 h-28" />
+              </div>
+              <h1 className="text-3xl font-black tracking-wider text-white uppercase flex items-center animate-slide-up">
+                ONE <span className="text-amber-400 ml-2">ASPAL</span>
+              </h1>
+              <p className="text-xs text-slate-400 font-semibold mt-2 tracking-widest animate-slide-up">ONE ROAD, ONE BROTHERHOOD</p>
+              <div className="absolute bottom-10 w-8 h-8 border-4 border-slate-700 border-t-amber-500 rounded-full animate-spin"></div>
+            </div>
+          )}
+
           {toast.show && (
             <div className="absolute top-5 left-4 right-4 z-[100] toast-animate pointer-events-none">
               <div className={`bg-white/90 backdrop-blur-xl border shadow-2xl rounded-2xl overflow-hidden ${toast.type==='error'?'border-rose-200/50':toast.type==='info'?'border-blue-200/50':'border-emerald-200/50'}`}>
@@ -764,6 +817,10 @@
               <div className="flex-1 flex flex-col overflow-y-auto scrollbar-none bg-white/40 backdrop-blur-md animate-fade-in">
                 <div className="sticky top-0 z-30 bg-white/40 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/40">
                   <div className="flex items-center space-x-2.5"><GlassLogoMini /><h1 className="text-sm font-black tracking-wider text-slate-900 uppercase flex items-center">ONE <span className="text-amber-500 ml-1">ASPAL</span></h1></div>
+                  {/* Tombol Login di Header */}
+                  <button onClick={()=>{setAuthMode('login');setShowPublicPage(false);}} className="text-[10px] bg-slate-900 text-white font-bold px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-md active:scale-95 transition">
+                    <I.Lock className="w-3.5 h-3.5" /><span>Masuk</span>
+                  </button>
                 </div>
                 <div className="p-6 space-y-6 pb-10">
                   <div className="text-center pt-4"><GlassLogo size="w-32 h-32" animate={true} /><h2 className="text-2xl font-black tracking-wider text-slate-900 uppercase mt-6">ONE <span className="text-amber-500">ASPAL CLUB</span></h2><p className="text-xs text-slate-500 font-semibold mt-1">One Road, One Brotherhood</p></div>
@@ -772,11 +829,40 @@
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Award className="text-amber-500 w-5 h-5" /><span>Visi & Misi</span></h3><div className="space-y-3"><div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3"><p className="text-[10px] font-black text-amber-600 uppercase mb-1">Visi</p><p className="text-xs text-slate-700 font-semibold">Menjadi komunitas berkendara paling solid, aman, dan dihormati di Indonesia.</p></div><div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">Misi</p><ul className="text-xs text-slate-700 font-semibold space-y-1.5 list-disc list-inside"><li>Membangun kekeluargaan antar anggota tanpa batas golongan.</li><li>Meningkatkan budaya safety riding dan kesadaran hukum lalu lintas.</li><li>Mengadakan kegiatan touring tahunan dan aksi sosial.</li></ul></div></div></div>
                   
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4">
-                    <h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Infografis Anggota</span></h3>
+                    <h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Info Raider</span></h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div>
                       <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div>
                     </div>
+
+                    {/* Progress Bar Target Quota Modern */}
+                    <div className="pt-4 border-t border-slate-100">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-xs font-bold text-slate-700">Progres</h4>
+                        <span className="text-[10px] font-bold text-slate-500">Estimasi: {TARGET_QUOTA} Raiders</span>
+                      </div>
+                      <div className="relative w-full h-6 bg-slate-200/70 rounded-full overflow-hidden shadow-inner border border-slate-100">
+                        <div 
+                          className="progress-bar-modern h-full rounded-full flex items-center justify-center transition-all duration-[1200ms] ease-out"
+                          style={{ width: `${quotaPercent}%`, background: 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)' }}
+                        >
+                          {quotaPercent > 15 && (
+                            <span className="text-[10px] font-black text-white drop-shadow-md relative z-10">{quotaPercent.toFixed(0)}%</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-[10px] font-bold text-emerald-600 flex items-center">
+                          <I.CheckCircle2 className="w-3 h-3 mr-1" /> Terdaftar: {tA}
+                        </span>
+                        {remainingQuota > 0 ? (
+                          <span className="text-[10px] font-bold text-slate-500">Tersedia {remainingQuota} Quota</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-amber-600 animate-pulse">Target Tercapai! 🎉</span>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="pt-4 border-t border-slate-100">
                       <h4 className="text-xs font-bold text-slate-700 mb-2 flex items-center space-x-1"><I.MapPin className="w-4 h-4 text-rose-500"/> Rekapitulasi Kota Asal</h4>
                       {cityStats.length > 0 ? <CityDonutChart cityData={cityStats} /> : <div className="h-[200px] flex items-center justify-center text-slate-400 text-xs italic">Memuat data kota...</div>}
@@ -785,9 +871,9 @@
 
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Calendar className="text-amber-500 w-5 h-5" /><span>Agenda Kegiatan</span></h3><div className="space-y-3">{events.map(ev=>(<div key={ev.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 flex items-center justify-between shadow-sm"><div className="flex-1"><span className="text-[10px] bg-rose-100 text-rose-600 font-bold px-2 py-0.5 rounded-full">{ev.tag}</span><h4 className="font-bold text-xs text-slate-900 mt-1">{ev.title}</h4><p className="text-[10px] text-slate-500 font-semibold flex items-center space-x-1 mt-0.5"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination} • {ev.date}</span></p></div><div className="text-right border-l border-slate-100 pl-3"><p className="text-lg font-black text-slate-800">{ev.joined}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Peserta</p></div></div>))}</div></div>
                   
+                  {/* CTA Daftar di Bawah */}
                   <div className="space-y-3 pt-4">
-                    <button onClick={()=>{setAuthMode('login');setShowPublicPage(false);}} className="w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white font-bold text-sm py-4 rounded-2xl shadow-lg active:scale-95 transition flex items-center justify-center space-x-2"><I.Lock className="w-4 h-4" /><span>Masuk Aplikasi</span></button>
-                    <button onClick={()=>{setAuthMode('register');setShowPublicPage(false);}} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center space-x-2 animate-breath-btn"><I.UserPlus className="w-4 h-4" /><span>Daftar Anggota Baru</span></button>
+                    <button onClick={()=>{setAuthMode('register');setShowPublicPage(false);}} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center space-x-2 animate-breath-btn shadow-lg"><I.UserPlus className="w-5 h-5" /><span>Daftar Anggota Baru</span></button>
                   </div>
                 </div>
               </div>
