@@ -59,7 +59,6 @@
     const { useState, useEffect, useRef, useMemo } = React;
     
     // === KONFIGURASI FIREBASE ANDA ===
-    // PASTIKAN INI SUDAH DIISI DENGAN BENAR DARI FIREBASE CONSOLE
     const firebaseConfig = {
       apiKey: "AIzaSyC_Lp9IMTfC0D1pSFeDbjW2ugyg22tFfTc",
       authDomain: "oneaspalclub.firebaseapp.com",
@@ -69,20 +68,38 @@
       messagingSenderId: "310756119151",
       appId: "1:310756119151:web:da5d0ccbc43dad23c5b39a"
     };
-    
-    // INISIALISASI FIREBASE DENGAN ERROR HANDLING
-    try {
-      firebase.initializeApp(firebaseConfig);
-    } catch (e) {
-      console.error("Firebase Initialization Error:", e);
-    }
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
-    const LOGO_URL = "https://z-cdn-media.chatglm.cn/files/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png?auth_key=1884486945-d15859bfa28c4cb08677f689560edf17-0-b48a62cb422e6271eb4aeb9096a34227";
+    const LOGO_URL = "https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png";
     const SESSION_DURATION = 30 * 60 * 1000; 
     const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🏍️'];
-    const AVATARS_MALE = Array.from({length: 10}, (_, i) => `https://api.dicebear.com/7.x/micah/svg?seed=Male${i+1}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9,b6e3f4&radius=50`);
-    const AVATARS_FEMALE = Array.from({length: 10}, (_, i) => `https://api.dicebear.com/7.x/micah/svg?seed=Female${i+1}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9,b6e3f4&radius=50`);
+
+    // DAFTAR AVATAR (Foto Model Eropa)
+    const AVATARS_MALE = [
+      'https://i.postimg.cc/wMTWFGcY/1-m.jpg',
+      'https://i.postimg.cc/N9S7jbzk/2-m.jpg',
+      'https://i.postimg.cc/ygtX8nbF/3-m.jpg',
+      'https://i.postimg.cc/9RKtQ1nR/4-m.jpg',
+      'https://i.postimg.cc/Kkwr8QH7/5-m.jpg',
+      'https://i.postimg.cc/8J9Bzw0T/6-m.jpg',
+      'https://i.postimg.cc/k6BvCLfr/7-m.jpg',
+      'https://i.postimg.cc/7Gfn4jXj/8-m.jpg',
+      'https://i.postimg.cc/YGhz7Tbr/9-m.jpg',
+      'https://i.postimg.cc/wtWQS95F/10-m.jpg'
+    ];
+    const AVATARS_FEMALE = [
+      'https://randomuser.me/api/portraits/women/44.jpg',
+      'https://randomuser.me/api/portraits/women/68.jpg',
+      'https://randomuser.me/api/portraits/women/90.jpg',
+      'https://randomuser.me/api/portraits/women/75.jpg',
+      'https://randomuser.me/api/portraits/women/81.jpg',
+      'https://randomuser.me/api/portraits/women/85.jpg',
+      'https://randomuser.me/api/portraits/women/33.jpg',
+      'https://randomuser.me/api/portraits/women/95.jpg',
+      'https://randomuser.me/api/portraits/women/12.jpg',
+      'https://randomuser.me/api/portraits/women/79.jpg'
+    ];
 
     const GlassLogo = ({ size = "w-28 h-28", animate = false }) => (
       <div className={`${size} mx-auto flex items-center justify-center relative`}>
@@ -247,7 +264,6 @@
       useEffect(() => { const t = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })), 1000); return () => clearInterval(t); }, []);
       useEffect(() => { fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true').then(r=>r.json()).then(d=>d.current_weather&&setWeather(d.current_weather)).catch(e=>console.error(e)); }, []);
       
-      // LISTENER FIREBASE DENGAN ERROR HANDLING
       useEffect(() => {
         if (!db) return;
         
@@ -756,7 +772,7 @@
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Award className="text-amber-500 w-5 h-5" /><span>Visi & Misi</span></h3><div className="space-y-3"><div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3"><p className="text-[10px] font-black text-amber-600 uppercase mb-1">Visi</p><p className="text-xs text-slate-700 font-semibold">Menjadi komunitas berkendara paling solid, aman, dan dihormati di Indonesia.</p></div><div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">Misi</p><ul className="text-xs text-slate-700 font-semibold space-y-1.5 list-disc list-inside"><li>Membangun kekeluargaan antar anggota tanpa batas golongan.</li><li>Meningkatkan budaya safety riding dan kesadaran hukum lalu lintas.</li><li>Mengadakan kegiatan touring tahunan dan aksi sosial.</li></ul></div></div></div>
                   
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4">
-                    <h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Summary Anggota</span></h3>
+                    <h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Infografis Anggota</span></h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div>
                       <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div>
