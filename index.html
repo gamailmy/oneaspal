@@ -232,6 +232,110 @@
       );
     };
 
+    // Helper untuk hitung mundur
+    const calculateTimeLeft = (targetDate) => {
+      const difference = +new Date(targetDate) - +new Date();
+      let timeLeft = {};
+      if (difference > 0) {
+        timeLeft = {
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+          seconds: Math.floor((difference / 1000) % 60),
+          total: difference
+        };
+      } else {
+        timeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+      }
+      return timeLeft;
+    };
+
+    const CountdownTimer = ({ targetDate }) => {
+      const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(targetDate));
+
+      useEffect(() => {
+        const timer = setInterval(() => {
+          setTimeLeft(calculateTimeLeft(targetDate));
+        }, 1000);
+        return () => clearInterval(timer);
+      }, [targetDate]);
+
+      if (timeLeft.total <= 0) {
+        return <span className="text-[10px] font-bold text-rose-600 bg-rose-100 px-3 py-1 rounded-full">Sedang Berlangsung/Selesai</span>;
+      }
+
+      const timeBlocks = [
+        { label: 'Hari', value: timeLeft.days },
+        { label: 'Jam', value: timeLeft.hours },
+        { label: 'Menit', value: timeLeft.minutes },
+        { label: 'Detik', value: timeLeft.seconds }
+      ];
+
+      return (
+        <div className="flex space-x-1.5 mt-3">
+          {timeBlocks.map((block, i) => (
+            <div key={i} className="flex flex-col items-center bg-slate-900 text-white px-2 py-1 rounded-lg min-w-[36px] shadow-sm">
+              <span className="font-black text-sm tabular-nums leading-none">{String(block.value).padStart(2, '0')}</span>
+              <span className="text-[7px] text-slate-400 uppercase mt-0.5">{block.label}</span>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    const EventCard = ({ event, isAdmin, onDelete, onSubscribe, isSubscribed, subCount }) => {
+      const eventDate = new Date(event.timestamp);
+      const day = eventDate.toLocaleDateString('id-ID', { day: '2-digit' });
+      const month = eventDate.toLocaleDateString('id-ID', { month: 'short' });
+      const year = eventDate.toLocaleDateString('id-ID', { year: 'numeric' });
+      const dayName = eventDate.toLocaleDateString('id-ID', { weekday: 'long' });
+      const time = eventDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+      return (
+        <div className="bg-white/70 backdrop-blur-md border border-white/80 rounded-2xl shadow-sm overflow-hidden relative">
+          <div className="flex">
+            {/* Kalender */}
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-3 flex flex-col items-center justify-center min-w-[70px] shadow-md">
+              <span className="text-[9px] font-bold uppercase tracking-wider opacity-90">{dayName.split(',')[0]}</span>
+              <span className="text-2xl font-black leading-none my-0.5">{day}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider opacity-90">{month} {year}</span>
+              <span className="text-[9px] font-bold mt-1 bg-white/20 px-1.5 py-0.5 rounded">{time} WIB</span>
+            </div>
+
+            {/* Konten */}
+            <div className="p-3 flex-1 flex flex-col">
+              <div className="flex justify-between items-start">
+                <h4 className="font-extrabold text-sm text-slate-900">{event.title}</h4>
+                {isAdmin && (
+                  <button onClick={onDelete} className="p-1 bg-rose-50 text-rose-600 rounded-md border border-rose-100 active:scale-95">
+                    <I.Trash className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-600 font-medium mt-1 leading-relaxed flex-1 line-clamp-3">{event.description}</p>
+              
+              <CountdownTimer targetDate={event.timestamp} />
+
+              <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2">
+                <div className="flex items-center space-x-1 text-[10px] text-slate-600 font-bold">
+                  <I.Users className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{subCount} Subscriber</span>
+                </div>
+                {!isAdmin && (
+                  <button 
+                    onClick={onSubscribe} 
+                    className={`text-[10px] font-bold px-4 py-1.5 rounded-xl transition active:scale-95 ${isSubscribed ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-900 text-white shadow-md'}`}
+                  >
+                    {isSubscribed ? '✓ subscribed' : 'Subscribe'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     function App() {
       const [currentUser, setCurrentUser] = useState(null);
       const [authMode, setAuthMode] = useState('login'); 
@@ -258,7 +362,11 @@
       const [showConfirmRegModal, setShowConfirmRegModal] = useState(false); const [confirmRegData, setConfirmRegData] = useState(null);
       const [bikes, setBikes] = useState([]);
       const [editingBike, setEditingBike] = useState(null); const [showEditBikeModal, setShowEditBikeModal] = useState(false);
-      const [events, setEvents] = useState([{ id: 1, title: 'Touring Kemerdekaan 2026', date: '17 Agustus 2026', destination: 'Puncak Bogor', distance: '120 Km', meetingPoint: 'SPBU Veteran', joined: 42, isJoined: false, tag: 'Nasional' }]);
+      
+      // State Events (Firebase)
+      const [events, setEvents] = useState([]);
+      const [newEvent, setNewEvent] = useState({ title: '', timestamp: '', description: '' });
+
       const [announcements, setAnnouncements] = useState([{ id: 1, title: 'Selamat Datang Rider!', content: 'Selamat bergabung di One Aspal Club. Pastikan data motor dan profil kalian sudah lengkap. Safety riding!', date: '10 Jan 2026', author: 'Admin' }]);
       const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false); const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
       const [showAdminConfirmModal, setShowAdminConfirmModal] = useState(false); const [adminConfirmData, setAdminConfirmData] = useState(null); const [selectedClassName, setSelectedClassName] = useState('Rider Addict');
@@ -334,6 +442,15 @@
         }, (error) => {
           console.error("Firebase Threads Error:", error);
           addN(`Error DB: ${error.message}`, 'error');
+        });
+
+        // Listener Firebase untuk Events
+        const eventsRef = db.ref('events');
+        eventsRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          const eventsArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+          eventsArray.sort((a,b) => a.timestamp - b.timestamp); // Urutkan berdasarkan tanggal terdekat
+          setEvents(eventsArray);
         });
 
         const storedSession = localStorage.getItem('oac_session');
@@ -627,6 +744,42 @@
         addN('Pesan dihapus! 🗑️','info');
       };
 
+      // Logic Event Management
+      const createEvent = async (e) => {
+        e.preventDefault();
+        if(!newEvent.title || !newEvent.timestamp || !newEvent.description) {
+          addN('Semua field event wajib diisi!', 'error');
+          return;
+        }
+        const newEventRef = db.ref('events').push();
+        await newEventRef.set({
+          title: newEvent.title,
+          timestamp: new Date(newEvent.timestamp).getTime(),
+          description: newEvent.description,
+          subscribers: {}
+        });
+        setNewEvent({ title: '', timestamp: '', description: '' });
+        addN('Event berhasil dibuat! 📅','success');
+      };
+
+      const deleteEvent = async (eventId) => {
+        if (!window.confirm("Hapus event ini?")) return;
+        await db.ref('events/' + eventId).remove();
+        addN('Event dihapus. 🗑️','info');
+      };
+
+      const toggleSubscribeEvent = async (eventId, isSubscribed) => {
+        if(!currentUser) return;
+        const subsRef = db.ref('events/' + eventId + '/subscribers/' + currentUser.id);
+        if (isSubscribed) {
+          await subsRef.remove();
+          addN('Anda membatalkan subscription.','info');
+        } else {
+          await subsRef.set(true);
+          addN('Anda berlangganan event ini! 🔔','success');
+        }
+      };
+
       const mpd = currentUser; 
       const mb = bikes; 
       const tA = members.filter(m=>m.status==='approved').length; 
@@ -829,7 +982,7 @@
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Award className="text-amber-500 w-5 h-5" /><span>Visi & Misi</span></h3><div className="space-y-3"><div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3"><p className="text-[10px] font-black text-amber-600 uppercase mb-1">Visi</p><p className="text-xs text-slate-700 font-semibold">Menjadi komunitas berkendara paling solid, aman, dan dihormati di Indonesia.</p></div><div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">Misi</p><ul className="text-xs text-slate-700 font-semibold space-y-1.5 list-disc list-inside"><li>Membangun kekeluargaan antar anggota tanpa batas golongan.</li><li>Meningkatkan budaya safety riding dan kesadaran hukum lalu lintas.</li><li>Mengadakan kegiatan touring tahunan dan aksi sosial.</li></ul></div></div></div>
                   
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4">
-                    <h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Info Raider</span></h3>
+                    <h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Info Anggota</span></h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tA}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Dikonfirmasi</p></div>
                       <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-500 to-amber-400 rounded-2xl text-white shadow-lg"><p className="text-4xl font-black">{tP}</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-1 text-center">Proses Pengajuan</p></div>
@@ -838,8 +991,8 @@
                     {/* Progress Bar Target Quota Modern */}
                     <div className="pt-4 border-t border-slate-100">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-xs font-bold text-slate-700">Progres</h4>
-                        <span className="text-[10px] font-bold text-slate-500">Estimasi: {TARGET_QUOTA} Raiders</span>
+                        <h4 className="text-xs font-bold text-slate-700">Progres Anggota Bergabung</h4>
+                        <span className="text-[10px] font-bold text-slate-500">Estimasi: {TARGET_QUOTA} Anggota</span>
                       </div>
                       <div className="relative w-full h-6 bg-slate-200/70 rounded-full overflow-hidden shadow-inner border border-slate-100">
                         <div 
@@ -853,23 +1006,35 @@
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-[10px] font-bold text-emerald-600 flex items-center">
-                          <I.CheckCircle2 className="w-3 h-3 mr-1" /> Terdaftar: {tA}
+                          <I.CheckCircle2 className="w-3 h-3 mr-1" /> Telah Bergabung: {tA}
                         </span>
                         {remainingQuota > 0 ? (
-                          <span className="text-[10px] font-bold text-slate-500">Tersedia {remainingQuota} Quota</span>
+                          <span className="text-[10px] font-bold text-slate-500">tersedia {remainingQuota} Quota</span>
                         ) : (
-                          <span className="text-[10px] font-bold text-amber-600 animate-pulse">Target Tercapai! 🎉</span>
+                          <span className="text-[10px] font-bold text-amber-600 animate-pulse">Anggota Tercapai! 🎉</span>
                         )}
                       </div>
                     </div>
 
                     <div className="pt-4 border-t border-slate-100">
-                      <h4 className="text-xs font-bold text-slate-700 mb-2 flex items-center space-x-1"><I.MapPin className="w-4 h-4 text-rose-500"/> Rekapitulasi Kota Asal</h4>
+                      <h4 className="text-xs font-bold text-slate-700 mb-2 flex items-center space-x-1"><I.MapPin className="w-4 h-4 text-rose-500"/> Sebaran Kota dari para Anggota</h4>
                       {cityStats.length > 0 ? <CityDonutChart cityData={cityStats} /> : <div className="h-[200px] flex items-center justify-center text-slate-400 text-xs italic">Memuat data kota...</div>}
                     </div>
                   </div>
 
-                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Calendar className="text-amber-500 w-5 h-5" /><span>Agenda Kegiatan</span></h3><div className="space-y-3">{events.map(ev=>(<div key={ev.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 flex items-center justify-between shadow-sm"><div className="flex-1"><span className="text-[10px] bg-rose-100 text-rose-600 font-bold px-2 py-0.5 rounded-full">{ev.tag}</span><h4 className="font-bold text-xs text-slate-900 mt-1">{ev.title}</h4><p className="text-[10px] text-slate-500 font-semibold flex items-center space-x-1 mt-0.5"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination} • {ev.date}</span></p></div><div className="text-right border-l border-slate-100 pl-3"><p className="text-lg font-black text-slate-800">{ev.joined}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Peserta</p></div></div>))}</div></div>
+                  {/* Tampilkan Event di Halaman Publik */}
+                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4">
+                    <h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Calendar className="text-amber-500 w-5 h-5" /><span>Agenda Kegiatan</span></h3>
+                    <div className="space-y-3">
+                      {events.length > 0 ? events.map(ev => (
+                        <EventCard 
+                          key={ev.id} 
+                          event={ev} 
+                          subCount={ev.subscribers ? Object.keys(ev.subscribers).length : 0} 
+                        />
+                      )) : <div className="text-center py-6 text-slate-400 text-xs italic">Belum ada agenda event.</div>}
+                    </div>
+                  </div>
                   
                   {/* CTA Daftar di Bawah */}
                   <div className="space-y-3 pt-4">
@@ -998,16 +1163,19 @@
                     {activeTab==='events' && ( 
                       <div className="space-y-4">
                         <h3 className="text-lg font-black text-slate-900">Event Mendatang</h3>
-                        {events.map(ev=>(
-                          <div key={ev.id} className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm">
-                            <h4 className="font-extrabold text-sm text-slate-900">{ev.title}</h4>
-                            <p className="text-[11px] text-slate-500 mt-1 font-medium flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span>{ev.destination}</span></p>
-                            <div className="mt-4 flex justify-between items-center">
-                              <span className="text-xs font-bold text-slate-500">{ev.joined} Peserta</span>
-                              <button onClick={()=>setEvents(events.map(e=>e.id===ev.id?{...e,isJoined:!e.isJoined,joined:!e.isJoined?e.joined+1:e.joined-1}:e))} className={`text-[11px] font-bold px-4 py-2 rounded-xl transition active:scale-95 ${ev.isJoined?'bg-rose-50 text-rose-600 border border-rose-200':'bg-slate-900 text-white shadow-md shadow-slate-900/20'}`}>{ev.isJoined?'Batal':'Ikut Serta'}</button>
-                            </div>
-                          </div>
-                        ))}
+                        {events.length > 0 ? events.map(ev => {
+                          const isSubscribed = ev.subscribers && ev.subscribers[currentUser.id];
+                          const subCount = ev.subscribers ? Object.keys(ev.subscribers).length : 0;
+                          return (
+                            <EventCard 
+                              key={ev.id}
+                              event={ev}
+                              subCount={subCount}
+                              isSubscribed={isSubscribed}
+                              onSubscribe={() => toggleSubscribeEvent(ev.id, isSubscribed)}
+                            />
+                          );
+                        }) : <div className="text-center py-10 text-slate-400 text-xs italic">Belum ada event mendatang.</div>}
                       </div> 
                     )}
                     {activeTab==='garage' && ( 
@@ -1156,6 +1324,7 @@
                     <div className="bg-slate-100 p-1 rounded-2xl flex shadow-inner">
                       <button onClick={()=>setAdminTab('home')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='home'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Beranda</button>
                       <button onClick={()=>setAdminTab('members')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='members'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Anggota</button>
+                      <button onClick={()=>setAdminTab('events')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='events'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Event</button>
                       <button onClick={()=>setAdminTab('forum')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='forum'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Forum</button>
                       <button onClick={()=>setAdminTab('settings')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='settings'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Pengaturan</button>
                     </div>
@@ -1187,6 +1356,54 @@
                                 </div>
                               </div>
                             )):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}
+                          </div>
+                        </div>
+                      )}
+
+                      {adminTab === 'events' && (
+                        <div className="space-y-6">
+                          <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm">
+                            <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4>
+                            <form onSubmit={createEvent} className="space-y-3">
+                              <FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required />
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label>
+                                <input 
+                                  type="datetime-local" 
+                                  value={newEvent.timestamp} 
+                                  onChange={(e)=>setNewEvent({...newEvent, timestamp: e.target.value})} 
+                                  required 
+                                  className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label>
+                                <textarea 
+                                  value={newEvent.description} 
+                                  onChange={(e)=>setNewEvent({...newEvent, description: e.target.value})} 
+                                  rows="4" 
+                                  required 
+                                  className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none" 
+                                  placeholder="Detail rendezvous, rute, dan informasi penting lainnya..."
+                                ></textarea>
+                              </div>
+                              <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95 flex items-center justify-center space-x-1"><I.Plus className="w-4 h-4" /> <span>Publikasikan Event</span></button>
+                            </form>
+                          </div>
+
+                          <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm">
+                            <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Calendar className="w-4 h-4 text-amber-500" /> <span>Daftar Event Mendatang</span></h4>
+                            <div className="space-y-3">
+                              {events.length > 0 ? events.map(ev => (
+                                <EventCard 
+                                  key={ev.id}
+                                  event={ev}
+                                  isAdmin={true}
+                                  onDelete={() => deleteEvent(ev.id)}
+                                  subCount={ev.subscribers ? Object.keys(ev.subscribers).length : 0}
+                                />
+                              )) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada event.</p>}
+                            </div>
                           </div>
                         </div>
                       )}
