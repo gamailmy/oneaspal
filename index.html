@@ -187,7 +187,8 @@
       Smile: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>,
       ReplyIcon: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>,
       Settings: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
-      Camera: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+      Camera: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>,
+      Star: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     };
 
     const FormInput = ({ icon, label, hint, ...props }) => (
@@ -283,6 +284,15 @@
       );
     };
 
+    const getEventPoints = (type) => {
+      switch(type) {
+        case 'touring_2day': return { pts: 10, label: 'Touring Min 2 Hari', color: 'bg-rose-100 text-rose-700' };
+        case 'touring_1day': return { pts: 5, label: 'Touring 1 Hari', color: 'bg-amber-100 text-amber-700' };
+        case 'touring_member': return { pts: 2, label: 'Touring Tempat Anggota', color: 'bg-blue-100 text-blue-700' };
+        default: return { pts: 0, label: 'Umum', color: 'bg-slate-100 text-slate-600' };
+      }
+    };
+
     const EventCard = ({ event, isAdmin, onDelete, onEdit, onCheckin, isCheckedIn, checkinCount, totalMembers, onViewCheckins }) => {
       const eventDate = new Date(event.timestamp);
       const day = eventDate.toLocaleDateString('id-ID', { day: '2-digit' });
@@ -292,6 +302,13 @@
       const time = eventDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       
       const percent = totalMembers > 0 ? Math.min(100, (checkinCount / totalMembers) * 100) : 0;
+      const eventInfo = getEventPoints(event.eventType);
+
+      // Logika Batas Waktu Check-in
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+      const timeUntilEvent = event.timestamp - now;
+      const canCheckIn = timeUntilEvent >= oneDay && timeUntilEvent <= (25 * oneDay);
 
       return (
         <div className="bg-white/70 backdrop-blur-md border border-white/80 rounded-2xl shadow-sm overflow-hidden relative">
@@ -306,10 +323,14 @@
 
             {/* Konten */}
             <div className="p-3 flex-1 flex flex-col">
-              <div className="flex justify-between items-start">
-                <h4 className="font-extrabold text-sm text-slate-900">{event.title}</h4>
+              <div className="flex justify-between items-start gap-2 mb-1">
+                <h4 className="font-extrabold text-sm text-slate-900 flex-1">{event.title}</h4>
+                {event.eventType && (
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${eventInfo.color}`}>+{eventInfo.pts} Pts</span>
+                )}
               </div>
-              <p className="text-[11px] text-slate-600 font-medium mt-1 leading-relaxed flex-1 line-clamp-3">{event.description}</p>
+              <p className="text-[10px] text-slate-500 font-semibold mb-1">{eventInfo.label}</p>
+              <p className="text-[11px] text-slate-600 font-medium leading-relaxed flex-1 line-clamp-3">{event.description}</p>
               
               <CountdownTimer targetDate={event.timestamp} />
             </div>
@@ -340,9 +361,15 @@
               </div>
             ) : (
               onCheckin && (
-                <button onClick={onCheckin} className={`text-[10px] font-bold px-4 py-1.5 rounded-xl transition active:scale-95 ${isCheckedIn ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-900 text-white shadow-md'}`}>
-                  {isCheckedIn ? '✓ Checked' : 'Check-in'}
-                </button>
+                canCheckIn ? (
+                  <button onClick={onCheckin} className={`text-[10px] font-bold px-4 py-1.5 rounded-xl transition active:scale-95 ${isCheckedIn ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-900 text-white shadow-md'}`}>
+                    {isCheckedIn ? '✓ Checked' : 'Check-in'}
+                  </button>
+                ) : (
+                  <span className={`text-[9px] font-bold px-3 py-1.5 rounded-xl border ${timeUntilEvent < oneDay ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-amber-50 text-amber-500 border-amber-100'}`}>
+                    {timeUntilEvent < oneDay ? 'Check-in Ditutup' : 'Dibuka H-25'}
+                  </span>
+                )
               )
             )}
           </div>
@@ -379,7 +406,7 @@
       
       // State Events (Firebase)
       const [events, setEvents] = useState([]);
-      const [newEvent, setNewEvent] = useState({ title: '', timestamp: '', description: '' });
+      const [newEvent, setNewEvent] = useState({ title: '', timestamp: '', description: '', eventType: 'touring_1day' });
       const [showEditEventModal, setShowEditEventModal] = useState(false);
       const [editingEvent, setEditingEvent] = useState(null);
       const [showCheckinsModal, setShowCheckinsModal] = useState(false);
@@ -581,7 +608,7 @@
           email: fullEmail, ridingStatus: regRidingStatus,
           username: regUsername, password: regPassword,
           role: 'Prospect', status: 'pending', createdAt: Date.now(),
-          photoURL: '',
+          photoURL: '', points: 0,
           bikes: { [db.ref().push().key]: { name: `${regBikeBrand} ${regBikeModel}`, plate: regBikePlate, type: regBikeCategory, engine: `${regBikeEngine}cc` } },
           gears: { helmetBrand: '', helmetModel: '', jacketMaterial: '', jacketModel: '', shoeType: '', shoeModel: '' }
         });
@@ -780,9 +807,10 @@
           title: newEvent.title,
           timestamp: new Date(newEvent.timestamp).getTime(),
           description: newEvent.description,
+          eventType: newEvent.eventType,
           checkins: {}
         });
-        setNewEvent({ title: '', timestamp: '', description: '' });
+        setNewEvent({ title: '', timestamp: '', description: '', eventType: 'touring_1day' });
         addN('Event berhasil dibuat! 📅','success');
       };
 
@@ -798,7 +826,7 @@
         const localDate = new Date(date.getTime() - (offset * 60000));
         const localDateString = localDate.toISOString().slice(0, 16);
         
-        setEditingEvent({ ...ev, timestampLocal: localDateString });
+        setEditingEvent({ ...ev, timestampLocal: localDateString, eventType: ev.eventType || 'touring_1day' });
         setShowEditEventModal(true);
       };
 
@@ -808,7 +836,8 @@
         await db.ref('events/' + editingEvent.id).update({
           title: editingEvent.title,
           timestamp: new Date(editingEvent.timestampLocal).getTime(),
-          description: editingEvent.description
+          description: editingEvent.description,
+          eventType: editingEvent.eventType
         });
         setShowEditEventModal(false);
         addN('Event berhasil diperbarui! ✨','success');
@@ -835,6 +864,28 @@
         const memberEvents = events.filter(ev => ev.checkins && ev.checkins[member.id]).map(ev => ({ id: ev.id, title: ev.title, timestamp: ev.timestamp }));
         setActiveMemberEvents({ memberName: member.name, events: memberEvents });
         setShowMemberEventsModal(true);
+      };
+
+      // Hitung Potensi Poin Anggota
+      const getMemberPotentialPoints = (memberId) => {
+        let pts = 0;
+        events.forEach(ev => {
+          if (ev.checkins && ev.checkins[memberId] && (!ev.ptsApproved || !ev.ptsApproved[memberId])) {
+            pts += getEventPoints(ev.eventType).pts;
+          }
+        });
+        return pts;
+      };
+
+      // Approval Poin oleh Admin
+      const approveMemberPoints = async (eventId, memberId, pts) => {
+        const memberRef = db.ref('members/' + memberId + '/points');
+        // Transaction untuk menambah poin secara aman
+        await memberRef.transaction((currentPoints) => {
+          return (currentPoints || 0) + pts;
+        });
+        await db.ref('events/' + eventId + '/ptsApproved/' + memberId).set(true);
+        addN('Poin anggota berhasil di-approve! ⭐','success');
       };
 
       const mpd = currentUser; 
@@ -1035,8 +1086,8 @@
                 <div className="p-6 space-y-6 pb-10">
                   <div className="text-center pt-4"><GlassLogo size="w-32 h-32" animate={true} /><h2 className="text-2xl font-black tracking-wider text-slate-900 uppercase mt-6">ONE <span className="text-amber-500">ASPAL CLUB</span></h2><p className="text-xs text-slate-500 font-semibold mt-1">One Road, One Brotherhood</p></div>
                   <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-5 shadow-lg text-white relative overflow-hidden"><div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x=1/2"></div><div className="relative z-10 flex justify-between items-center"><div><div className="flex items-center space-x-2 text-amber-400 mb-1"><I.Clock /><p className="text-[10px] font-bold uppercase tracking-widest">Waktu Sekarang</p></div><h3 className="text-4xl font-black font-mono tracking-wider">{currentTime||'--:--:--'}</h3><p className="text-xs text-slate-400 font-semibold mt-1">WIB (Asia/Jakarta)</p></div><div className="text-right border-l border-white/10 pl-5"><div className="flex items-center justify-end space-x-2 text-amber-400 mb-1"><p className="text-[10px] font-bold uppercase tracking-widest">Cuaca</p><I.CloudSun /></div>{weather?(<><h3 className="text-4xl font-black">{Math.round(weather.temperature)}°C</h3><p className="text-xs text-slate-400 font-semibold mt-1">{wd.emoji} {wd.desc}</p></>):(<><h3 className="text-4xl font-black">--°C</h3><p className="text-xs text-slate-400 font-semibold mt-1">Memuat...</p></>)}</div></div></div>
-                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Info className="text-amber-500 w-5 h-5" /><span>Profile Club</span></h3><p className="text-xs text-slate-600 font-medium leading-relaxed"><b>One Aspal Club (OAC)</b> adalah komunitas pecinta motor premium yang bermarkas di jalan raya. Kami mengutamakan keselamatan, etika berkendara, dan persaudaraan tanpa batas antar pengguna motor sport, adventure, dan klasik di seluruh Indonesia.</p></div>
-                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Award className="text-amber-500 w-5 h-5" /><span>Visi & Misi</span></h3><div className="space-y-3"><div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3"><p className="text-[10px] font-black text-amber-600 uppercase mb-1">Visi</p><p className="text-xs text-slate-700 font-semibold">Menjadi komunitas berkendara paling solid, aman, dan dihormati di Indonesia.</p></div><div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">Misi</p><ul className="text-xs text-slate-700 font-semibold space-y-1.5 list-disc list-inside"><li>Membangun kekeluargaan antar anggota tanpa batas golongan.</li><li>Meningkatkan budaya safety riding dan kesadaran hukum lalu lintas.</li><li>Mengadakan kegiatan touring tahunan dan aksi sosial.</li></ul></div></div></div>
+                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Info className="text-amber-500 w-5 h-5" /><span>Profile Club</span></h3><p className="text-xs text-slate-600 font-medium leading-relaxed"><b>One Aspal Club (OAC)</b> adalah komunitas pecinta event kebersamaan dengan mengendarai motor dengan santai dalam menikmati momen. Kami mengutamakan keselamatan, etika berkendara, dan persaudaraan tanpa batas antar pengguna semua jenis kendaraan motor roda dua di jalan raya.</p></div>
+                  <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4"><h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Award className="text-amber-500 w-5 h-5" /><span>Visi & Misi</span></h3><div className="space-y-3"><div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3"><p className="text-[10px] font-black text-amber-600 uppercase mb-1">Visi</p><p className="text-xs text-slate-700 font-semibold">one aspal merupakan komunitas pengendara motor roda dua yang menginspirasi dalam aspek tertib lalu lintas, kekeluargaan yang erat, dan kepedulian sosial yang nyata bagi masyarakat luas.</p></div><div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">Misi</p><ul className="text-xs text-slate-700 font-semibold space-y-1.5 list-disc list-inside"><li>Membangun kekeluargaan antar anggota tanpa batas golongan.</li><li>Meningkatkan budaya safety riding dan kesadaran hukum lalu lintas.</li><li>Mengadakan kegiatan touring tahunan dan aksi sosial.</li></ul></div></div></div>
                   
                   <div className="bg-white/60 border border-white/80 rounded-3xl p-5 shadow-sm space-y-4">
                     <h3 className="font-black text-base text-slate-900 flex items-center space-x-2"><I.Users className="text-amber-500 w-5 h-5" /><span>Info Anggota</span></h3>
@@ -1048,8 +1099,8 @@
                     {/* Progress Bar Target Quota Modern */}
                     <div className="pt-4 border-t border-slate-100">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-xs font-bold text-slate-700">Capaian Target Anggota</h4>
-                        <span className="text-[10px] font-bold text-slate-500">Target: {TARGET_QUOTA} Anggota</span>
+                        <h4 className="text-xs font-bold text-slate-700">Progres Anggota</h4>
+                        <span className="text-[10px] font-bold text-slate-500">Menampung: {TARGET_QUOTA} Anggota</span>
                       </div>
                       <div className="relative w-full h-6 bg-slate-200/70 rounded-full overflow-hidden shadow-inner border border-slate-100">
                         <div 
@@ -1063,18 +1114,18 @@
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-[10px] font-bold text-emerald-600 flex items-center">
-                          <I.CheckCircle2 className="w-3 h-3 mr-1" /> Terdaftar: {tA}
+                          <I.CheckCircle2 className="w-3 h-3 mr-1" /> Telah terdaftar: {tA}
                         </span>
                         {remainingQuota > 0 ? (
-                          <span className="text-[10px] font-bold text-slate-500">Sisa {remainingQuota} Slot Lagi!</span>
+                          <span className="text-[10px] font-bold text-slate-500">Terbuka{remainingQuota} Quota</span>
                         ) : (
-                          <span className="text-[10px] font-bold text-amber-600 animate-pulse">Target Tercapai! 🎉</span>
+                          <span className="text-[10px] font-bold text-amber-600 animate-pulse">Jumlah Anggota Riders Addict 🎉</span>
                         )}
                       </div>
                     </div>
 
                     <div className="pt-4 border-t border-slate-100">
-                      <h4 className="text-xs font-bold text-slate-700 mb-2 flex items-center space-x-1"><I.MapPin className="w-4 h-4 text-rose-500"/> Rekapitulasi Kota Asal</h4>
+                      <h4 className="text-xs font-bold text-slate-700 mb-2 flex items-center space-x-1"><I.MapPin className="w-4 h-4 text-rose-500"/> Sebaran Kota Asal Anggota</h4>
                       {cityStats.length > 0 ? <CityDonutChart cityData={cityStats} /> : <div className="h-[200px] flex items-center justify-center text-slate-400 text-xs italic">Memuat data kota...</div>}
                     </div>
                   </div>
@@ -1270,6 +1321,8 @@
                         <SummaryCards />
                         {members.filter(m=>m.status==='approved').map(m=> {
                           const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]);
+                          const memberJourney = m.points || 0;
+                          const memberPotentialPts = getMemberPotentialPoints(m.id);
                           return (
                             <div key={m.id} className="bg-white/50 border border-white/60 rounded-2xl p-3 shadow-sm">
                               <div className="flex items-center space-x-3">
@@ -1285,9 +1338,17 @@
                                       </button>
                                     )}
                                   </div>
-                                  <div className="flex items-center mt-0.5">
-                                    {m.className && <span className="text-[9px] bg-slate-900 text-amber-400 font-bold px-2 py-0.5 rounded-full mr-1">{m.className}</span>}
+                                  <div className="flex items-center flex-wrap gap-1 mt-0.5">
+                                    {m.className && <span className="text-[9px] bg-slate-900 text-amber-400 font-bold px-2 py-0.5 rounded-full">{m.className}</span>}
                                     <p className="text-[10px] text-slate-500 font-semibold truncate">{m.role} • {m.ridingStatus || 'Pengendara'}</p>
+                                  </div>
+                                  <div className="flex items-center flex-wrap gap-1 mt-1">
+                                    {memberJourney > 0 && (
+                                      <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full flex items-center"><I.Star className="w-2.5 h-2.5 mr-0.5" /> Journey: {memberJourney} Pts</span>
+                                    )}
+                                    {memberPotentialPts > 0 && (
+                                      <span className="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Potensi: +{memberPotentialPts} Pts</span>
+                                    )}
                                   </div>
                                   <p className="text-[9px] text-rose-500 font-bold flex items-center mt-0.5"><I.MapPin className="w-3 h-3 mr-1"/> {m.city}</p>
                                   {m.touringRole && <p className="text-[10px] text-amber-600 font-bold mt-1 flex items-center"><I.Award className="w-3 h-3 mr-1"/> {m.touringRole}</p>}
@@ -1388,7 +1449,8 @@
                             <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Kota Asal</span><span>{mpd.city}</span></div>
                             <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Email</span><span className="truncate ml-2">{mpd.email}</span></div>
                             <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Status Berkendara</span><span>{mpd.ridingStatus}</span></div>
-                            <div className="flex justify-between"><span className="text-slate-400 font-bold">No. HP</span><span>{mpd.phone}</span></div>
+                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">No. HP</span><span>{mpd.phone}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400 font-bold">Journey Poin</span><span className="font-bold text-indigo-600">{mpd.points || 0} Pts</span></div>
                           </div>
                         </div>
                       </div>
@@ -1443,6 +1505,11 @@
                             <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4>
                             <form onSubmit={createEvent} className="space-y-3">
                               <FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required />
+                              <FormSelect label="Jenis Event & Bobot Poin" value={newEvent.eventType} onChange={(e)=>setNewEvent({...newEvent, eventType: e.target.value})} required>
+                                <option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option>
+                                <option value="touring_1day">Touring 1 Hari (+5 Pts)</option>
+                                <option value="touring_member">Touring Tempat Anggota (+2 Pts)</option>
+                              </FormSelect>
                               <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label>
                                 <input 
@@ -1466,6 +1533,39 @@
                               </div>
                               <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95 flex items-center justify-center space-x-1"><I.Plus className="w-4 h-4" /> <span>Publikasikan Event</span></button>
                             </form>
+                          </div>
+
+                          <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm">
+                            <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Star className="w-4 h-4 text-amber-500" /> <span>Approval Poin Event</span></h4>
+                            <div className="space-y-3">
+                              {events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).length > 0 ? events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).map(ev => {
+                                const eventInfo = getEventPoints(ev.eventType);
+                                const pendingMembers = Object.keys(ev.checkins).filter(uid => !ev.ptsApproved || !ev.ptsApproved[uid]);
+                                if(pendingMembers.length === 0) return null;
+                                return (
+                                  <div key={ev.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-2">
+                                    <div className="flex justify-between items-center mb-2">
+                                      <h5 className="font-bold text-xs text-slate-900 truncate">{ev.title}</h5>
+                                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${eventInfo.color}`}>+{eventInfo.pts} Pts</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {pendingMembers.map(uid => {
+                                        const m = members.find(mem => mem.id === uid);
+                                        return (
+                                          <div key={uid} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100">
+                                            <div className="flex items-center space-x-2">
+                                              <MemberAvatar user={m || {}} size="w-7 h-7" textSize="text-xs" />
+                                              <span className="text-[11px] font-bold text-slate-800">{m ? m.name : 'Anggota'}</span>
+                                            </div>
+                                            <button onClick={() => approveMemberPoints(ev.id, uid, eventInfo.pts)} className="text-[10px] bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg active:scale-95 transition">Approve Poin</button>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                );
+                              }) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada poin event yang perlu di-approve.</p>}
+                            </div>
                           </div>
 
                           <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm">
@@ -1493,6 +1593,8 @@
                           <div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900">Data Lengkap Anggota & Safety Gear</h4></div>
                           {members.filter(m=>m.status==='approved').map(m=> {
                             const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]);
+                            const memberJourney = m.points || 0;
+                            const memberPotentialPts = getMemberPotentialPoints(m.id);
                             return (
                               <div key={m.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2">
                                 <div className="flex items-center justify-between mb-2">
@@ -1506,10 +1608,16 @@
                                       <p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.memberId}</p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center space-x-1.5">
+                                  <div className="flex items-center space-x-1.5 flex-wrap gap-1 justify-end">
+                                    {memberJourney > 0 && (
+                                      <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-full flex items-center"><I.Star className="w-2.5 h-2.5 mr-0.5" /> {memberJourney} Pts</span>
+                                    )}
+                                    {memberPotentialPts > 0 && (
+                                      <span className="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">+{memberPotentialPts} Pts</span>
+                                    )}
                                     {memberCheckedEvents.length > 0 && (
                                       <button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full active:scale-95 transition">
-                                        ✓ Checked ({memberCheckedEvents.length})
+                                        ✓ ({memberCheckedEvents.length})
                                       </button>
                                     )}
                                     <button onClick={()=>{ setEditingTouringMember(m); setSelectedTouringRole(m.touringRole||''); setShowEditTouringModal(true); }} className="text-[10px] bg-amber-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Award className="w-3 h-3"/><span>Penugasan</span></button>
@@ -1581,6 +1689,11 @@
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Edit className="w-5 h-5 text-amber-500" /> Edit Event</h3>
                 <form onSubmit={saveEditedEvent} className="space-y-3">
                   <FormInput label="Judul Event" type="text" value={editingEvent.title} onChange={(e)=>setEditingEvent({...editingEvent, title: e.target.value})} required />
+                  <FormSelect label="Jenis Event & Bobot Poin" value={editingEvent.eventType} onChange={(e)=>setEditingEvent({...editingEvent, eventType: e.target.value})} required>
+                    <option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option>
+                    <option value="touring_1day">Touring 1 Hari (+5 Pts)</option>
+                    <option value="touring_member">Touring Tempat Anggota (+2 Pts)</option>
+                  </FormSelect>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label>
                     <input type="datetime-local" value={editingEvent.timestampLocal} onChange={(e)=>setEditingEvent({...editingEvent, timestampLocal: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" />
