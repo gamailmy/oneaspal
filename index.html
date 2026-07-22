@@ -500,6 +500,9 @@
       const [showMemberEventsModal, setShowMemberEventsModal] = useState(false);
       const [activeMemberEvents, setActiveMemberEvents] = useState(null);
 
+      // State lokal untuk Checklist agar cepat (tanpa lag)
+      const [localReadiness, setLocalReadiness] = useState({});
+
       const [announcements, setAnnouncements] = useState([{ id: 1, title: 'Selamat Datang Rider!', content: 'Selamat bergabung di One Aspal Club. Pastikan data motor dan profil kalian sudah lengkap. Safety riding!', date: '10 Jan 2026', author: 'Admin' }]);
       const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false); const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
       const [showAdminConfirmModal, setShowAdminConfirmModal] = useState(false); const [adminConfirmData, setAdminConfirmData] = useState(null); const [selectedClassName, setSelectedClassName] = useState('Rider Addict');
@@ -941,11 +944,27 @@
         }
       };
 
-      const toggleReadiness = async (eventId, key, isChecked) => {
-        if(!currentUser) return;
-        const ref = db.ref('events/' + eventId + '/readiness/' + currentUser.id + '/' + key);
-        if(isChecked) await ref.set(true);
-        else await ref.remove();
+      // Fungsi Submit Checklist Sekaligus
+      const submitReadiness = async () => {
+        if(!activeEventDetail || !currentUser) return;
+        
+        const allChecked = READINESS_ITEMS.every(item => localReadiness[item.key]);
+        if (!allChecked) {
+          addN('Semua checklist wajib dicentang!', 'error');
+          return;
+        }
+
+        try {
+          const cleanReadiness = {};
+          Object.keys(localReadiness).forEach(k => {
+            if(localReadiness[k]) cleanReadiness[k] = true;
+          });
+          await db.ref('events/' + activeEventDetail.id + '/readiness/' + currentUser.id).set(cleanReadiness);
+          addN('Checklist kesiapan berhasil disimpan! ✅','success');
+          setShowEventDetailModal(false); // Otomatis keluar dari pop-up
+        } catch (err) {
+          addN('Gagal menyimpan checklist.', 'error');
+        }
       };
 
       const openCheckinsModal = (ev) => {
@@ -955,6 +974,8 @@
 
       const openEventDetailModal = (ev) => {
         setActiveEventDetail(ev);
+        const userReadiness = (ev.readiness && currentUser && ev.readiness[currentUser.id]) ? ev.readiness[currentUser.id] : {};
+        setLocalReadiness(userReadiness);
         setShowEventDetailModal(true);
       };
 
@@ -1076,7 +1097,7 @@
                     <div key={m.id} className={`flex ${me?'justify-end':'justify-start'} animate-msg-in`}>
                       <div className={`max-w-[80%] p-3 shadow-md ${me?'bg-[#007AFF] text-white rounded-3xl rounded-br-lg':'bg-white/60 backdrop-blur-lg text-slate-900 border border-white/70 rounded-3xl rounded-bl-lg'}`}>
                         {m.replyTo && (
-                          <div className={`mb-2 p-2 rounded-lg border-l-2 ${me?'bg-white/20 border-white/60':'bg-slate-100 border-slate-400'}`}>
+                          <div className={`mb-2 p-2 rounded-lg border-l-2 ${me?'bg-white/20 border-white-60':'bg-slate-100 border-slate-400'}`}>
                             <p className={`text-[9px] font-bold ${me?'text-white/80':'text-blue-500'}`}>Membalas {m.replyTo.user}</p>
                             <p className={`text-[10px] italic truncate ${me?'text-white/70':'text-slate-500'}`}>{m.replyTo.message}</p>
                           </div>
@@ -1431,6 +1452,12 @@
                           const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]);
                           const memberJourney = m.points || 0;
                           const memberPotentialPts = getMemberPotentialPoints(m.id);
+                          
+                          // Cek apakah siap untuk event mendatang terdekat
+                          const upcomingEvents = events.filter(ev => ev.checkins && ev.checkins[m.id] && ev.timestamp > Date.now());
+                          const nearestUpcoming = upcomingEvents.sort((a,b) => a.timestamp - b.timestamp)[0];
+                          const isReady = nearestUpcoming && nearestUpcoming.readiness && nearestUpcoming.readiness[m.id] && Object.keys(nearestUpcoming.readiness[m.id]).length === READINESS_ITEMS.length;
+
                           return (
                             <div key={m.id} className="bg-white/50 border border-white/60 rounded-2xl p-3 shadow-sm">
                               <div className="flex items-center space-x-3">
@@ -1440,11 +1467,14 @@
                                     <h4 className="font-bold text-xs text-slate-900 flex items-center truncate">
                                       {m.name} {m.simVerified && <I.CheckCircle2 className="ml-1 w-3 h-3 text-blue-500 flex-shrink-0" />}
                                     </h4>
-                                    {memberCheckedEvents.length > 0 && (
-                                      <button onClick={() => openMemberEventsModal(m)} className="ml-2 flex-shrink-0 text-[9px] font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full active:scale-95 transition">
-                                        ✓ Checked ({memberCheckedEvents.length})
-                                      </button>
-                                    )}
+                                    <div className="flex items-center space-x-1">
+                                      {isReady && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">Siap</span>}
+                                      {memberCheckedEvents.length > 0 && (
+                                        <button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-full active:scale-95 transition">
+                                          ✓ ({memberCheckedEvents.length})
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="flex items-center flex-wrap gap-1 mt-0.5">
                                     {m.className && <span className="text-[9px] bg-slate-900 text-amber-400 font-bold px-2 py-0.5 rounded-full">{m.className}</span>}
@@ -1732,7 +1762,7 @@
                                       </button>
                                     )}
                                     <button onClick={()=>{ setEditingTouringMember(m); setSelectedTouringRole(m.touringRole||''); setShowEditTouringModal(true); }} className="text-[10px] bg-amber-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Award className="w-3 h-3"/><span>Penugasan</span></button>
-                                    <button onClick={()=>reqA('delete',m)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95"><I.XCircle className="w-4 h-4" /></button>
+                                    <button onClick={()=>reqA('delete',m)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.XCircle className="w-4 h-4" /></button>
                                   </div>
                                 </div>
                                 <div className="border-t border-slate-100 pt-2 space-y-2 text-[10px] text-slate-600">
@@ -1815,27 +1845,39 @@
                 {currentUser && currentUser.role !== 'Admin' && activeEventDetail.checkins && activeEventDetail.checkins[currentUser.id] && (
                   <div className="border-t border-slate-100 pt-4 mt-2">
                     <h4 className="text-sm font-bold text-slate-900 mb-1 flex items-center"><I.ShieldCheck className="w-4 h-4 text-amber-500 mr-2" /> Checklist Kesiapan Diri</h4>
-                    <p className="text-[10px] text-rose-500 font-bold mb-3">Wajib dicentang untuk mendapatkan poin event!</p>
-                    <div className="space-y-2">
+                    <p className="text-[10px] text-rose-500 font-bold mb-2">Pengecekan Wajib dilakukan untuk komitmen keselamatan bersama</p>
+                    
+                    <div className="space-y-1.5 max-h-[40vh] overflow-y-auto scrollbar-none pr-1 border border-slate-100 rounded-xl p-2 bg-slate-50/50">
                       {READINESS_ITEMS.map(item => {
-                        const isChecked = activeEventDetail.readiness && activeEventDetail.readiness[currentUser.id] && activeEventDetail.readiness[currentUser.id][item.key];
+                        const isChecked = localReadiness[item.key] || false;
                         return (
-                          <label key={item.key} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-slate-50">
+                          <label key={item.key} className="flex items-center space-x-2 cursor-pointer p-1.5 rounded-md hover:bg-white border border-transparent hover:border-slate-200 transition">
                             <input 
                               type="checkbox" 
-                              checked={isChecked || false} 
-                              onChange={(e) => toggleReadiness(activeEventDetail.id, item.key, e.target.checked)}
-                              className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 focus:ring-offset-0 border-slate-300"
+                              checked={isChecked} 
+                              onChange={(e) => {
+                                setLocalReadiness(prev => ({ ...prev, [item.key]: e.target.checked }));
+                              }}
+                              className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 focus:ring-offset-0 border-slate-300 flex-shrink-0"
                             />
-                            <span className="text-xs text-slate-700 font-medium">{item.label}</span>
+                            <span className="text-[11px] text-slate-700 font-medium leading-tight">{item.label}</span>
                           </label>
                         );
                       })}
                     </div>
+                    
                     <div className="mt-3 p-2 bg-amber-50 border border-amber-100 rounded-lg">
                       <p className="text-[10px] text-amber-700 font-bold">Catatan Tambahan:</p>
                       <p className="text-[10px] text-amber-600 font-medium mt-1">Awal perjalanan touring pastikan bensin di tanki motor telah terisi minimal untuk dapat menempuh jarak 30Km</p>
                     </div>
+                    
+                    <button 
+                      onClick={submitReadiness} 
+                      disabled={!READINESS_ITEMS.every(item => localReadiness[item.key])}
+                      className={`w-full mt-4 font-bold text-xs py-3 rounded-xl flex items-center justify-center space-x-1 transition ${READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'bg-emerald-500 text-white active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                    >
+                      <I.CheckCircle2 className="w-4 h-4" /> <span>{READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'Simpan & Konfirmasi Kesiapan' : 'Centang Semua Checklist'}</span>
+                    </button>
                   </div>
                 )}
                 
