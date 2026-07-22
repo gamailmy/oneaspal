@@ -1823,50 +1823,50 @@
             </>
           )}
 
-          {/* Modal Detail Event & Checklist Kesiapan */}
+          {/* Modal Detail Event & Checklist Kesiapan (iOS Glass Layout) */}
           {showEventDetailModal && activeEventDetail && (
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEventDetailModal(false)}>
-              <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto scrollbar-none" onClick={e=>e.stopPropagation()}>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEventDetailModal(false)}>
+              <div className="bg-white/80 backdrop-blur-2xl border border-white/80 rounded-[32px] shadow-2xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto scrollbar-none animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${getEventPoints(activeEventDetail.eventType).color}`}>+{getEventPoints(activeEventDetail.eventType).pts} Pts</span>
                     <h3 className="text-lg font-black text-slate-900 mt-1">{activeEventDetail.title}</h3>
                   </div>
-                  <button onClick={()=>setShowEventDetailModal(false)} className="p-1 text-slate-400 hover:text-slate-700"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg></button>
+                  <button onClick={()=>setShowEventDetailModal(false)} className="p-1 text-slate-400 hover:text-slate-700 bg-white/60 rounded-full border border-white/80"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg></button>
                 </div>
                 <div className="flex items-center space-x-2 text-xs text-slate-500 font-bold mb-4">
                   <I.MapPin className="w-4 h-4 text-rose-500" />
                   <span>{new Date(activeEventDetail.timestamp).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-3 mb-4">
+                <div className="bg-white/60 backdrop-blur-lg rounded-xl p-3 mb-4 border border-white/80">
                   <p className="text-xs text-slate-700 font-medium leading-relaxed">{activeEventDetail.description}</p>
                 </div>
                 
                 {currentUser && currentUser.role !== 'Admin' && activeEventDetail.checkins && activeEventDetail.checkins[currentUser.id] && (
-                  <div className="border-t border-slate-100 pt-4 mt-2">
+                  <div className="border-t border-white/60 pt-4 mt-2">
                     <h4 className="text-sm font-bold text-slate-900 mb-1 flex items-center"><I.ShieldCheck className="w-4 h-4 text-amber-500 mr-2" /> Checklist Kesiapan Diri</h4>
-                    <p className="text-[10px] text-rose-500 font-bold mb-2">Pengecekan Wajib dilakukan untuk komitmen keselamatan bersama</p>
+                    <p className="text-[10px] text-rose-500 font-bold mb-3">Pengecekan wajib dlakukan untuk komitmen keselamatan bersama</p>
                     
-                    <div className="space-y-1.5 max-h-[40vh] overflow-y-auto scrollbar-none pr-1 border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+                    <div className="grid grid-cols-2 gap-2 p-2 bg-slate-50/50 border border-white/60 rounded-xl backdrop-blur-md">
                       {READINESS_ITEMS.map(item => {
                         const isChecked = localReadiness[item.key] || false;
                         return (
-                          <label key={item.key} className="flex items-center space-x-2 cursor-pointer p-1.5 rounded-md hover:bg-white border border-transparent hover:border-slate-200 transition">
+                          <label key={item.key} className={`flex items-start space-x-1.5 cursor-pointer p-2 rounded-lg border transition-all duration-200 ${isChecked ? 'bg-emerald-50/90 border-emerald-200/80 shadow-sm' : 'bg-white/70 border-white/80 hover:bg-white'}`}>
                             <input 
                               type="checkbox" 
                               checked={isChecked} 
                               onChange={(e) => {
                                 setLocalReadiness(prev => ({ ...prev, [item.key]: e.target.checked }));
                               }}
-                              className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 focus:ring-offset-0 border-slate-300 flex-shrink-0"
+                              className="mt-0.5 w-4 h-4 rounded-full text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0 border-slate-300 flex-shrink-0 appearance-none checked:bg-emerald-500 checked:border-transparent"
                             />
-                            <span className="text-[11px] text-slate-700 font-medium leading-tight">{item.label}</span>
+                            <span className="text-[10px] text-slate-700 font-medium leading-tight">{item.label}</span>
                           </label>
                         );
                       })}
                     </div>
                     
-                    <div className="mt-3 p-2 bg-amber-50 border border-amber-100 rounded-lg">
+                    <div className="mt-3 p-2 bg-amber-50/80 border border-amber-100/80 rounded-lg backdrop-blur-md">
                       <p className="text-[10px] text-amber-700 font-bold">Catatan Tambahan:</p>
                       <p className="text-[10px] text-amber-600 font-medium mt-1">Awal perjalanan touring pastikan bensin di tanki motor telah terisi minimal untuk dapat menempuh jarak 30Km</p>
                     </div>
@@ -1874,7 +1874,7 @@
                     <button 
                       onClick={submitReadiness} 
                       disabled={!READINESS_ITEMS.every(item => localReadiness[item.key])}
-                      className={`w-full mt-4 font-bold text-xs py-3 rounded-xl flex items-center justify-center space-x-1 transition ${READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'bg-emerald-500 text-white active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                      className={`w-full mt-4 font-bold text-xs py-3 rounded-xl flex items-center justify-center space-x-1 transition ${READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'bg-emerald-500 text-white active:scale-95 shadow-md' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                     >
                       <I.CheckCircle2 className="w-4 h-4" /> <span>{READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'Simpan & Konfirmasi Kesiapan' : 'Centang Semua Checklist'}</span>
                     </button>
