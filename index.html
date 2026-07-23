@@ -480,51 +480,84 @@
       useEffect(() => { showChatModalRef.current = showChatModal; }, [showChatModal]);
       useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
 
-      // Global Chat Listener untuk Notifikasi Pop-up & Badge
+      // Global Chat Listener untuk Notifikasi Pop-up & Badge (Persistent)
       useEffect(() => {
         if (!currentUser || members.length === 0) return;
-        const baseTime = Date.now(); // Hanya catat pesan yang masuk setelah user login
+        
+        const baseTime = Date.now();
         const listeners = [];
+        const newUnread = {};
 
-        const handleNewMessage = (chatId, otherUserId, msg) => {
-          if (msg.senderId === currentUser.id) return; // Abaikan pesan kita sendiri
-          
-          // Jika chat sedang dibuka untuk user ini, jangan buat notifikasi/badge
-          if (showChatModalRef.current && activeChatIdRef.current === chatId) return;
-          
-          // Tambah jumlah pesan belum dibaca
-          setUnreadChats(prev => ({ ...prev, [otherUserId]: (prev[otherUserId] || 0) + 1 }));
-          
-          // Munculkan pop-up notifikasi (hanya jika tidak ada pop-up lain yang sedang aktif)
-          setIncomingMessageAlert(prev => {
-            if (prev) return prev; 
-            const m = membersRef.current.find(mem => mem.id === otherUserId);
-            return {
-              senderName: msg.senderName || (m ? m.name : 'Admin'),
-              text: msg.text,
-              recipientUser: m || { id: otherUserId, name: msg.senderName }
-            };
-          });
-          addN(`Pesan baru dari ${msg.senderName}`, 'info');
+        const checkUnreadMessages = async () => {
+          // 1. Check Broadcast
+          const bChatId = 'broadcast_admin';
+          const bLastRead = parseInt(localStorage.getItem('oac_last_read_' + bChatId) || '0');
+          const bSnap = await db.ref('chats/' + bChatId + '/messages').orderByChild('timestamp').startAfter(bLastRead).once('value');
+          let bCount = 0;
+          bSnap.forEach(child => { if (child.val().senderId !== currentUser.id) bCount++; });
+          if (bCount > 0) newUnread['ALL'] = bCount;
+
+          // 2. Check 1-on-1
+          for (const m of members) {
+            if (m.id !== currentUser.id) {
+              const cId = [currentUser.id, m.id].sort().join('_');
+              const lastRead = parseInt(localStorage.getItem('oac_last_read_' + cId) || '0');
+              const cSnap = await db.ref('chats/' + cId + '/messages').orderByChild('timestamp').startAfter(lastRead).once('value');
+              let count = 0;
+              cSnap.forEach(child => { if (child.val().senderId !== currentUser.id) count++; });
+              if (count > 0) newUnread[m.id] = count;
+            }
+          }
+          setUnreadChats(newUnread);
+          setupLiveListeners();
         };
 
-        // 1. Listener Broadcast
-        const broadcastId = 'broadcast_admin';
-        const bRef = db.ref('chats/' + broadcastId + '/messages').orderByChild('timestamp').startAfter(baseTime);
-        const bHandler = (snap) => handleNewMessage(broadcastId, 'ALL', snap.val());
-        bRef.on('child_added', bHandler);
-        listeners.push(() => bRef.off('child_added', bHandler));
+        const setupLiveListeners = () => {
+          const handleNewMessage = (chatId, otherUserId, msg) => {
+            if (msg.senderId === currentUser.id) return; // Abaikan pesan kita sendiri
+            
+            // Jika chat sedang dibuka untuk user ini, update last read time
+            if (showChatModalRef.current && activeChatIdRef.current === chatId) {
+              localStorage.setItem('oac_last_read_' + chatId, Date.now());
+              return;
+            }
+            
+            // Tambah jumlah pesan belum dibaca
+            setUnreadChats(prev => ({ ...prev, [otherUserId]: (prev[otherUserId] || 0) + 1 }));
+            
+            // Munculkan pop-up notifikasi (hanya jika tidak ada pop-up lain yang sedang aktif)
+            setIncomingMessageAlert(prev => {
+              if (prev) return prev; 
+              const m = membersRef.current.find(mem => mem.id === otherUserId);
+              return {
+                senderName: msg.senderName || (m ? m.name : 'Admin'),
+                text: msg.text,
+                recipientUser: m || { id: otherUserId, name: msg.senderName }
+              };
+            });
+            addN(`Pesan baru dari ${msg.senderName}`, 'info');
+          };
 
-        // 2. Listener Chat 1-on-1
-        members.forEach(m => {
-          if (m.id !== currentUser.id) {
-            const chatId = [currentUser.id, m.id].sort().join('_');
-            const cRef = db.ref('chats/' + chatId + '/messages').orderByChild('timestamp').startAfter(baseTime);
-            const cHandler = (snap) => handleNewMessage(chatId, m.id, snap.val());
-            cRef.on('child_added', cHandler);
-            listeners.push(() => cRef.off('child_added', cHandler));
-          }
-        });
+          // Listener Broadcast
+          const broadcastId = 'broadcast_admin';
+          const bRef = db.ref('chats/' + broadcastId + '/messages').orderByChild('timestamp').startAfter(baseTime);
+          const bHandler = (snap) => handleNewMessage(broadcastId, 'ALL', snap.val());
+          bRef.on('child_added', bHandler);
+          listeners.push(() => bRef.off('child_added', bHandler));
+
+          // Listener Chat 1-on-1
+          members.forEach(m => {
+            if (m.id !== currentUser.id) {
+              const chatId = [currentUser.id, m.id].sort().join('_');
+              const cRef = db.ref('chats/' + chatId + '/messages').orderByChild('timestamp').startAfter(baseTime);
+              const cHandler = (snap) => handleNewMessage(chatId, m.id, snap.val());
+              cRef.on('child_added', cHandler);
+              listeners.push(() => cRef.off('child_added', cHandler));
+            }
+          });
+        };
+
+        checkUnreadMessages();
 
         return () => listeners.forEach(fn => fn());
       }, [currentUser, members]);
@@ -632,9 +665,14 @@
         let chatId;
         if (recipient.id === 'ALL') { chatId = 'broadcast_admin'; } 
         else { const uids = [currentUser.id, recipient.id].sort(); chatId = uids.join('_'); }
-        setActiveChatUser(recipient); setActiveChatId(chatId); setShowChatModal(true);
-        // Reset jumlah pesan belum dibaca untuk user ini
+        
+        setActiveChatUser(recipient); 
+        setActiveChatId(chatId); 
+        setShowChatModal(true);
+        
+        // Reset jumlah pesan belum dibaca untuk user ini & update localStorage
         setUnreadChats(prev => ({ ...prev, [recipient.id]: 0 }));
+        localStorage.setItem('oac_last_read_' + chatId, Date.now());
       };
 
       const closeChat = () => { setShowChatModal(false); setActiveChatId(null); setActiveChatUser(null); setChatMessages([]); };
@@ -765,7 +803,7 @@
                         <div className="flex items-center justify-end space-x-2 mt-1 relative">
                           <span className={`text-[9px] ${me?'text-white/70':'text-slate-400'}`}>{new Date(m.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</span>
                           <button onClick={() => setShowEmojiFor(showEmojiFor === m.id ? null : m.id)} className={`p-1 rounded-full hover:bg-black/10 ${me?'text-white/80':'text-slate-400'}`}><I.Smile className="w-3.5 h-3.5" /></button>
-                          {showEmojiFor === m.id && (<div className={`absolute -top-10 ${me?'right-0':'left-0'} bg-white shadow-lg rounded-full px-2 py-1 flex gap-1 z=50 border border-slate-100`}>{EMOJIS.map(em => <button key={em} onClick={() => toggleReaction(m.id, em)} className="text-lg hover:scale-125 transition">{em}</button>)}</div>)}
+                          {showEmojiFor === m.id && (<div className={`absolute -top-10 ${me?'right-0':'left-0'} bg-white shadow-lg rounded-full px-2 py-1 flex gap-1 z-50 border border-slate-100`}>{EMOJIS.map(em => <button key={em} onClick={() => toggleReaction(m.id, em)} className="text-lg hover:scale-125 transition">{em}</button>)}</div>)}
                           <button onClick={() => handleReplyClick(m)} className={`p-1 rounded-full hover:bg-black/10 ${me?'text-white/80':'text-slate-400'}`}><I.ReplyIcon className="w-3.5 h-3.5" /></button>
                           {currentUser.role === 'Admin' && (<div className="flex space-x-1 ml-1 border-l border-white/20 pl-2"><button onClick={() => { setEditingThreadId(m.id); setEditingThreadMsg(m.message); setShowEditThreadModal(true); }} className={`text-[9px] ${me?'text-white/80 hover:text-white':'text-slate-400 hover:text-blue-500'}`}>Edit</button><button onClick={() => handleDeleteThread(m.id, false, activeThread.id)} className={`text-[9px] ${me?'text-white/80 hover:text-white':'text-slate-400 hover:text-rose-500'}`}>Hapus</button></div>)}
                         </div>
@@ -919,7 +957,7 @@
                 <div className="flex items-center space-x-2 relative">
                   <button onClick={()=>setShowNotifPanel(!showNotifPanel)} className="relative p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition text-slate-600 active:scale-90"><I.Bell />{un>0&&<span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">{un}</span>}</button>
                   <button onClick={()=>out()} className="p-2 rounded-full bg-rose-50 border border-rose-200 hover:bg-rose-100 transition text-rose-600 active:scale-90" title="Keluar"><I.LogOut /></button>
-                  {showNotifPanel && ( <div className="absolute top-12 right-0 w-80 max-h-[70vh] bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 flex flex-col overflow-hidden animate-scale-in"><div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"><h3 className="font-bold text-sm text-slate-900">Pusat Notifikasi</h3><button onClick={()=>setNotifications(notifications.map(n=>({...n,read:true})))} className="text-[10px] font-bold text-amber-500 hover:underline">Tandai dibaca</button></div><div className="flex-1 overflow-y-auto scrollbar-none bg-white">{notifications.length===0?<div className="p-8 text-center text-xs text-slate-400 font-medium">Tidak ada notifikasi</div>:notifications.map(n=>(<div key={n.id} className={`p-3 border-b border-slate-50 flex items-start space-x-3 transition ${!n.read?'bg-amber-50/40':'bg-white'}`}><div className="mt-0.5">{n.type==='success'&&<I.CheckCircle2 className="text-emerald-500 w-4 h-4" />}{n.type==='error'&&<I.XCircle className="text-rose-500 w-4 h-4" />}{n.type==='info'&&<I.Info className="text-blue-500 w-4 h-4" />}</div><div className="flex-1"><p className={`text-xs leading-relaxed ${!n.read?'text-slate-900 font-semibold':'text-slate-600 font-medium'}`}>{n.message}</p><p className="text-[9px] text-slate-400 mt-1 font-semibold">{n.time}</p></div>{!n.read&&<div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>}</div>))}</div></div> )}
+                  {showNotifPanel && ( <div className="absolute top-12 right-0 w-80 max-h-[70vh] bg-white rounded-2xl shadow-2xl border border-slate-101 z-40 flex flex-col overflow-hidden animate-scale-in"><div className="p-3 border-b border-slate-101 flex justify-between items-center bg-slate-50/50"><h3 className="font-bold text-sm text-slate-900">Pusat Notifikasi</h3><button onClick={()=>setNotifications(notifications.map(n=>({...n,read:true})))} className="text-[10px] font-bold text-amber-500 hover:underline">Tandai dibaca</button></div><div className="flex-1 overflow-y-auto scrollbar-none bg-white">{notifications.length===0?<div className="p-8 text-center text-xs text-slate-400 font-medium">Tidak ada notifikasi</div>:notifications.map(n=>(<div key={n.id} className={`p-3 border-b border-slate-50 flex items-start space-x-3 transition ${!n.read?'bg-amber-50/40':'bg-white'}`}><div className="mt-0.5">{n.type==='success'&&<I.CheckCircle2 className="text-emerald-500 w-4 h-4" />}{n.type==='error'&&<I.XCircle className="text-rose-500 w-4 h-4" />}{n.type==='info'&&<I.Info className="text-blue-500 w-4 h-4" />}</div><div className="flex-1"><p className={`text-xs leading-relaxed ${!n.read?'text-slate-900 font-semibold':'text-slate-600 font-medium'}`}>{n.message}</p><p className="text-[9px] text-slate-400 mt-1 font-semibold">{n.time}</p></div>{!n.read&&<div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>}</div>))}</div></div> )}
                 </div>
               </div>
 
@@ -933,7 +971,7 @@
                       </div>
                     )}
                     {activeTab==='events' && ( <div className="space-y-4"><h3 className="text-lg font-black text-slate-900">Event Mendatang</h3>{events.filter(ev => ev.isVisible !== false).length > 0 ? events.filter(ev => ev.isVisible !== false).map(ev => { const isCheckedIn = ev.checkins && ev.checkins[currentUser.id]; const checkinCount = ev.checkins ? Object.keys(ev.checkins).length : 0; return ( <EventCard key={ev.id} event={ev} checkinCount={checkinCount} isCheckedIn={isCheckedIn} onCheckin={() => toggleCheckinEvent(ev.id, isCheckedIn)} totalMembers={totalApprovedMembers} onViewCheckins={openCheckinsModal} onViewDetails={openEventDetailModal} /> ); }) : <div className="text-center py-10 text-slate-400 text-xs italic">Belum ada event mendatang.</div>}</div> )}
-                    {activeTab==='garage' && ( <div className="space-y-4"><div className="flex justify-between items-center"><h3 className="text-lg font-black text-slate-900">Garasi Saya</h3>{mb.length < 2 && (<button onClick={() => setShowAddBikeModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95 shadow-md"><I.Plus className="w-3 h-3" /><span>Tambah Motor</span></button>)}</div>{mb.length>0?mb.map(b=>(<div key={b.id} className="bg-white/50 border border-white/60 rounded-2xl p-4 flex flex-col space-y-3 shadow-sm"><div className="flex items-center space-x-4"><BikeIcon type={b.type} className="w-12 h-12 text-amber-500 flex-shrink-0" /><div className="flex-1"><div className="flex items-center space-x-2"><h4 className="font-bold text-sm text-slate-900">{b.name}</h4>{b.isPrimary && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">Utama</span>}</div><p className="text-[11px] text-slate-500 font-semibold">{b.plate} • {b.type} • {b.engine}</p></div><button onClick={()=>{setEditingBike(b);setShowEditBikeModal(true);}} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition active:scale-95"><I.Edit className="w-5 h-5" /></button></div>{!b.isPrimary && (<button onClick={() => setPrimaryBike(b.id)} className="text-[10px] bg-slate-100 text-slate-700 font-bold py-2 rounded-xl active:scale-95 transition hover:bg-slate-200">Jadikan Motor Utama</button>)}</div>)):<div className="text-center py-10 text-slate-400 text-xs italic">Motor belum terdaftar di garasi.</div>}<div className="bg-white/50 border border-white/60 rounded-2xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="font-bold text-sm text-slate-900 flex items-center"><I.ShieldCheck className="w-4 h-4 text-amber-500 mr-2" /> Safety Gear</h4><button onClick={()=>{ setEditingGear(userGears || {}); setShowEditGearModal(true); }} className="text-[10px] bg-blue-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Edit className="w-3 h-3" /> <span>Edit Gear</span></button></div><div className="space-y-3 text-xs text-slate-600 font-medium"><div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Helm</span><span>{userGears?.helmetBrand ? `${userGears.helmetBrand} (${userGears.helmetModel || '-'})` : 'Belum diisi'}</span></div><div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Jaket</span><span>{userGears?.jacketMaterial ? `${userGears.jacketMaterial} (${userGears.jacketModel || '-'})` : 'Belum diisi'}</span></div><div className="flex justify-between"><span className="text-slate-400 font-bold">Sepatu</span><span>{userGears?.shoeType ? `${userGears.shoeType} (${userGears.shoeModel || '-'})` : 'Belum diisi'}</span></div></div></div></div> )}
+                    {activeTab==='garage' && ( <div className="space-y-4"><div className="flex justify-between items-center"><h3 className="text-lg font-black text-slate-900">Garasi Saya</h3>{mb.length < 2 && (<button onClick={() => setShowAddBikeModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95 shadow-md"><I.Plus className="w-3 h-3" /><span>Tambah Motor</span></button>)}</div>{mb.length>0?mb.map(b=>(<div key={b.id} className="bg-white/50 border border-white/60 rounded-2xl p-4 flex flex-col space-y-3 shadow-sm"><div className="flex items-center space-x-4"><BikeIcon type={b.type} className="w-12 h-12 text-amber-500 flex-shrink-0" /><div className="flex-1"><div className="flex items-center space-x-2"><h4 className="font-bold text-sm text-slate-900">{b.name}</h4>{b.isPrimary && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">Utama</span>}</div><p className="text-[11px] text-slate-500 font-semibold">{b.plate} • {b.type} • {b.engine}</p></div><button onClick={()=>{setEditingBike(b);setShowEditBikeModal(true);}} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition active:scale-95"><I.Edit className="w-5 h-5" /></button></div>{!b.isPrimary && (<button onClick={() => setPrimaryBike(b.id)} className="text-[10px] bg-slate-100 text-slate-700 font-bold py-2 rounded-xl active:scale-95 transition hover:bg-slate-200">Jadikan Motor Utama</button>)}</div>)):<div className="text-center py-10 text-slate-400 text-xs italic">Motor belum terdaftar di garasi.</div>}<div className="bg-white/50 border border-white/60 rounded-2xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="font-bold text-sm text-slate-900 flex items-center"><I.ShieldCheck className="w-4 h-4 text-amber-500 mr-2" /> Safety Gear</h4><button onClick={()=>{ setEditingGear(userGears || {}); setShowEditGearModal(true); }} className="text-[10px] bg-blue-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Edit className="w-3 h-3" /> <span>Edit Gear</span></button></div><div className="space-y-3 text-xs text-slate-600 font-medium"><div className="flex justify-between border-b border-slate-101 pb-2"><span className="text-slate-400 font-bold">Helm</span><span>{userGears?.helmetBrand ? `${userGears.helmetBrand} (${userGears.helmetModel || '-'})` : 'Belum diisi'}</span></div><div className="flex justify-between border-b border-slate-101 pb-2"><span className="text-slate-400 font-bold">Jaket</span><span>{userGears?.jacketMaterial ? `${userGears.jacketMaterial} (${userGears.jacketModel || '-'})` : 'Belum diisi'}</span></div><div className="flex justify-between"><span className="text-slate-400 font-bold">Sepatu</span><span>{userGears?.shoeType ? `${userGears.shoeType} (${userGears.shoeModel || '-'})` : 'Belum diisi'}</span></div></div></div></div> )}
                     {activeTab==='members' && ( 
                       <div className="space-y-4">
                         <h3 className="text-lg font-black text-slate-900">Anggota Club</h3>
@@ -951,7 +989,7 @@
                           <button onClick={() => openChat({ id: 'ALL', name: 'Info & Broadcast' })} className="relative p-2 bg-blue-500 text-white rounded-xl active:scale-95 shadow-sm">
                             <I.MessageSquare className="w-5 h-5" />
                             {(unreadChats['ALL'] || 0) > 0 && (
-                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
                                 {unreadChats['ALL']}
                               </span>
                             )}
@@ -985,7 +1023,7 @@
                                         <button onClick={() => openChat(m)} className="relative p-1.5 bg-blue-100 text-blue-600 rounded-full active:scale-95 transition">
                                           <I.MessageSquare className="w-3.5 h-3.5" />
                                           {(unreadChats[m.id] || 0) > 0 && (
-                                            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                                            <span className="absolute -top-1 -right-1 min-w-[14px] h-3.5 px-1 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
                                               {unreadChats[m.id]}
                                             </span>
                                           )}
@@ -1009,7 +1047,7 @@
                                   {m.touringRole && <p className="text-[10px] text-amber-600 font-bold mt-1 flex items-center"><I.Award className="w-3 h-3 mr-1"/> {m.touringRole}</p>}
                                 </div>
                               </div>
-                              <div className="mt-2 pt-2 border-t border-slate-100">
+                              <div className="mt-2 pt-2 border-t border-slate-101">
                                 {m.bikes && m.bikes.length > 0 ? (
                                   m.bikes.map(bike => (
                                     <div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2 mb-1">
@@ -1099,12 +1137,12 @@
                             <button onClick={()=>{ let emailUser = mpd.email || ''; let emailDomain = '@gmail.com'; if (mpd.email && mpd.email.includes('@')) { const parts = mpd.email.split('@'); emailUser = parts[0]; emailDomain = '@' + parts[1]; } setEditingProfile({ ...mpd, email: emailUser, emailDomain: emailDomain }); setShowEditProfileModal(true); }} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Edit className="w-3 h-3" /> <span>Edit Data</span></button>
                           </div>
                           <div className="space-y-2 text-xs text-slate-600 font-medium">
-                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Nama Lengkap</span><span>{mpd.name}</span></div>
-                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Jenis Kelamin</span><span>{mpd.gender}</span></div>
-                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Kota Asal</span><span>{mpd.city}</span></div>
-                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Email</span><span className="truncate ml-2">{mpd.email}</span></div>
-                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Status Berkendara</span><span>{mpd.ridingStatus}</span></div>
-                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">No. HP</span><span>{mpd.phone}</span></div>
+                            <div className="flex justify-between border-b border-slate-101 pb-2"><span className="text-slate-400 font-bold">Nama Lengkap</span><span>{mpd.name}</span></div>
+                            <div className="flex justify-between border-b border-slate-101 pb-2"><span className="text-slate-400 font-bold">Jenis Kelamin</span><span>{mpd.gender}</span></div>
+                            <div className="flex justify-between border-b border-slate-101 pb-2"><span className="text-slate-400 font-bold">Kota Asal</span><span>{mpd.city}</span></div>
+                            <div className="flex justify-between border-b border-slate-101 pb-2"><span className="text-slate-400 font-bold">Email</span><span className="truncate ml-2">{mpd.email}</span></div>
+                            <div className="flex justify-between border-b border-slate-101 pb-2"><span className="text-slate-400 font-bold">Status Berkendara</span><span>{mpd.ridingStatus}</span></div>
+                            <div className="flex justify-between border-b border-slate-101 pb-2"><span className="text-slate-400 font-bold">No. HP</span><span>{mpd.phone}</span></div>
                             <div className="flex justify-between"><span className="text-slate-400 font-bold">Journey Poin</span><span className="font-bold text-indigo-600">{mpd.points || 0} Pts</span></div>
                           </div>
                         </div>
@@ -1114,7 +1152,7 @@
                 ) : (
                   <div className="space-y-6">
                     <h3 className="text-lg font-black text-slate-900">Dashboard Admin</h3>
-                    <div className="bg-slate-100 p-1 rounded-2xl flex shadow-inner">
+                    <div className="bg-slate-101 p-1 rounded-2xl flex shadow-inner">
                       <button onClick={()=>setAdminTab('home')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='home'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Beranda</button>
                       <button onClick={()=>setAdminTab('members')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='members'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Anggota</button>
                       <button onClick={()=>setAdminTab('events')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='events'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Event</button>
@@ -1122,8 +1160,8 @@
                       <button onClick={()=>setAdminTab('settings')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='settings'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Pengaturan</button>
                     </div>
                     <div key={adminTab} className="animate-slide-up">
-                      {adminTab === 'home' && ( <div className="space-y-6"><SummaryCards /><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-100 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
-                      {adminTab === 'events' && ( <div className="space-y-6"><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4><form onSubmit={createEvent} className="space-y-3"><FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required /><FormSelect label="Jenis Event & Bobot Poin" value={newEvent.eventType} onChange={(e)=>setNewEvent({...newEvent, eventType: e.target.value})} required><option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option><option value="touring_1day">Touring 1 Hari (+5 Pts)</option><option value="touring_member">Touring Tempat Anggota (+2 Pts)</option></FormSelect><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={newEvent.timestamp} onChange={(e)=>setNewEvent({...newEvent, timestamp: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label><textarea value={newEvent.description} onChange={(e)=>setNewEvent({...newEvent, description: e.target.value})} rows="4" required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none" placeholder="Detail rendezvous, rute, dan informasi penting lainnya..."></textarea></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95 flex items-center justify-center space-x-1"><I.Plus className="w-4 h-4" /> <span>Publikasikan Event</span></button></form></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Star className="w-4 h-4 text-amber-500" /> <span>Approval Poin Event</span></h4><div className="space-y-3">{events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).length > 0 ? events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).map(ev => { const eventInfo = getEventPoints(ev.eventType); const pendingMembers = Object.keys(ev.checkins).filter(uid => !ev.ptsApproved || !ev.ptsApproved[uid]); if(pendingMembers.length === 0) return null; return ( <div key={ev.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-2"><div className="flex justify-between items-center mb-2"><h5 className="font-bold text-xs text-slate-900 truncate">{ev.title}</h5><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${eventInfo.color}`}>+{eventInfo.pts} Pts</span></div><div className="space-y-2">{pendingMembers.map(uid => { const m = members.find(mem => mem.id === uid); const isReady = ev.readiness && ev.readiness[uid] && Object.keys(ev.readiness[uid]).length === READINESS_ITEMS.length; return ( <div key={uid} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100"><div className="flex items-center space-x-2"><MemberAvatar user={m || {}} size="w-7 h-7" textSize="text-xs" /><span className="text-[11px] font-bold text-slate-800">{m ? m.name : 'Anggota'}</span>{isReady && <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full font-bold">Siap</span>}</div><button onClick={() => approveMemberPoints(ev.id, uid, eventInfo.pts)} className="text-[10px] bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg active:scale-95 transition">Approve Poin</button></div> ); })}</div></div> ); }) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada poin event yang perlu di-approve.</p>}</div></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Calendar className="w-4 h-4 text-amber-500" /> <span>Daftar Event Mendatang</span></h4><div className="space-y-3">{events.length > 0 ? events.map(ev => ( <EventCard key={ev.id} event={ev} isAdmin={true} onDelete={() => deleteEvent(ev.id)} onEdit={() => handleEditEventClick(ev)} onToggleVisibility={toggleEventVisibility} checkinCount={ev.checkins ? Object.keys(ev.checkins).length : 0} totalMembers={totalApprovedMembers} onViewCheckins={openCheckinsModal} onViewDetails={openEventDetailModal} /> )) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada event.</p>}</div></div></div> )}
+                      {adminTab === 'home' && ( <div className="space-y-6"><SummaryCards /><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-101 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-101 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
+                      {adminTab === 'events' && ( <div className="space-y-6"><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4><form onSubmit={createEvent} className="space-y-3"><FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required /><FormSelect label="Jenis Event & Bobot Poin" value={newEvent.eventType} onChange={(e)=>setNewEvent({...newEvent, eventType: e.target.value})} required><option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option><option value="touring_1day">Touring 1 Hari (+5 Pts)</option><option value="touring_member">Touring Tempat Anggota (+2 Pts)</option></FormSelect><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={newEvent.timestamp} onChange={(e)=>setNewEvent({...newEvent, timestamp: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label><textarea value={newEvent.description} onChange={(e)=>setNewEvent({...newEvent, description: e.target.value})} rows="4" required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none" placeholder="Detail rendezvous, rute, dan informasi penting lainnya..."></textarea></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95 flex items-center justify-center space-x-1"><I.Plus className="w-4 h-4" /> <span>Publikasikan Event</span></button></form></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Star className="w-4 h-4 text-amber-500" /> <span>Approval Poin Event</span></h4><div className="space-y-3">{events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).length > 0 ? events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).map(ev => { const eventInfo = getEventPoints(ev.eventType); const pendingMembers = Object.keys(ev.checkins).filter(uid => !ev.ptsApproved || !ev.ptsApproved[uid]); if(pendingMembers.length === 0) return null; return ( <div key={ev.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-2"><div className="flex justify-between items-center mb-2"><h5 className="font-bold text-xs text-slate-900 truncate">{ev.title}</h5><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${eventInfo.color}`}>+{eventInfo.pts} Pts</span></div><div className="space-y-2">{pendingMembers.map(uid => { const m = members.find(mem => mem.id === uid); const isReady = ev.readiness && ev.readiness[uid] && Object.keys(ev.readiness[uid]).length === READINESS_ITEMS.length; return ( <div key={uid} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-101"><div className="flex items-center space-x-2"><MemberAvatar user={m || {}} size="w-7 h-7" textSize="text-xs" /><span className="text-[11px] font-bold text-slate-800">{m ? m.name : 'Anggota'}</span>{isReady && <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full font-bold">Siap</span>}</div><button onClick={() => approveMemberPoints(ev.id, uid, eventInfo.pts)} className="text-[10px] bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg active:scale-95 transition">Approve Poin</button></div> ); })}</div></div> ); }) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada poin event yang perlu di-approve.</p>}</div></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Calendar className="w-4 h-4 text-amber-500" /> <span>Daftar Event Mendatang</span></h4><div className="space-y-3">{events.length > 0 ? events.map(ev => ( <EventCard key={ev.id} event={ev} isAdmin={true} onDelete={() => deleteEvent(ev.id)} onEdit={() => handleEditEventClick(ev)} onToggleVisibility={toggleEventVisibility} checkinCount={ev.checkins ? Object.keys(ev.checkins).length : 0} totalMembers={totalApprovedMembers} onViewCheckins={openCheckinsModal} onViewDetails={openEventDetailModal} /> )) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada event.</p>}</div></div></div> )}
                       {adminTab === 'members' && ( 
                         <div className="space-y-4">
                           <div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900">Data Lengkap Anggota & Safety Gear</h4></div>
@@ -1140,7 +1178,7 @@
                             <button onClick={() => openChat({ id: 'ALL', name: 'Broadcast Message' })} className="relative p-2 bg-blue-500 text-white rounded-xl active:scale-95 shadow-sm">
                               <I.MessageSquare className="w-5 h-5" />
                               {(unreadChats['ALL'] || 0) > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
                                   {unreadChats['ALL']}
                                 </span>
                               )}
@@ -1152,7 +1190,7 @@
                             const memberJourney = m.points || 0; 
                             const memberPotentialPts = getMemberPotentialPoints(m.id); 
                             return ( 
-                              <div key={m.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2">
+                              <div key={m.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2">
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center space-x-2">
                                     <MemberAvatar user={m} size="w-9 h-9" />
@@ -1179,16 +1217,16 @@
                                     <button onClick={() => openChat(m)} className="relative p-1.5 bg-blue-100 text-blue-600 rounded-full active:scale-95 transition">
                                       <I.MessageSquare className="w-3.5 h-3.5" />
                                       {(unreadChats[m.id] || 0) > 0 && (
-                                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                                        <span className="absolute -top-1 -right-1 min-w-[14px] h-3.5 px-1 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
                                           {unreadChats[m.id]}
                                         </span>
                                       )}
                                     </button>
                                     <button onClick={()=>{ setEditingTouringMember(m); setSelectedTouringRole(m.touringRole||''); setShowEditTouringModal(true); }} className="text-[10px] bg-amber-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Award className="w-3 h-3"/><span>Penugasan</span></button>
-                                    <button onClick={()=>reqA('delete',m)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95"><I.XCircle className="w-4 h-4" /></button>
+                                    <button onClick={()=>reqA('delete',m)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.XCircle className="w-4 h-4" /></button>
                                   </div>
                                 </div>
-                                <div className="border-t border-slate-100 pt-2 space-y-2 text-[10px] text-slate-600">
+                                <div className="border-t border-slate-101 pt-2 space-y-2 text-[10px] text-slate-600">
                                   <div className="grid grid-cols-2 gap-2">
                                     <div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div>
                                     <div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div>
@@ -1247,7 +1285,7 @@
                     <div className="grid grid-cols-2 gap-2 p-2 bg-slate-50/50 border border-white/60 rounded-xl backdrop-blur-md">
                       {READINESS_ITEMS.map(item => { const isChecked = localReadiness[item.key] || false; return ( <label key={item.key} className={`flex items-start space-x-1.5 cursor-pointer p-2 rounded-lg border transition-all duration-200 ${isChecked ? 'bg-emerald-50/90 border-emerald-200/80 shadow-sm' : 'bg-white/70 border-white/80 hover:bg-white'}`}><input type="checkbox" checked={isChecked} onChange={(e) => { setLocalReadiness(prev => ({ ...prev, [item.key]: e.target.checked })); }} className="mt-0.5 w-4 h-4 rounded-full text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0 border-slate-300 flex-shrink-0 appearance-none checked:bg-emerald-500 checked:border-transparent" /><span className="text-[10px] text-slate-700 font-medium leading-tight">{item.label}</span></label> ); })}
                     </div>
-                    <div className="mt-3 p-2 bg-amber-50/80 border border-amber-100/80 rounded-lg backdrop-blur-md"><p className="text-[10px] font-bold text-amber-700">Catatan Tambahan:</p><p className="text-[10px] text-amber-600 font-medium mt-1">Awal perjalanan touring pastikan bensin di tanki motor telah terisi minimal untuk dapat menempuh jarak 30Km</p></div>
+                    <div className="mt-3 p-2 bg-amber-50/80 border border-amber-101/80 rounded-lg backdrop-blur-md"><p className="text-[10px] font-bold text-amber-700">Catatan Tambahan:</p><p className="text-[10px] text-amber-600 font-medium mt-1">Awal perjalanan touring pastikan bensin di tanki motor telah terisi minimal untuk dapat menempuh jarak 30Km</p></div>
                     <button onClick={submitReadiness} disabled={!READINESS_ITEMS.every(item => localReadiness[item.key])} className={`w-full mt-4 font-bold text-xs py-3 rounded-xl flex items-center justify-center space-x-1 transition ${READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'bg-emerald-500 text-white active:scale-95 shadow-md' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}><I.CheckCircle2 className="w-4 h-4" /> <span>{READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'Simpan & Konfirmasi Kesiapan' : 'Centang Semua Checklist'}</span></button>
                   </div>
                 )}
@@ -1280,7 +1318,7 @@
                         )}
                         {m?.className && <span className="text-[8px] bg-slate-900 text-amber-400 font-bold px-1.5 py-0.5 rounded-full">{m.className}</span>}
                         {currentUser.role === 'Admin' && (
-                          <button onClick={() => adminManageCheckin(activeEventCheckins.id, uid, true)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95">
+                          <button onClick={() => adminManageCheckin(activeEventCheckins.id, uid, true)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95">
                             <I.Trash className="w-3 h-3" />
                           </button>
                         )}
@@ -1292,7 +1330,7 @@
                 </div>
 
                 {currentUser.role === 'Admin' && (
-                  <div className="mt-4 pt-4 border-t border-slate-100">
+                  <div className="mt-4 pt-4 border-t border-slate-101">
                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">Tambah Peserta Manual:</p>
                     <div className="relative">
                       <select 
@@ -1373,7 +1411,7 @@
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowPhotoModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Camera className="w-5 h-5 text-amber-500" /> Ubah Foto Profil</h3>
-                <div className="bg-slate-100 p-1 rounded-2xl flex shadow-inner mb-4">
+                <div className="bg-slate-101 p-1 rounded-2xl flex shadow-inner mb-4">
                   <button onClick={()=>setPhotoTab('avatar')} className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${photoTab==='avatar'?'bg-white text-slate-900 shadow-md':'text-slate-500'}`}>Pilih Avatar</button>
                   <button onClick={()=>setPhotoTab('upload')} className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${photoTab==='upload'?'bg-white text-slate-900 shadow-md':'text-slate-500'}`}>Unggah Foto</button>
                 </div>
@@ -1440,7 +1478,7 @@
                   <div className="bg-blue-50 p-2 rounded-xl text-[10px] font-bold text-blue-600 mb-2 mt-4">JACKET SAFETY</div>
                   <FormSelect label="Bahan Jacket" value={editingGear.jacketMaterial || ''} onChange={(e)=>setEditingGear({...editingGear, jacketMaterial: e.target.value})}><option value="">Pilih Bahan</option><option>Kulit</option><option>Denim</option><option>Katun</option><option>Parasut</option></FormSelect>
                   <FormSelect label="Model Jacket" value={editingGear.jacketModel || ''} onChange={(e)=>setEditingGear({...editingGear, jacketModel: e.target.value})}><option value="">Pilih Model</option><option>Long sleeve</option><option>Half sleeve</option><option>Rompi</option></FormSelect>
-                  <div className="bg-slate-100 p-2 rounded-xl text-[10px] font-bold text-slate-600 mb-2 mt-4">SEPATU SAFETY</div>
+                  <div className="bg-slate-101 p-2 rounded-xl text-[10px] font-bold text-slate-600 mb-2 mt-4">SEPATU SAFETY</div>
                   <FormSelect label="Jenis Sepatu" value={editingGear.shoeType || ''} onChange={(e)=>setEditingGear({...editingGear, shoeType: e.target.value})}><option value="">Pilih Jenis Sepatu</option><option>Boots</option><option>Sneaker</option><option>Pantofel</option></FormSelect>
                   <FormSelect label="Model Sepatu" value={editingGear.shoeModel || ''} onChange={(e)=>setEditingGear({...editingGear, shoeModel: e.target.value})}><option value="">Pilih Model Sepatu</option><option>Kulit</option><option>Kanvas</option><option>Mesh</option></FormSelect>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Safety Gear</button>
@@ -1469,7 +1507,7 @@
                   <div className="flex justify-between"><span className="font-bold text-slate-500">Plat Nomor</span><span>{confirmRegData.bikePlate}</span></div>
                   <div className="flex justify-between"><span className="font-bold text-slate-500">Spek</span><span>{confirmRegData.bikeCategory} • {confirmRegData.bikeEngine}</span></div>
                 </div>
-                <div className="bg-rose-50 border border-rose-100 rounded-2xl p-3 mb-4"><p className="text-[10px] font-black text-rose-600 uppercase mb-1.5 flex items-center"><I.ShieldCheck className="w-3.5 h-3.5 mr-1" /> Aturan & Kode Etik Anggota</p><ul className="text-[10px] text-rose-700 font-medium space-y-1 list-disc list-inside leading-relaxed"><li>Wajib mematuhi rambu dan hukum lalu lintas yang berlaku.</li><li>Mengutamakan keselamatan berkendara (Safety Riding) dan dilarang mengebut di jalan umum.</li><li>Menjaga nama baik komunitas serta menjaga kekompakan antar anggota.</li><li>Data yang diinput wajib benar. Jika terbukti palsu, keanggotaan akan dibatalkan.</li></ul></div>
+                <div className="bg-rose-50 border border-rose-101 rounded-2xl p-3 mb-4"><p className="text-[10px] font-black text-rose-600 uppercase mb-1.5 flex items-center"><I.ShieldCheck className="w-3.5 h-3.5 mr-1" /> Aturan & Kode Etik Anggota</p><ul className="text-[10px] text-rose-700 font-medium space-y-1 list-disc list-inside leading-relaxed"><li>Wajib mematuhi rambu dan hukum lalu lintas yang berlaku.</li><li>Mengutamakan keselamatan berkendara (Safety Riding) dan dilarang mengebut di jalan umum.</li><li>Menjaga nama baik komunitas serta menjaga kekompakan antar anggota.</li><li>Data yang diinput wajib benar. Jika terbukti palsu, keanggotaan akan dibatalkan.</li></ul></div>
                 <div className="grid grid-cols-2 gap-2"><button onClick={()=>{setShowConfirmRegModal(false);setConfirmRegData(null);}} className="w-full bg-slate-100 text-slate-600 font-bold text-xs py-3 rounded-xl active:scale-95 transition">Batal</button><button onClick={finalReg} className="w-full bg-gradient-to-r from-slate-800 to-amber-500 text-white font-bold text-xs py-3 rounded-xl active:scale-95 transition">OK, Setuju & Kirim</button></div>
               </div>
             </div>
@@ -1629,7 +1667,7 @@
                 )}
                 
                 {/* Info Hasil Cetak */}
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-4">
+                <div className="bg-blue-50 border border-blue-101 rounded-xl p-3 mb-4">
                   <div className="flex items-start space-x-2">
                     <I.Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
                     <div>
@@ -1688,7 +1726,7 @@
           {showChatModal && activeChatUser && (
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[70] flex items-end justify-center animate-fade-in" onClick={closeChat}>
               <div className="bg-white w-full max-w-md h-[85vh] rounded-t-[32px] shadow-2xl flex flex-col animate-scale-in" onClick={e=>e.stopPropagation()}>
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="p-4 border-b border-slate-101 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <button onClick={closeChat} className="p-1.5 rounded-full hover:bg-slate-100">
                       <I.ArrowLeft />
@@ -1710,7 +1748,7 @@
                     const isMe = msg.senderId === currentUser.id;
                     return (
                       <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-msg-in`}>
-                        <div className={`max-w-[75%] p-3 shadow-md ${isMe ? 'bg-[#007AFF] text-white rounded-3xl rounded-br-lg' : 'bg-white text-slate-900 border border-slate-100 rounded-3xl rounded-bl-lg'}`}>
+                        <div className={`max-w-[75%] p-3 shadow-md ${isMe ? 'bg-[#007AFF] text-white rounded-3xl rounded-br-lg' : 'bg-white text-slate-900 border border-slate-101 rounded-3xl rounded-bl-lg'}`}>
                           {!isMe && <p className={`text-[10px] font-bold mb-1 ${isMe ? 'text-white/80' : 'text-blue-500'}`}>{msg.senderName}</p>}
                           <p className="text-xs leading-relaxed">{msg.text}</p>
                           <p className={`text-[9px] mt-1 text-right ${isMe ? 'text-white/70' : 'text-slate-400'}`}>{new Date(msg.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
@@ -1720,7 +1758,7 @@
                   })}
                 </div>
 
-                <form onSubmit={sendMessage} className="p-3 bg-white border-t border-slate-100 flex space-x-2">
+                <form onSubmit={sendMessage} className="p-3 bg-white border-t border-slate-101 flex space-x-2">
                   <input
                     type="text"
                     value={newMessage}
