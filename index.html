@@ -348,6 +348,7 @@
       const cardRef = useRef(null); 
       const logoutTimerRef = useRef(null);
       const fileInputRef = useRef(null);
+      const chatScrollRef = useRef(null);
       const [showSplash, setShowSplash] = useState(true);
       const [splashFading, setSplashFading] = useState(false);
       const [regName, setRegName] = useState(''); const [regUsername, setRegUsername] = useState(''); const [regPassword, setRegPassword] = useState(''); const [regGender, setRegGender] = useState('Laki-laki'); const [regPhone, setRegPhone] = useState(''); const [regCity, setRegCity] = useState(''); const [regEmail, setRegEmail] = useState(''); const [regEmailDomain, setRegEmailDomain] = useState('@gmail.com'); const [regRidingStatus, setRegRidingStatus] = useState(''); const [regBikeBrand, setRegBikeBrand] = useState(''); const [regBikeModel, setRegBikeModel] = useState(''); const [regBikePlate, setRegBikePlate] = useState(''); const [regBikeCategory, setRegBikeCategory] = useState('Matic'); const [regBikeEngine, setRegBikeEngine] = useState('');
@@ -360,9 +361,11 @@
       const [showEditEventModal, setShowEditEventModal] = useState(false);
       const [editingEvent, setEditingEvent] = useState(null);
       const [showCheckinsModal, setShowCheckinsModal] = useState(false);
-      const [activeEventCheckins, setActiveEventCheckins] = useState(null);
+      const [activeEventCheckinsId, setActiveEventCheckinsId] = useState(null);
+      const activeEventCheckins = useMemo(() => events.find(e => e.id === activeEventCheckinsId), [events, activeEventCheckinsId]);
       const [showEventDetailModal, setShowEventDetailModal] = useState(false);
-      const [activeEventDetail, setActiveEventDetail] = useState(null);
+      const [activeEventDetailId, setActiveEventDetailId] = useState(null);
+      const activeEventDetail = useMemo(() => events.find(e => e.id === activeEventDetailId), [events, activeEventDetailId]);
       const [showMemberEventsModal, setShowMemberEventsModal] = useState(false);
       const [activeMemberEvents, setActiveMemberEvents] = useState(null);
       const [localReadiness, setLocalReadiness] = useState({});
@@ -394,6 +397,13 @@
       const [cardFormat, setCardFormat] = useState('jpg');
       const [isProcessing, setIsProcessing] = useState(false);
 
+      // State Chat
+      const [showChatModal, setShowChatModal] = useState(false);
+      const [activeChatUser, setActiveChatUser] = useState(null);
+      const [activeChatId, setActiveChatId] = useState(null);
+      const [chatMessages, setChatMessages] = useState([]);
+      const [newMessage, setNewMessage] = useState('');
+
       const touringRoles = ['Road Captain (RC)', 'Vorijder (VO)', 'Sweeper (SW)', 'Safety Officer (SO)', 'Technical Officer (TO)', 'Medical Officer (MO)'];
       const myMemberData = useMemo(() => members.find(m => m.id === currentUser?.id), [members, currentUser]);
       const mb = myMemberData?.bikes ? Object.keys(myMemberData.bikes).map(key => ({ id: key, ...myMemberData.bikes[key] })) : [];
@@ -401,7 +411,6 @@
       const primaryBike = mb.find(b => b.isPrimary) || mb[0];
       const primaryBikeText = primaryBike ? `${primaryBike.name} - ${primaryBike.engine}` : 'Belum ada motor utama';
 
-      // Hitung masa berlaku 1 tahun dari pendaftaran
       const mpd = currentUser; 
       const validThruDate = mpd && mpd.createdAt ? new Date(mpd.createdAt + (365 * 24 * 60 * 60 * 1000)) : new Date(new Date().setFullYear(new Date().getFullYear() + 1));
       const validThruText = validThruDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
@@ -434,6 +443,21 @@
         const storedSession = localStorage.getItem('oac_session');
         if (storedSession) { try { const session = JSON.parse(storedSession); if (session.expiresAt > Date.now()) { setCurrentUser(session.user); setUserGears(session.gears || {}); setActiveTab(session.user.role === 'Admin' ? 'admin_dashboard' : 'home'); if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); logoutTimerRef.current = setTimeout(() => out(false), session.expiresAt - Date.now()); } else { localStorage.removeItem('oac_session'); } } catch (e) { localStorage.removeItem('oac_session'); } }
       }, []);
+
+      // Listener untuk Chat Messages
+      useEffect(() => {
+        if (!activeChatId) return;
+        const chatRef = db.ref('chats/' + activeChatId + '/messages');
+        chatRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          const msgs = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a,b) => a.timestamp - b.timestamp) : [];
+          setChatMessages(msgs);
+          setTimeout(() => {
+            if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+          }, 100);
+        });
+        return () => chatRef.off();
+      }, [activeChatId]);
 
       const cityStats = useMemo(() => { const stats = {}; members.filter(m => m.status === 'approved' && m.city).forEach(m => { stats[m.city] = (stats[m.city] || 0) + 1; }); const cityArray = Object.keys(stats).map(city => ({ city, count: stats[city] })); cityArray.sort((a, b) => b.count - a.count); return cityArray; }, [members]);
       const totalApprovedMembers = useMemo(() => members.filter(m => m.status === 'approved').length, [members]);
@@ -502,12 +526,62 @@
       const handleEditEventClick = (ev) => { const date = new Date(ev.timestamp); const offset = date.getTimezoneOffset(); const localDate = new Date(date.getTime() - (offset * 60000)); const localDateString = localDate.toISOString().slice(0, 16); setEditingEvent({ ...ev, timestampLocal: localDateString, eventType: ev.eventType || 'touring_1day' }); setShowEditEventModal(true); };
       const saveEditedEvent = async (e) => { e.preventDefault(); if(!editingEvent.title || !editingEvent.timestampLocal || !editingEvent.description) return; await db.ref('events/' + editingEvent.id).update({ title: editingEvent.title, timestamp: new Date(editingEvent.timestampLocal).getTime(), description: editingEvent.description, eventType: editingEvent.eventType }); setShowEditEventModal(false); addN('Event berhasil diperbarui! ✨','success'); };
       const toggleCheckinEvent = async (eventId, isCheckedIn) => { if(!currentUser) return; const checkinRef = db.ref('events/' + eventId + '/checkins/' + currentUser.id); const readinessRef = db.ref('events/' + eventId + '/readiness/' + currentUser.id); if (isCheckedIn) { await checkinRef.remove(); await readinessRef.remove(); addN('Anda membatalkan check-in dan checklist kesiapan.','info'); } else { await checkinRef.set(true); addN('Berhasil check-in! Jangan lupa isi checklist kesiapan diri.','success'); } };
+
+      // Admin Control Check-in
+      const adminManageCheckin = async (eventId, memberId, isCurrentlyCheckedIn) => {
+        const checkinRef = db.ref('events/' + eventId + '/checkins/' + memberId);
+        const readinessRef = db.ref('events/' + eventId + '/readiness/' + memberId);
+        if (isCurrentlyCheckedIn) {
+          await checkinRef.remove();
+          await readinessRef.remove();
+          addN('Check-in anggota dibatalkan oleh Admin.', 'info');
+        } else {
+          await checkinRef.set(true);
+          addN('Anggota berhasil di-check-in oleh Admin.', 'success');
+        }
+      };
+
       const submitReadiness = async () => { if(!activeEventDetail || !currentUser) return; const allChecked = READINESS_ITEMS.every(item => localReadiness[item.key]); if (!allChecked) { addN('Semua checklist wajib dicentang!', 'error'); return; } try { const cleanReadiness = {}; Object.keys(localReadiness).forEach(k => { if(localReadiness[k]) cleanReadiness[k] = true; }); await db.ref('events/' + activeEventDetail.id + '/readiness/' + currentUser.id).set(cleanReadiness); addN('Checklist kesiapan berhasil disimpan! ✅','success'); setShowEventDetailModal(false); } catch (err) { addN('Gagal menyimpan checklist.', 'error'); } };
-      const openCheckinsModal = (ev) => { setActiveEventCheckins(ev); setShowCheckinsModal(true); };
-      const openEventDetailModal = (ev) => { setActiveEventDetail(ev); const userReadiness = (ev.readiness && currentUser && ev.readiness[currentUser.id]) ? ev.readiness[currentUser.id] : {}; setLocalReadiness(userReadiness); setShowEventDetailModal(true); };
+      const openCheckinsModal = (ev) => { setActiveEventCheckinsId(ev.id); setShowCheckinsModal(true); };
+      const openEventDetailModal = (ev) => { setActiveEventDetailId(ev.id); const userReadiness = (ev.readiness && currentUser && ev.readiness[currentUser.id]) ? ev.readiness[currentUser.id] : {}; setLocalReadiness(userReadiness); setShowEventDetailModal(true); };
       const openMemberEventsModal = (member) => { const memberEvents = events.filter(ev => ev.checkins && ev.checkins[member.id]).map(ev => ({ id: ev.id, title: ev.title, timestamp: ev.timestamp })); setActiveMemberEvents({ memberName: member.name, events: memberEvents }); setShowMemberEventsModal(true); };
       const getMemberPotentialPoints = (memberId) => { let pts = 0; events.forEach(ev => { if (ev.checkins && ev.checkins[memberId] && (!ev.ptsApproved || !ev.ptsApproved[memberId])) { pts += getEventPoints(ev.eventType).pts; } }); return pts; };
       const approveMemberPoints = async (eventId, memberId, pts) => { const memberRef = db.ref('members/' + memberId + '/points'); await memberRef.transaction((currentPoints) => { return (currentPoints || 0) + pts; }); await db.ref('events/' + eventId + '/ptsApproved/' + memberId).set(true); addN('Poin anggota berhasil di-approve! ⭐','success'); };
+
+      // Chat Functions
+      const openChat = (recipient) => {
+        if (recipient.id === currentUser.id) return;
+        let chatId;
+        if (recipient.id === 'ALL') {
+          chatId = 'broadcast_admin';
+        } else {
+          const uids = [currentUser.id, recipient.id].sort();
+          chatId = uids.join('_');
+        }
+        setActiveChatUser(recipient);
+        setActiveChatId(chatId);
+        setShowChatModal(true);
+      };
+
+      const closeChat = () => {
+        setShowChatModal(false);
+        setActiveChatId(null);
+        setActiveChatUser(null);
+        setChatMessages([]);
+      };
+
+      const sendMessage = async (e) => {
+        e.preventDefault();
+        if (!newMessage.trim() || !activeChatId) return;
+        const msgRef = db.ref('chats/' + activeChatId + '/messages').push();
+        await msgRef.set({
+          senderId: currentUser.id,
+          senderName: currentUser.name,
+          text: newMessage,
+          timestamp: Date.now()
+        });
+        setNewMessage('');
+      };
 
       const tA = members.filter(m=>m.status==='approved').length; 
       const tP = members.filter(m=>m.status==='pending').length; 
@@ -831,7 +905,94 @@
                     )}
                     {activeTab==='events' && ( <div className="space-y-4"><h3 className="text-lg font-black text-slate-900">Event Mendatang</h3>{events.filter(ev => ev.isVisible !== false).length > 0 ? events.filter(ev => ev.isVisible !== false).map(ev => { const isCheckedIn = ev.checkins && ev.checkins[currentUser.id]; const checkinCount = ev.checkins ? Object.keys(ev.checkins).length : 0; return ( <EventCard key={ev.id} event={ev} checkinCount={checkinCount} isCheckedIn={isCheckedIn} onCheckin={() => toggleCheckinEvent(ev.id, isCheckedIn)} totalMembers={totalApprovedMembers} onViewCheckins={openCheckinsModal} onViewDetails={openEventDetailModal} /> ); }) : <div className="text-center py-10 text-slate-400 text-xs italic">Belum ada event mendatang.</div>}</div> )}
                     {activeTab==='garage' && ( <div className="space-y-4"><div className="flex justify-between items-center"><h3 className="text-lg font-black text-slate-900">Garasi Saya</h3>{mb.length < 2 && (<button onClick={() => setShowAddBikeModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95 shadow-md"><I.Plus className="w-3 h-3" /><span>Tambah Motor</span></button>)}</div>{mb.length>0?mb.map(b=>(<div key={b.id} className="bg-white/50 border border-white/60 rounded-2xl p-4 flex flex-col space-y-3 shadow-sm"><div className="flex items-center space-x-4"><BikeIcon type={b.type} className="w-12 h-12 text-amber-500 flex-shrink-0" /><div className="flex-1"><div className="flex items-center space-x-2"><h4 className="font-bold text-sm text-slate-900">{b.name}</h4>{b.isPrimary && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">Utama</span>}</div><p className="text-[11px] text-slate-500 font-semibold">{b.plate} • {b.type} • {b.engine}</p></div><button onClick={()=>{setEditingBike(b);setShowEditBikeModal(true);}} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition active:scale-95"><I.Edit className="w-5 h-5" /></button></div>{!b.isPrimary && (<button onClick={() => setPrimaryBike(b.id)} className="text-[10px] bg-slate-100 text-slate-700 font-bold py-2 rounded-xl active:scale-95 transition hover:bg-slate-200">Jadikan Motor Utama</button>)}</div>)):<div className="text-center py-10 text-slate-400 text-xs italic">Motor belum terdaftar di garasi.</div>}<div className="bg-white/50 border border-white/60 rounded-2xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="font-bold text-sm text-slate-900 flex items-center"><I.ShieldCheck className="w-4 h-4 text-amber-500 mr-2" /> Safety Gear</h4><button onClick={()=>{ setEditingGear(userGears || {}); setShowEditGearModal(true); }} className="text-[10px] bg-blue-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Edit className="w-3 h-3" /> <span>Edit Gear</span></button></div><div className="space-y-3 text-xs text-slate-600 font-medium"><div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Helm</span><span>{userGears?.helmetBrand ? `${userGears.helmetBrand} (${userGears.helmetModel || '-'})` : 'Belum diisi'}</span></div><div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-slate-400 font-bold">Jaket</span><span>{userGears?.jacketMaterial ? `${userGears.jacketMaterial} (${userGears.jacketModel || '-'})` : 'Belum diisi'}</span></div><div className="flex justify-between"><span className="text-slate-400 font-bold">Sepatu</span><span>{userGears?.shoeType ? `${userGears.shoeType} (${userGears.shoeModel || '-'})` : 'Belum diisi'}</span></div></div></div></div> )}
-                    {activeTab==='members' && ( <div className="space-y-4"><h3 className="text-lg font-black text-slate-900">Anggota Club</h3><SummaryCards />{members.filter(m=>m.status==='approved').map(m=> { const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]); const memberJourney = m.points || 0; const memberPotentialPts = getMemberPotentialPoints(m.id); const upcomingEvents = events.filter(ev => ev.checkins && ev.checkins[m.id] && ev.timestamp > Date.now()); const nearestUpcoming = upcomingEvents.sort((a,b) => a.timestamp - b.timestamp)[0]; const isReady = nearestUpcoming && nearestUpcoming.readiness && nearestUpcoming.readiness[m.id] && Object.keys(nearestUpcoming.readiness[m.id]).length === READINESS_ITEMS.length; return ( <div key={m.id} className="bg-white/50 border border-white/60 rounded-2xl p-3 shadow-sm"><div className="flex items-center space-x-3"><MemberAvatar user={m} size="w-12 h-12" textSize="text-2xl" /><div className="flex-1 min-w-0"><div className="flex items-center justify-between"><h4 className="font-bold text-xs text-slate-900 flex items-center truncate">{m.name} {m.simVerified && <I.CheckCircle2 className="ml-1 w-3 h-3 text-blue-500 flex-shrink-0" />}</h4><div className="flex items-center space-x-1">{isReady && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">Siap</span>}{memberCheckedEvents.length > 0 && (<button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-full active:scale-95 transition">✓ ({memberCheckedEvents.length})</button>)}</div></div><div className="flex items-center flex-wrap gap-1 mt-0.5">{m.className && <span className="text-[9px] bg-slate-900 text-amber-400 font-bold px-2 py-0.5 rounded-full">{m.className}</span>}<p className="text-[10px] text-slate-500 font-semibold truncate">{m.role} • {m.ridingStatus || 'Pengendara'}</p></div><div className="flex items-center flex-wrap gap-1 mt-1">{memberJourney > 0 && (<span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full flex items-center"><I.Star className="w-2.5 h-2.5 mr-0.5" /> Journey: {memberJourney} Pts</span>)}{memberPotentialPts > 0 && (<span className="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Potensi: +{memberPotentialPts} Pts</span>)}</div><p className="text-[9px] text-rose-500 font-bold flex items-center mt-0.5"><I.MapPin className="w-3 h-3 mr-1"/> {m.city}</p>{m.touringRole && <p className="text-[10px] text-amber-600 font-bold mt-1 flex items-center"><I.Award className="w-3 h-3 mr-1"/> {m.touringRole}</p>}</div></div><div className="mt-2 pt-2 border-t border-slate-100">{m.bikes && m.bikes.length > 0 ? ( m.bikes.map(bike => (<div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2 mb-1"><BikeIcon type={bike.type} className="w-6 h-6 text-amber-500 flex-shrink-0" /><div className="flex-1"><div className="flex items-center space-x-1"><p className="font-bold text-slate-800 text-[11px]">{bike.name}</p>{bike.isPrimary && <span className="text-[7px] bg-emerald-100 text-emerald-700 font-bold px-1 py-0.5 rounded-full">Utama</span>}</div><p className="text-slate-500 text-[9px]">{bike.plate} • {bike.type} • {bike.engine}</p></div></div>)) ) : ( <div className="text-center text-[10px] text-slate-400 italic py-1">Belum ada motor terdaftar</div> )}</div></div> ); })}</div> )}
+                    {activeTab==='members' && ( 
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-black text-slate-900">Anggota Club</h3>
+                        <SummaryCards />
+                        
+                        {/* Broadcast Card */}
+                        <div className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm mb-4 flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">📢</div>
+                            <div>
+                              <h4 className="font-bold text-sm text-slate-900">Info & Broadcast</h4>
+                              <p className="text-[10px] text-slate-500 font-semibold">Pesan dari Admin</p>
+                            </div>
+                          </div>
+                          <button onClick={() => openChat({ id: 'ALL', name: 'Info & Broadcast' })} className="p-2 bg-blue-500 text-white rounded-xl active:scale-95 shadow-sm">
+                            <I.MessageSquare className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {members.filter(m=>m.status==='approved').map(m=> { 
+                          const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]); 
+                          const memberJourney = m.points || 0; 
+                          const memberPotentialPts = getMemberPotentialPoints(m.id); 
+                          const upcomingEvents = events.filter(ev => ev.checkins && ev.checkins[m.id] && ev.timestamp > Date.now()); 
+                          const nearestUpcoming = upcomingEvents.sort((a,b) => a.timestamp - b.timestamp)[0]; 
+                          const isReady = nearestUpcoming && nearestUpcoming.readiness && nearestUpcoming.readiness[m.id] && Object.keys(nearestUpcoming.readiness[m.id]).length === READINESS_ITEMS.length; 
+                          return ( 
+                            <div key={m.id} className="bg-white/50 border border-white/60 rounded-2xl p-3 shadow-sm">
+                              <div className="flex items-center space-x-3">
+                                <MemberAvatar user={m} size="w-12 h-12" textSize="text-2xl" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-bold text-xs text-slate-900 flex items-center truncate">
+                                      {m.name} {m.simVerified && <I.CheckCircle2 className="ml-1 w-3 h-3 text-blue-500 flex-shrink-0" />}
+                                    </h4>
+                                    <div className="flex items-center space-x-1">
+                                      {isReady && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">Siap</span>}
+                                      {memberCheckedEvents.length > 0 && (
+                                        <button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-full active:scale-95 transition">
+                                          ✓ ({memberCheckedEvents.length})
+                                        </button>
+                                      )}
+                                      {m.id !== currentUser.id && (
+                                        <button onClick={() => openChat(m)} className="p-1.5 bg-blue-100 text-blue-600 rounded-full active:scale-95 transition">
+                                          <I.MessageSquare className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center flex-wrap gap-1 mt-0.5">
+                                    {m.className && <span className="text-[9px] bg-slate-900 text-amber-400 font-bold px-2 py-0.5 rounded-full">{m.className}</span>}
+                                    <p className="text-[10px] text-slate-500 font-semibold truncate">{m.role} • {m.ridingStatus || 'Pengendara'}</p>
+                                  </div>
+                                  <div className="flex items-center flex-wrap gap-1 mt-1">
+                                    {memberJourney > 0 && (
+                                      <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full flex items-center"><I.Star className="w-2.5 h-2.5 mr-0.5" /> Journey: {memberJourney} Pts</span>
+                                    )}
+                                    {memberPotentialPts > 0 && (
+                                      <span className="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Potensi: +{memberPotentialPts} Pts</span>
+                                    )}
+                                  </div>
+                                  <p className="text-[9px] text-rose-500 font-bold flex items-center mt-0.5"><I.MapPin className="w-3 h-3 mr-1"/> {m.city}</p>
+                                  {m.touringRole && <p className="text-[10px] text-amber-600 font-bold mt-1 flex items-center"><I.Award className="w-3 h-3 mr-1"/> {m.touringRole}</p>}
+                                </div>
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-slate-100">
+                                {m.bikes && m.bikes.length > 0 ? (
+                                  m.bikes.map(bike => (
+                                    <div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2 mb-1">
+                                      <BikeIcon type={bike.type} className="w-6 h-6 text-amber-500 flex-shrink-0" />
+                                      <div className="flex-1">
+                                        <div className="flex items-center space-x-1">
+                                          <p className="font-bold text-slate-800 text-[11px]">{bike.name}</p>
+                                          {bike.isPrimary && <span className="text-[7px] bg-emerald-100 text-emerald-700 font-bold px-1 py-0.5 rounded-full">Utama</span>}
+                                        </div>
+                                        <p className="text-slate-500 text-[9px]">{bike.plate} • {bike.type} • {bike.engine}</p>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-center text-[10px] text-slate-400 italic py-1">Belum ada motor terdaftar</div>
+                                )}
+                              </div>
+                            </div>
+                          ); 
+                        })}
+                      </div> 
+                    )}
                     {activeTab==='profile' && mpd && (
                       <div className="space-y-6 pt-2">
                         <h3 className="text-lg font-black text-slate-900">Profil & Pengaturan</h3>
@@ -841,7 +1002,6 @@
                         </div>
                         <div className="flex flex-col items-center">
                           <div className="w-full mb-4">
-                            {/* === DESAIN KARTU ANGGOTA === */}
                             <div ref={cardRef} className="w-full relative rounded-[24px] overflow-hidden shadow-2xl border border-slate-300/50 card-font" style={{background: 'linear-gradient(135deg, #ebebeb 0%, #f5f5f5 25%, #e0e0e0 50%, #f5f5f5 75%, #ebebeb 100%)', height: '240px'}}>
                               <div className="absolute -top-12 -right-12 w-40 h-40 bg-white/40 rounded-full blur-3xl"></div>
                               <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-slate-400/20 rounded-full blur-3xl"></div>
@@ -925,7 +1085,83 @@
                     <div key={adminTab} className="animate-slide-up">
                       {adminTab === 'home' && ( <div className="space-y-6"><SummaryCards /><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-100 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
                       {adminTab === 'events' && ( <div className="space-y-6"><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4><form onSubmit={createEvent} className="space-y-3"><FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required /><FormSelect label="Jenis Event & Bobot Poin" value={newEvent.eventType} onChange={(e)=>setNewEvent({...newEvent, eventType: e.target.value})} required><option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option><option value="touring_1day">Touring 1 Hari (+5 Pts)</option><option value="touring_member">Touring Tempat Anggota (+2 Pts)</option></FormSelect><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={newEvent.timestamp} onChange={(e)=>setNewEvent({...newEvent, timestamp: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label><textarea value={newEvent.description} onChange={(e)=>setNewEvent({...newEvent, description: e.target.value})} rows="4" required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none" placeholder="Detail rendezvous, rute, dan informasi penting lainnya..."></textarea></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95 flex items-center justify-center space-x-1"><I.Plus className="w-4 h-4" /> <span>Publikasikan Event</span></button></form></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Star className="w-4 h-4 text-amber-500" /> <span>Approval Poin Event</span></h4><div className="space-y-3">{events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).length > 0 ? events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).map(ev => { const eventInfo = getEventPoints(ev.eventType); const pendingMembers = Object.keys(ev.checkins).filter(uid => !ev.ptsApproved || !ev.ptsApproved[uid]); if(pendingMembers.length === 0) return null; return ( <div key={ev.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-2"><div className="flex justify-between items-center mb-2"><h5 className="font-bold text-xs text-slate-900 truncate">{ev.title}</h5><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${eventInfo.color}`}>+{eventInfo.pts} Pts</span></div><div className="space-y-2">{pendingMembers.map(uid => { const m = members.find(mem => mem.id === uid); const isReady = ev.readiness && ev.readiness[uid] && Object.keys(ev.readiness[uid]).length === READINESS_ITEMS.length; return ( <div key={uid} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100"><div className="flex items-center space-x-2"><MemberAvatar user={m || {}} size="w-7 h-7" textSize="text-xs" /><span className="text-[11px] font-bold text-slate-800">{m ? m.name : 'Anggota'}</span>{isReady && <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full font-bold">Siap</span>}</div><button onClick={() => approveMemberPoints(ev.id, uid, eventInfo.pts)} className="text-[10px] bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg active:scale-95 transition">Approve Poin</button></div> ); })}</div></div> ); }) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada poin event yang perlu di-approve.</p>}</div></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Calendar className="w-4 h-4 text-amber-500" /> <span>Daftar Event Mendatang</span></h4><div className="space-y-3">{events.length > 0 ? events.map(ev => ( <EventCard key={ev.id} event={ev} isAdmin={true} onDelete={() => deleteEvent(ev.id)} onEdit={() => handleEditEventClick(ev)} onToggleVisibility={toggleEventVisibility} checkinCount={ev.checkins ? Object.keys(ev.checkins).length : 0} totalMembers={totalApprovedMembers} onViewCheckins={openCheckinsModal} onViewDetails={openEventDetailModal} /> )) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada event.</p>}</div></div></div> )}
-                      {adminTab === 'members' && ( <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900">Data Lengkap Anggota & Safety Gear</h4></div>{members.filter(m=>m.status==='approved').map(m=> { const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]); const memberJourney = m.points || 0; const memberPotentialPts = getMemberPotentialPoints(m.id); return ( <div key={m.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900 flex items-center">{m.name} {m.className && <span className="ml-1 text-[8px] bg-slate-900 text-amber-400 font-bold px-1.5 py-0.5 rounded-full">{m.className}</span>}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.memberId}</p></div></div><div className="flex items-center space-x-1.5 flex-wrap gap-1 justify-end">{memberJourney > 0 && (<span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-full flex items-center"><I.Star className="w-2.5 h-2.5 mr-0.5" /> {memberJourney} Pts</span>)}{memberPotentialPts > 0 && (<span className="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">+{memberPotentialPts} Pts</span>)}{memberCheckedEvents.length > 0 && (<button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full active:scale-95 transition">✓ ({memberCheckedEvents.length})</button>)}<button onClick={()=>{ setEditingTouringMember(m); setSelectedTouringRole(m.touringRole||''); setShowEditTouringModal(true); }} className="text-[10px] bg-amber-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Award className="w-3 h-3"/><span>Penugasan</span></button><button onClick={()=>reqA('delete',m)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-slate-100 pt-2 space-y-2 text-[10px] text-slate-600"><div className="grid grid-cols-2 gap-2"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div><div className="flex items-center space-x-1"><I.User className="w-3 h-3 text-slate-400" /><span className="font-semibold">{m.gender}</span></div><div className="flex items-center space-x-1"><I.Mail className="w-3 h-3 text-slate-400" /><span className="font-semibold truncate">{m.email}</span></div><div className="flex items-center space-x-1 col-span-2"><BikeIcon type={m.bikes && m.bikes[0] ? m.bikes[0].type : null} className="w-3 h-3 text-amber-500" /><span className="font-semibold">{m.ridingStatus}</span></div></div>{m.bikes && m.bikes.length > 0 ? ( m.bikes.map(bike => (<div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2"><BikeIcon type={bike.type} className="w-7 h-7 text-amber-500 flex-shrink-0" /><div className="flex-1"><p className="font-bold text-slate-800 text-[11px]">{bike.name}</p><p className="text-slate-500">{bike.plate} • {bike.type} • {bike.engine}</p></div></div>)) ) : ( <div className="text-center text-[10px] text-slate-400 italic py-1">Belum ada motor terdaftar</div> )}{m.touringRole && <div className="flex items-center space-x-1 mb-1 bg-amber-50 p-1.5 rounded-lg"><I.Award className="w-3 h-3 text-amber-600" /><span className="font-bold text-amber-700">{m.touringRole}</span></div>}<div className="grid grid-cols-3 gap-2 text-[9px] mt-2"><div className={`p-1.5 rounded-lg flex flex-col items-center text-center ${m.gears?.helmetBrand ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}><span className="font-bold uppercase">Helm</span><span className="truncate w-full">{m.gears?.helmetBrand || 'Kosong'}</span></div><div className={`p-1.5 rounded-lg flex flex-col items-center text-center ${m.gears?.jacketMaterial ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}><span className="font-bold uppercase">Jaket</span><span className="truncate w-full">{m.gears?.jacketMaterial || 'Kosong'}</span></div><div className={`p-1.5 rounded-lg flex flex-col items-center text-center ${m.gears?.shoeType ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}><span className="font-bold uppercase">Sepatu</span><span className="truncate w-full">{m.gears?.shoeType || 'Kosong'}</span></div></div></div></div> ); })}</div> )}
+                      {adminTab === 'members' && ( 
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900">Data Lengkap Anggota & Safety Gear</h4></div>
+                          
+                          {/* Admin Broadcast Card */}
+                          <div className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm mb-4 flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">📢</div>
+                              <div>
+                                <h4 className="font-bold text-sm text-slate-900">Broadcast Message</h4>
+                                <p className="text-[10px] text-slate-500 font-semibold">Kirim pesan ke semua anggota</p>
+                              </div>
+                            </div>
+                            <button onClick={() => openChat({ id: 'ALL', name: 'Broadcast Message' })} className="p-2 bg-blue-500 text-white rounded-xl active:scale-95 shadow-sm">
+                              <I.MessageSquare className="w-5 h-5" />
+                            </button>
+                          </div>
+
+                          {members.filter(m=>m.status==='approved').map(m=> { 
+                            const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]); 
+                            const memberJourney = m.points || 0; 
+                            const memberPotentialPts = getMemberPotentialPoints(m.id); 
+                            return ( 
+                              <div key={m.id} className="bg-white/80 border border-slate-100 rounded-2xl p-3 mb-2">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center space-x-2">
+                                    <MemberAvatar user={m} size="w-9 h-9" />
+                                    <div>
+                                      <h5 className="font-bold text-xs text-slate-900 flex items-center">
+                                        {m.name} 
+                                        {m.className && <span className="ml-1 text-[8px] bg-slate-900 text-amber-400 font-bold px-1.5 py-0.5 rounded-full">{m.className}</span>}
+                                      </h5>
+                                      <p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.memberId}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-1.5 flex-wrap gap-1 justify-end">
+                                    {memberJourney > 0 && (
+                                      <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-full flex items-center"><I.Star className="w-2.5 h-2.5 mr-0.5" /> {memberJourney} Pts</span>
+                                    )}
+                                    {memberPotentialPts > 0 && (
+                                      <span className="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">+{memberPotentialPts} Pts</span>
+                                    )}
+                                    {memberCheckedEvents.length > 0 && (
+                                      <button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full active:scale-95 transition">
+                                        ✓ ({memberCheckedEvents.length})
+                                      </button>
+                                    )}
+                                    <button onClick={() => openChat(m)} className="p-1.5 bg-blue-100 text-blue-600 rounded-full active:scale-95 transition">
+                                      <I.MessageSquare className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button onClick={()=>{ setEditingTouringMember(m); setSelectedTouringRole(m.touringRole||''); setShowEditTouringModal(true); }} className="text-[10px] bg-amber-500 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Award className="w-3 h-3"/><span>Penugasan</span></button>
+                                    <button onClick={()=>reqA('delete',m)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95"><I.XCircle className="w-4 h-4" /></button>
+                                  </div>
+                                </div>
+                                <div className="border-t border-slate-100 pt-2 space-y-2 text-[10px] text-slate-600">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div>
+                                    <div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div>
+                                    <div className="flex items-center space-x-1"><I.User className="w-3 h-3 text-slate-400" /><span className="font-semibold">{m.gender}</span></div>
+                                    <div className="flex items-center space-x-1"><I.Mail className="w-3 h-3 text-slate-400" /><span className="font-semibold truncate">{m.email}</span></div>
+                                    <div className="flex items-center space-x-1 col-span-2"><BikeIcon type={m.bikes && m.bikes[0] ? m.bikes[0].type : null} className="w-3 h-3 text-amber-500" /><span className="font-semibold">{m.ridingStatus}</span></div>
+                                  </div>
+                                  {m.bikes && m.bikes.length > 0 ? ( m.bikes.map(bike => (
+                                    <div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2"><BikeIcon type={bike.type} className="w-7 h-7 text-amber-500 flex-shrink-0" /><div className="flex-1"><p className="font-bold text-slate-800 text-[11px]">{bike.name}</p><p className="text-slate-500">{bike.plate} • {bike.type} • {bike.engine}</p></div></div>
+                                  )) ) : ( <div className="text-center text-[10px] text-slate-400 italic py-1">Belum ada motor terdaftar</div> )}
+                                  {m.touringRole && <div className="flex items-center space-x-1 mb-1 bg-amber-50 p-1.5 rounded-lg"><I.Award className="w-3 h-3 text-amber-600" /><span className="font-bold text-amber-700">{m.touringRole}</span></div>}
+                                  <div className="grid grid-cols-3 gap-2 text-[9px] mt-2">
+                                    <div className={`p-1.5 rounded-lg flex flex-col items-center text-center ${m.gears?.helmetBrand ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}><span className="font-bold uppercase">Helm</span><span className="truncate w-full">{m.gears?.helmetBrand || 'Kosong'}</span></div>
+                                    <div className={`p-1.5 rounded-lg flex flex-col items-center text-center ${m.gears?.jacketMaterial ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}><span className="font-bold uppercase">Jaket</span><span className="truncate w-full">{m.gears?.jacketMaterial || 'Kosong'}</span></div>
+                                    <div className={`p-1.5 rounded-lg flex flex-col items-center text-center ${m.gears?.shoeType ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}><span className="font-bold uppercase">Sepatu</span><span className="truncate w-full">{m.gears?.shoeType || 'Kosong'}</span></div>
+                                  </div>
+                                </div>
+                              </div>
+                            ); 
+                          })}
+                        </div>
+                      )}
                       {adminTab === 'forum' && ( <div className="bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.MessageSquare className="w-4 h-4 text-amber-500" /> <span>Forum Koordinasi Anggota</span></h4>{renderForum()}</div> )}
                       {adminTab === 'settings' && ( <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Settings className="w-4 h-4 text-amber-500" /> <span>Pengaturan Akses Admin</span></h4><form onSubmit={updateAdminCreds} className="space-y-3"><FormInput label="Username Admin Baru" icon={<I.User />} type="text" value={adminCreds.username} onChange={(e)=>setAdminCreds({...adminCreds, username: e.target.value})} placeholder="Masukkan username baru" required /><FormInput label="Password Admin Baru" icon={<I.Lock />} type="password" value={adminCreds.password} onChange={(e)=>setAdminCreds({...adminCreds, password: e.target.value})} placeholder="Masukkan password baru" required /><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Update Kredensial</button></form></div> )}
                     </div>
@@ -962,11 +1198,75 @@
                     <div className="grid grid-cols-2 gap-2 p-2 bg-slate-50/50 border border-white/60 rounded-xl backdrop-blur-md">
                       {READINESS_ITEMS.map(item => { const isChecked = localReadiness[item.key] || false; return ( <label key={item.key} className={`flex items-start space-x-1.5 cursor-pointer p-2 rounded-lg border transition-all duration-200 ${isChecked ? 'bg-emerald-50/90 border-emerald-200/80 shadow-sm' : 'bg-white/70 border-white/80 hover:bg-white'}`}><input type="checkbox" checked={isChecked} onChange={(e) => { setLocalReadiness(prev => ({ ...prev, [item.key]: e.target.checked })); }} className="mt-0.5 w-4 h-4 rounded-full text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0 border-slate-300 flex-shrink-0 appearance-none checked:bg-emerald-500 checked:border-transparent" /><span className="text-[10px] text-slate-700 font-medium leading-tight">{item.label}</span></label> ); })}
                     </div>
-                    <div className="mt-3 p-2 bg-amber-50/80 border border-amber-100/80 rounded-lg backdrop-blur-md"><p className="text-[10px] text-amber-700 font-bold">Catatan Tambahan:</p><p className="text-[10px] text-amber-600 font-medium mt-1">Awal perjalanan touring pastikan bensin di tanki motor telah terisi minimal untuk dapat menempuh jarak 30Km</p></div>
+                    <div className="mt-3 p-2 bg-amber-50/80 border border-amber-100/80 rounded-lg backdrop-blur-md"><p className="text-[10px] font-bold text-amber-700">Catatan Tambahan:</p><p className="text-[10px] text-amber-600 font-medium mt-1">Awal perjalanan touring pastikan bensin di tanki motor telah terisi minimal untuk dapat menempuh jarak 30Km</p></div>
                     <button onClick={submitReadiness} disabled={!READINESS_ITEMS.every(item => localReadiness[item.key])} className={`w-full mt-4 font-bold text-xs py-3 rounded-xl flex items-center justify-center space-x-1 transition ${READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'bg-emerald-500 text-white active:scale-95 shadow-md' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}><I.CheckCircle2 className="w-4 h-4" /> <span>{READINESS_ITEMS.every(item => localReadiness[item.key]) ? 'Simpan & Konfirmasi Kesiapan' : 'Centang Semua Checklist'}</span></button>
                   </div>
                 )}
                 <button onClick={()=>setShowEventDetailModal(false)} className="w-full mt-4 text-xs text-slate-500 font-bold hover:underline text-center">Tutup</button>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Daftar Peserta Check-in Event (Dengan Admin Control) */}
+          {showCheckinsModal && activeEventCheckins && (
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowCheckinsModal(false)}>
+              <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in max-h-[80vh] flex flex-col" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.Users className="w-5 h-5 text-amber-500" /> Daftar Peserta Check-in</h3>
+                <p className="text-xs text-slate-500 mb-4 truncate">Event: {activeEventCheckins.title}</p>
+                <div className="flex-1 overflow-y-auto scrollbar-none space-y-2">
+                  {activeEventCheckins.checkins && Object.keys(activeEventCheckins.checkins).length > 0 ? ( Object.keys(activeEventCheckins.checkins).map(uid => {
+                    const m = members.find(mem => mem.id === uid);
+                    const isReady = activeEventCheckins.readiness && activeEventCheckins.readiness[uid] && Object.keys(activeEventCheckins.readiness[uid]).length === READINESS_ITEMS.length;
+                    return (
+                      <div key={uid} className="flex items-center space-x-3 p-2 bg-slate-50 rounded-xl">
+                        <MemberAvatar user={m || {}} size="w-8 h-8" textSize="text-sm" />
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-slate-800">{m ? m.name : 'Anggota Tidak Ditemukan'}</p>
+                          <p className="text-[9px] text-slate-500 font-semibold">{m ? m.city : '-'}</p>
+                        </div>
+                        {isReady ? (
+                          <span className="text-[8px] bg-emerald-100 text-emerald-600 font-bold px-2 py-1 rounded-full">Siap</span>
+                        ) : (
+                          <span className="text-[8px] bg-amber-100 text-amber-600 font-bold px-2 py-1 rounded-full">Cek List</span>
+                        )}
+                        {m?.className && <span className="text-[8px] bg-slate-900 text-amber-400 font-bold px-1.5 py-0.5 rounded-full">{m.className}</span>}
+                        {currentUser.role === 'Admin' && (
+                          <button onClick={() => adminManageCheckin(activeEventCheckins.id, uid, true)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 active:scale-95">
+                            <I.Trash className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }) ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs italic">Belum ada peserta check-in pada event ini.</div>
+                  )}
+                </div>
+
+                {currentUser.role === 'Admin' && (
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">Tambah Peserta Manual:</p>
+                    <div className="relative">
+                      <select 
+                        className="appearance-none w-full bg-slate-50/80 border border-slate-200 rounded-xl pl-3.5 pr-9 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200"
+                        onChange={(e) => {
+                          if(e.target.value) {
+                            adminManageCheckin(activeEventCheckins.id, e.target.value, false);
+                            e.target.value = ""; 
+                          }
+                        }}
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Pilih Anggota...</option>
+                        {members.filter(m => m.status === 'approved' && !activeEventCheckins.checkins?.[m.id]).map(m => (
+                          <option key={m.id} value={m.id}>{m.name} ({m.city})</option>
+                        ))}
+                      </select>
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><I.ChevronDown /></span>
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={()=>setShowCheckinsModal(false)} className="w-full mt-4 text-xs text-slate-500 font-bold hover:underline text-center">Tutup</button>
               </div>
             </div>
           )}
@@ -1001,20 +1301,6 @@
                   <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label><textarea value={editingEvent.description} onChange={(e)=>setEditingEvent({...editingEvent, description: e.target.value})} rows="4" required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none"></textarea></div>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button>
                 </form>
-              </div>
-            </div>
-          )}
-
-          {/* Modal Daftar Peserta Check-in Event */}
-          {showCheckinsModal && activeEventCheckins && (
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowCheckinsModal(false)}>
-              <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in max-h-[80vh] flex flex-col" onClick={e=>e.stopPropagation()}>
-                <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.Users className="w-5 h-5 text-amber-500" /> Daftar Peserta Check-in</h3>
-                <p className="text-xs text-slate-500 mb-4 truncate">Event: {activeEventCheckins.title}</p>
-                <div className="flex-1 overflow-y-auto scrollbar-none space-y-2">
-                  {activeEventCheckins.checkins && Object.keys(activeEventCheckins.checkins).length > 0 ? ( Object.keys(activeEventCheckins.checkins).map(uid => { const m = members.find(mem => mem.id === uid); const isReady = activeEventCheckins.readiness && activeEventCheckins.readiness[uid] && Object.keys(activeEventCheckins.readiness[uid]).length === READINESS_ITEMS.length; return ( <div key={uid} className="flex items-center space-x-3 p-2 bg-slate-50 rounded-xl"><MemberAvatar user={m || {}} size="w-8 h-8" textSize="text-sm" /><div className="flex-1"><p className="text-xs font-bold text-slate-800">{m ? m.name : 'Anggota Tidak Ditemukan'}</p><p className="text-[9px] text-slate-500 font-semibold">{m ? m.city : '-'}</p></div>{isReady ? (<span className="text-[8px] bg-emerald-100 text-emerald-600 font-bold px-2 py-1 rounded-full">Siap</span>) : (<span className="text-[8px] bg-amber-100 text-amber-600 font-bold px-2 py-1 rounded-full">Cek List</span>)}{m?.className && <span className="text-[8px] bg-slate-900 text-amber-400 font-bold px-1.5 py-0.5 rounded-full">{m.className}</span>}</div> ); }) ) : ( <div className="text-center py-8 text-slate-400 text-xs italic">Belum ada peserta check-in pada event ini.</div> )}
-                </div>
-                <button onClick={()=>setShowCheckinsModal(false)} className="w-full mt-4 text-xs text-slate-500 font-bold hover:underline text-center">Tutup</button>
               </div>
             </div>
           )}
@@ -1346,6 +1632,59 @@
                     )}
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* === MODAL CHAT === */}
+          {showChatModal && activeChatUser && (
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[70] flex items-end justify-center animate-fade-in" onClick={closeChat}>
+              <div className="bg-white w-full max-w-md h-[85vh] rounded-t-[32px] shadow-2xl flex flex-col animate-scale-in" onClick={e=>e.stopPropagation()}>
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <button onClick={closeChat} className="p-1.5 rounded-full hover:bg-slate-100">
+                      <I.ArrowLeft />
+                    </button>
+                    {activeChatUser.id === 'ALL' ? (
+                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-2xl">📢</div>
+                    ) : (
+                      <MemberAvatar user={activeChatUser} size="w-10 h-10" textSize="text-xl" />
+                    )}
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900">{activeChatUser.name}</h3>
+                      <p className="text-[10px] text-emerald-500 font-semibold">Online</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 scrollbar-none">
+                  {chatMessages.map(msg => {
+                    const isMe = msg.senderId === currentUser.id;
+                    return (
+                      <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-msg-in`}>
+                        <div className={`max-w-[75%] p-3 shadow-md ${isMe ? 'bg-[#007AFF] text-white rounded-3xl rounded-br-lg' : 'bg-white text-slate-900 border border-slate-100 rounded-3xl rounded-bl-lg'}`}>
+                          {!isMe && <p className={`text-[10px] font-bold mb-1 ${isMe ? 'text-white/80' : 'text-blue-500'}`}>{msg.senderName}</p>}
+                          <p className="text-xs leading-relaxed">{msg.text}</p>
+                          <p className={`text-[9px] mt-1 text-right ${isMe ? 'text-white/70' : 'text-slate-400'}`}>{new Date(msg.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <form onSubmit={sendMessage} className="p-3 bg-white border-t border-slate-100 flex space-x-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e)=>setNewMessage(e.target.value)}
+                    placeholder="Ketik pesan..."
+                    className="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200"
+                    required
+                  />
+                  <button type="submit" className="bg-[#007AFF] text-white p-2.5 rounded-full shadow-md active:scale-90 transition">
+                    <I.Send />
+                  </button>
+                </form>
               </div>
             </div>
           )}
