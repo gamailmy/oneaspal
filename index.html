@@ -98,8 +98,48 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const messaging = firebase.messaging();
     
     const LOGO_URL = "https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png";
+
+    // Script untuk Suara notifikasi dan getar di HP
+    // Ganti dengan VAPID Key yang Anda dapatkan di Langkah 1
+    const VAPID_KEY = "BAAKM-p8R3kEQl7Rn3qosWNLo2Zgmx9PvhK4nBLCNs9vXVpPR2g54UYGsIpX1MgDvrIWhcwZ41_xW-bmpGSE8fg"; 
+    
+    // Fungsi untuk memutar suara notifikasi
+    const playNotificationSound = () => {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880; // Nada bunyi
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+      } catch (e) { console.error("Sound error:", e); }
+    };
+
+    // Fungsi meminta izin dan menyimpan token FCM
+    const requestNotificationPermission = async (userId) => {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          const token = await messaging.getToken({ vapidKey: VAPID_KEY });
+          if (token) {
+            // Simpan token ke database Firebase di user tersebut
+            await db.ref('members/' + userId + '/fcmToken').set(token);
+            console.log('FCM Token saved');
+          }
+        } else {
+          console.log('Izin notifikasi ditolak');
+        }
+      } catch (e) { console.error('Error FCM:', e); }
+    };
+    
     const SESSION_DURATION = 30 * 60 * 1000; 
     const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🏍️'];
 
@@ -519,11 +559,12 @@
             if (msg.senderId === currentUser.id) return; // Abaikan pesan kita sendiri
             
             // Jika chat sedang dibuka untuk user ini, update last read time
-            if (showChatModalRef.current && activeChatIdRef.current === chatId) {
-              localStorage.setItem('oac_last_read_' + chatId, Date.now());
-              return;
-            }
-            
+            if (showChatModalRef.current && activeChatIdRef.current === chatId) return;
+
+            // TAMBAHKAN BARIS INI: Getar HP dan mainkan suara
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            playNotificationSound();
+
             // Tambah jumlah pesan belum dibaca
             setUnreadChats(prev => ({ ...prev, [otherUserId]: (prev[otherUserId] || 0) + 1 }));
             
@@ -584,8 +625,12 @@
       const getW = (c) => { if(c===0)return{emoji:'☀️',desc:'Cerah'}; if([1,2].includes(c))return{emoji:'🌤️',desc:'Berawan Sebagian'}; if(c===3)return{emoji:'☁️',desc:'Mendung'}; if([45,48].includes(c))return{emoji:'🌫️',desc:'Berkabut'}; if([51,53,55,56,57].includes(c))return{emoji:'🌦️',desc:'Gerimis'}; if([61,63,65,66,67].includes(c))return{emoji:'🌧️',desc:'Hujan'}; if([71,73,75,77].includes(c))return{emoji:'❄️',desc:'Salju'}; if([80,81,82].includes(c))return{emoji:'🌦️',desc:'Hujan Lokal'}; if([95,96,99].includes(c))return{emoji:'⛈️',desc:'Badai Petir'}; return{emoji:'🌡️',desc:'Cuaca Normal'} };
       const addN = (m, t='info') => { setNotifications(p=>[{id:Date.now(),message:m,type:t,time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),read:false},...p]); setToast({show:true,message:m,type:t}); setTimeout(()=>setToast({show:false,message:'',type:'success'}),3000); };
       const updateSessionData = (newUser, newGears) => { const stored = localStorage.getItem('oac_session'); if (stored) { try { const session = JSON.parse(stored); const updatedSession = { user: newUser || session.user, gears: newGears || session.gears || {}, expiresAt: session.expiresAt }; localStorage.setItem('oac_session', JSON.stringify(updatedSession)); } catch (e) {} } };
-      const setSession = (user, gears = {}) => { const session = { user, gears, expiresAt: Date.now() + SESSION_DURATION }; localStorage.setItem('oac_session', JSON.stringify(session)); setCurrentUser(user); setUserGears(gears); if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, SESSION_DURATION); };
+      const setSession = (user, gears = {}) => { const session = { user, gears, expiresAt: Date.now() + SESSION_DURATION }; localStorage.setItem('oac_session', JSON.stringify(session)); setCurrentUser(user); setUserGears(gears); if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, SESSION_DURATION);
+        // Minta izin notifikasi saat user login
+        if (user.id) requestNotificationPermission(user.id);
+      };
 
+      
       const handleLogin = async (e) => { 
         e.preventDefault(); 
         if(loginRole==='admin'){ db.ref('settings').once('value').then((snapshot) => { const settings = snapshot.val(); if(settings && username === settings.admin_username && password === settings.admin_password){ const adminUser = { name:'One-Admin', role:'Admin', avatar:'👑', id:'ADMIN-SYS', dbId:'admin', city:'Jakarta' }; setSession(adminUser, {}); setActiveTab('admin_dashboard'); addN('Selamat Datang, Admin Pengelola! ⚡','success'); } else { addN('Kredensial admin salah atau DB kosong!','error'); } }).catch(err => addN(`Error: ${err.message}`, 'error')); }
