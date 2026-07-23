@@ -560,7 +560,6 @@
       useEffect(() => {
         if (!currentUser || members.length === 0) return;
         
-        const baseTime = Date.now();
         const listeners = [];
         const newUnread = {};
 
@@ -570,8 +569,18 @@
           const bLastRead = parseInt(localStorage.getItem('oac_last_read_' + bChatId) || '0');
           const bSnap = await db.ref('chats/' + bChatId + '/messages').orderByChild('timestamp').startAfter(bLastRead).once('value');
           let bCount = 0;
-          bSnap.forEach(child => { if (child.val().senderId !== currentUser.id) bCount++; });
-          if (bCount > 0) newUnread['ALL'] = bCount;
+          let bLatestTime = bLastRead;
+          bSnap.forEach(child => { 
+            if (child.val().senderId !== currentUser.id) {
+              bCount++; 
+              if(child.val().timestamp > bLatestTime) bLatestTime = child.val().timestamp;
+            }
+          });
+          if (bCount > 0) {
+            newUnread['ALL'] = bCount;
+            // Update last read time agar tidak terdeteksi ulang
+            localStorage.setItem('oac_last_read_' + bChatId, bLatestTime);
+          }
 
           // 2. Check 1-on-1
           for (const m of members) {
@@ -580,8 +589,18 @@
               const lastRead = parseInt(localStorage.getItem('oac_last_read_' + cId) || '0');
               const cSnap = await db.ref('chats/' + cId + '/messages').orderByChild('timestamp').startAfter(lastRead).once('value');
               let count = 0;
-              cSnap.forEach(child => { if (child.val().senderId !== currentUser.id) count++; });
-              if (count > 0) newUnread[m.id] = count;
+              let cLatestTime = lastRead;
+              cSnap.forEach(child => { 
+                if (child.val().senderId !== currentUser.id) {
+                  count++; 
+                  if(child.val().timestamp > cLatestTime) cLatestTime = child.val().timestamp;
+                }
+              });
+              if (count > 0) {
+                newUnread[m.id] = count;
+                // Update last read time agar tidak terdeteksi ulang
+                localStorage.setItem('oac_last_read_' + cId, cLatestTime);
+              }
             }
           }
           setUnreadChats(newUnread);
@@ -592,10 +611,13 @@
           const handleNewMessage = (chatId, otherUserId, msg) => {
             if (msg.senderId === currentUser.id) return; // Abaikan pesan kita sendiri
             
-            // Jika chat sedang dibuka untuk user ini, update last read time
-            if (showChatModalRef.current && activeChatIdRef.current === chatId) return;
+            // Jika chat sedang dibuka untuk user ini, update last read time secara real-time
+            if (showChatModalRef.current && activeChatIdRef.current === chatId) {
+              localStorage.setItem('oac_last_read_' + chatId, msg.timestamp);
+              return;
+            }
 
-            // TAMBAHKAN BARIS INI: Getar HP dan mainkan suara
+            // Getar HP dan mainkan suara
             if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
             playNotificationSound();
 
@@ -617,7 +639,8 @@
 
           // Listener Broadcast
           const broadcastId = 'broadcast_admin';
-          const bRef = db.ref('chats/' + broadcastId + '/messages').orderByChild('timestamp').startAfter(baseTime);
+          const bLastReadVal = parseInt(localStorage.getItem('oac_last_read_' + broadcastId) || '0');
+          const bRef = db.ref('chats/' + broadcastId + '/messages').orderByChild('timestamp').startAfter(bLastReadVal);
           const bHandler = (snap) => handleNewMessage(broadcastId, 'ALL', snap.val());
           bRef.on('child_added', bHandler);
           listeners.push(() => bRef.off('child_added', bHandler));
@@ -626,7 +649,8 @@
           members.forEach(m => {
             if (m.id !== currentUser.id) {
               const chatId = [currentUser.id, m.id].sort().join('_');
-              const cRef = db.ref('chats/' + chatId + '/messages').orderByChild('timestamp').startAfter(baseTime);
+              const cLastReadVal = parseInt(localStorage.getItem('oac_last_read_' + chatId) || '0');
+              const cRef = db.ref('chats/' + chatId + '/messages').orderByChild('timestamp').startAfter(cLastReadVal);
               const cHandler = (snap) => handleNewMessage(chatId, m.id, snap.val());
               cRef.on('child_added', cHandler);
               listeners.push(() => cRef.off('child_added', cHandler));
@@ -638,6 +662,7 @@
 
         return () => listeners.forEach(fn => fn());
       }, [currentUser, members]);
+
 
       // Listener untuk Chat Messages yang sedang aktif dibuka
       useEffect(() => {
