@@ -10,8 +10,7 @@
   <title>One Aspal Club - Riding and Touring Community</title>
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png">
-  
+  <link rel="preload" as="image" href="https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png" fetchpriority="high">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -829,7 +828,7 @@
               <div className="relative mb-8 animate-scale-in flex items-center justify-center">
                 <div className="absolute w-40 h-40 bg-amber-400/30 rounded-full blur-3xl animate-glow-pulse"></div>
                 <div className="absolute w-28 h-28 rounded-full animate-splash-glow"></div>
-                <div className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-white shadow-xl shine-sweep z-10"><img src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" /></div>
+                <div className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-white shadow-xl shine-sweep z-10"><img src={LOGO_URL} alt="Logo" fetchpriority="high" className="w-full h-full object-cover rounded-full" /></div>
               </div>
               <h1 className="text-3xl font-black tracking-wider text-slate-900 uppercase flex items-center animate-slide-up">ONE <span className="text-amber-500 ml-2">ASPAL</span></h1>
               <p className="text-xs text-slate-500 font-semibold mt-2 tracking-widest animate-slide-up">ONE ROAD, ONE BROTHERHOOD</p>
