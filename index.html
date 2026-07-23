@@ -435,6 +435,7 @@
       const logoutTimerRef = useRef(null);
       const fileInputRef = useRef(null);
       const chatScrollRef = useRef(null);
+      const heartbeatRef = useRef(null); // Ref untuk interval heartbeat
       const [showSplash, setShowSplash] = useState(true);
       const [splashFading, setSplashFading] = useState(false);
       const [regName, setRegName] = useState(''); const [regUsername, setRegUsername] = useState(''); const [regPassword, setRegPassword] = useState(''); const [regGender, setRegGender] = useState('Laki-laki'); const [regPhone, setRegPhone] = useState(''); const [regCity, setRegCity] = useState(''); const [regEmail, setRegEmail] = useState(''); const [regEmailDomain, setRegEmailDomain] = useState('@gmail.com'); const [regRidingStatus, setRegRidingStatus] = useState(''); const [regBikeBrand, setRegBikeBrand] = useState(''); const [regBikeModel, setRegBikeModel] = useState(''); const [regBikePlate, setRegBikePlate] = useState(''); const [regBikeCategory, setRegBikeCategory] = useState('Matic'); const [regBikeEngine, setRegBikeEngine] = useState('');
@@ -658,9 +659,35 @@
       const getW = (c) => { if(c===0)return{emoji:'☀️',desc:'Cerah'}; if([1,2].includes(c))return{emoji:'🌤️',desc:'Berawan Sebagian'}; if(c===3)return{emoji:'☁️',desc:'Mendung'}; if([45,48].includes(c))return{emoji:'🌫️',desc:'Berkabut'}; if([51,53,55,56,57].includes(c))return{emoji:'🌦️',desc:'Gerimis'}; if([61,63,65,66,67].includes(c))return{emoji:'🌧️',desc:'Hujan'}; if([71,73,75,77].includes(c))return{emoji:'❄️',desc:'Salju'}; if([80,81,82].includes(c))return{emoji:'🌦️',desc:'Hujan Lokal'}; if([95,96,99].includes(c))return{emoji:'⛈️',desc:'Badai Petir'}; return{emoji:'🌡️',desc:'Cuaca Normal'} };
       const addN = (m, t='info') => { setNotifications(p=>[{id:Date.now(),message:m,type:t,time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),read:false},...p]); setToast({show:true,message:m,type:t}); setTimeout(()=>setToast({show:false,message:'',type:'success'}),3000); };
       const updateSessionData = (newUser, newGears) => { const stored = localStorage.getItem('oac_session'); if (stored) { try { const session = JSON.parse(stored); const updatedSession = { user: newUser || session.user, gears: newGears || session.gears || {}, expiresAt: session.expiresAt }; localStorage.setItem('oac_session', JSON.stringify(updatedSession)); } catch (e) {} } };
-      const setSession = (user, gears = {}) => { const session = { user, gears, expiresAt: Date.now() + SESSION_DURATION }; localStorage.setItem('oac_session', JSON.stringify(session)); setCurrentUser(user); setUserGears(gears); if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, SESSION_DURATION);
-        // Minta izin notifikasi saat user login
-        if (user.id) requestNotificationPermission(user.id);
+      
+      // Fungsi Heartbeat untuk update status online
+      const updateHeartbeat = async (userId) => {
+        if (!userId || !db) return;
+        try {
+          await db.ref('members/' + userId + '/lastActive').set(firebase.database.ServerValue.TIMESTAMP);
+        } catch (e) { console.error("Heartbeat error:", e); }
+      };
+
+      const stopHeartbeat = () => {
+        if (heartbeatRef.current) {
+          clearInterval(heartbeatRef.current);
+          heartbeatRef.current = null;
+        }
+      };
+
+      const setSession = (user, gears = {}) => { 
+        const session = { user, gears, expiresAt: Date.now() + SESSION_DURATION }; 
+        localStorage.setItem('oac_session', JSON.stringify(session)); 
+        setCurrentUser(user); setUserGears(gears); 
+        if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); 
+        logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, SESSION_DURATION);
+        
+        // Minta izin notifikasi saat user login & mulai heartbeat
+        if (user.id) {
+          requestNotificationPermission(user.id);
+          updateHeartbeat(user.id); // Langsung update
+          heartbeatRef.current = setInterval(() => updateHeartbeat(user.id), 30000); // Update tiap 30 detik
+        }
       };
 
       
@@ -700,7 +727,29 @@
         setAuthMode('login'); setLoginRole('member'); setUsername(''); setPassword(''); setRegName(''); setRegUsername(''); setRegPassword(''); setRegPhone(''); setRegCity(''); setRegEmail(''); setRegRidingStatus(''); setRegBikeBrand(''); setRegBikeModel(''); setRegBikePlate(''); setRegBikeCategory('Matic'); setRegBikeEngine(''); setShowConfirmRegModal(false); setConfirmRegData(null); setShowPublicPage(true);
       };
       
-      const out = (showMsg = true) => { localStorage.removeItem('oac_session'); if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); setCurrentUser(null);setUserGears({});setActiveThread(null); setUsername('');setPassword('');setShowNotifPanel(false);setShowPublicPage(true); if (showMsg) addN('Anda telah keluar dari aplikasi.','info'); };
+      const out = (showMsg = true) => { 
+        stopHeartbeat(); // Hentikan heartbeat
+        if (currentUser?.id && db) {
+          // Set status offline manual (lastActive ke 0)
+          db.ref('members/' + currentUser.id + '/lastActive').set(0).catch(()=>{});
+        }
+        localStorage.removeItem('oac_session'); 
+        if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); 
+        setCurrentUser(null);setUserGears({});setActiveThread(null); 
+        setUsername('');setPassword('');setShowNotifPanel(false);setShowPublicPage(true); 
+        if (showMsg) addN('Anda telah keluar dari aplikasi.','info'); 
+      };
+      
+      // Helper untuk menentukan status online berdasarkan lastActive
+      const getOnlineStatus = (lastActive) => {
+        if (!lastActive) return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; // Abu-abu/Merah
+        const now = Date.now();
+        const diff = now - lastActive;
+        if (diff < 60000) return { color: 'bg-emerald-500', text: 'Online', textColor: 'text-emerald-700', bgColor: 'bg-emerald-100' }; // Hijau
+        if (diff < 300000) return { color: 'bg-amber-500', text: 'Idle', textColor: 'text-amber-700', bgColor: 'bg-amber-100' }; // Kuning
+        return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; // Abu-abu/Merah
+      };
+
       const addBike = async (e) => { e.preventDefault(); if(!newBike.name || !newBike.plate) { addN('Data motor tidak boleh kosong!', 'error'); return; } if(mb.length >= 2) { addN('Maksimal 2 motor!', 'error'); return; } const bikeRef = db.ref('members/' + currentUser.id + '/bikes').push(); const newBikeData = { ...newBike, isPrimary: mb.length === 0 }; await bikeRef.set(newBikeData); setNewBike({ name: '', plate: '', type: 'Matic', engine: '' }); setShowAddBikeModal(false); addN('Motor berhasil ditambahkan! 🏍️', 'success'); };
       const upBike = (e) => { e.preventDefault(); if(!editingBike.name||!editingBike.plate){addN('Data motor tidak boleh kosong!','error');return;} const bikeRef = db.ref('members/' + currentUser.id + '/bikes/' + editingBike.id); bikeRef.update({ name: editingBike.name, plate: editingBike.plate, type: editingBike.type, engine: editingBike.engine }); setShowEditBikeModal(false);setEditingBike(null);addN('Data motor berhasil diperbarui! 🏍️','success'); };
       const setPrimaryBike = async (bikeId) => { if(!currentUser) return; const updates = {}; mb.forEach(b => { updates[b.id] = { ...b, isPrimary: (b.id === bikeId) }; }); await db.ref('members/' + currentUser.id + '/bikes').update(updates); addN('Motor utama berhasil diubah! 🏍️', 'success'); };
@@ -1083,16 +1132,26 @@
                           const upcomingEvents = events.filter(ev => ev.checkins && ev.checkins[m.id] && ev.timestamp > Date.now()); 
                           const nearestUpcoming = upcomingEvents.sort((a,b) => a.timestamp - b.timestamp)[0]; 
                           const isReady = nearestUpcoming && nearestUpcoming.readiness && nearestUpcoming.readiness[m.id] && Object.keys(nearestUpcoming.readiness[m.id]).length === READINESS_ITEMS.length; 
+                          const status = getOnlineStatus(m.lastActive); // Dapatkan status online
+                          
                           return ( 
                             <div key={m.id} className="bg-white/50 border border-white/60 rounded-2xl p-3 shadow-sm">
                               <div className="flex items-center space-x-3">
-                                <MemberAvatar user={m} size="w-12 h-12" textSize="text-2xl" />
+                                <div className="relative">
+                                  <MemberAvatar user={m} size="w-12 h-12" textSize="text-2xl" />
+                                  {/* Indikator Status Online */}
+                                  <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${status.color}`}></span>
+                                </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between">
                                     <h4 className="font-bold text-xs text-slate-900 flex items-center truncate">
                                       {m.name} {m.simVerified && <I.CheckCircle2 className="ml-1 w-3 h-3 text-blue-500 flex-shrink-0" />}
                                     </h4>
                                     <div className="flex items-center space-x-1">
+                                      {/* Label Status Online */}
+                                      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${status.bgColor} ${status.textColor}`}>
+                                        {status.text}
+                                      </span>
                                       {isReady && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">Siap</span>}
                                       {memberCheckedEvents.length > 0 && (
                                         <button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-full active:scale-95 transition">
@@ -1269,11 +1328,17 @@
                             const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]); 
                             const memberJourney = m.points || 0; 
                             const memberPotentialPts = getMemberPotentialPoints(m.id); 
+                            const status = getOnlineStatus(m.lastActive); // Dapatkan status online
+                            
                             return ( 
                               <div key={m.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2">
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center space-x-2">
-                                    <MemberAvatar user={m} size="w-9 h-9" />
+                                    <div className="relative">
+                                      <MemberAvatar user={m} size="w-9 h-9" />
+                                      {/* Indikator Status Online */}
+                                      <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${status.color}`}></span>
+                                    </div>
                                     <div>
                                       <h5 className="font-bold text-xs text-slate-900 flex items-center">
                                         {m.name} 
@@ -1283,6 +1348,10 @@
                                     </div>
                                   </div>
                                   <div className="flex items-center space-x-1.5 flex-wrap gap-1 justify-end">
+                                    {/* Label Status Online */}
+                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${status.bgColor} ${status.textColor}`}>
+                                      {status.text}
+                                    </span>
                                     {memberJourney > 0 && (
                                       <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-full flex items-center"><I.Star className="w-2.5 h-2.5 mr-0.5" /> {memberJourney} Pts</span>
                                     )}
