@@ -45,13 +45,26 @@
       flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
-    
+
+   
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    .animate-fade-in { animation: fadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-    @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    .animate-scale-in { animation: scaleIn 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.92) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .animate-scale-in { animation: scaleIn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    /* SMOOTH PAGE TRANSITIONS */
+    .page-transition-container { position: relative; width: 100%; }
+    .page-transition-entering, .page-transition-entered { position: relative; z-index: 2; width: 100%; }
+    .page-transition-entering { animation: pageEnterSmooth 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
+    .page-transition-entered { animation: none; }
+    .page-transition-exiting { position: absolute; top: 0; left: 0; right: 0; z-index: 1; pointer-events: none; animation: pageExitSmooth 0.32s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
+    @keyframes pageEnterSmooth { 0% { opacity: 0; transform: translateY(18px) scale(0.985); filter: blur(3px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+    @keyframes pageExitSmooth { 0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 100% { opacity: 0; transform: translateY(-14px) scale(1.015); filter: blur(3px); } }
+    
+    .nav-btn { transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+
     @keyframes slideDownBounce { 0% { transform: translateY(-100px); opacity: 0; } 60% { transform: translateY(10px); opacity: 1; } 80% { transform: translateY(-5px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
     @keyframes shrinkBar { 0% { width: 100%; } 100% { width: 0%; } }
     .toast-animate { animation: slideDownBounce 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
@@ -203,6 +216,40 @@
         </div>
       </div>
     );
+
+
+      const PageTransition = ({ pageKey, children }) => {
+      const [exitContent, setExitContent] = useState(null);
+      const timeoutRef = useRef(null);
+      const prevChildrenRef = useRef(children);
+      const prevKeyRef = useRef(pageKey);
+
+      useEffect(() => {
+        if (pageKey !== prevKeyRef.current) {
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+          setExitContent({ key: prevKeyRef.current, content: prevChildrenRef.current });
+          timeoutRef.current = setTimeout(() => { setExitContent(null); }, 420);
+          prevKeyRef.current = pageKey;
+        }
+        prevChildrenRef.current = children;
+      }, [pageKey, children]);
+
+      useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
+
+      return (
+        <div className="page-transition-container">
+          {exitContent && (
+            <div key={exitContent.key} className="page-transition-exiting">
+              {exitContent.content}
+            </div>
+          )}
+          <div key={pageKey} className={exitContent ? 'page-transition-entering' : 'page-transition-entered'}>
+            {children}
+          </div>
+        </div>
+      );
+    };
+
 
     const MemberAvatar = ({ user, size = "w-10 h-10", textSize = "text-xl" }) => {
       const gender = user?.gender || 'Laki-laki';
@@ -1117,7 +1164,7 @@
 
               <div className="flex-1 overflow-y-auto pb-24 px-5 pt-5 space-y-6 scrollbar-none" onClick={()=>setShowNotifPanel(false)}>
                 {currentUser.role!=='Admin' ? (
-                  <div key={activeTab} className="animate-slide-up">
+                  <PageTransition pageKey={activeTab}>
                     {activeTab==='home' && (
                       <div className="space-y-4">
                         {announcements.length>0 && (<div className="space-y-3">{announcements.map(an=>(<div key={an.id} className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm"><div className="flex justify-between items-start"><h4 className="font-black text-sm text-slate-900 flex items-center"><I.Megaphone className="w-4 h-4 text-amber-500 mr-2" /> {an.title}</h4><span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full uppercase animate-pulse">Baru</span></div><p className="text-xs text-slate-600 font-medium mt-1.5 leading-relaxed">{an.content}</p><p className="text-[9px] text-slate-400 font-bold mt-2">{an.date} • oleh {an.author}</p></div>))}</div>)}
@@ -1312,7 +1359,7 @@
                         </div>
                       </div>
                     )}
-                  </div>
+                  </PageTransition>
                 ) : (
                   <div className="space-y-6">
                     <h3 className="text-lg font-black text-slate-900">Dashboard Admin</h3>
@@ -1323,7 +1370,7 @@
                       <button onClick={()=>setAdminTab('forum')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='forum'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Forum</button>
                       <button onClick={()=>setAdminTab('settings')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='settings'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Pengaturan</button>
                     </div>
-                    <div key={adminTab} className="animate-slide-up">
+                      <PageTransition pageKey={adminTab}>
                       {adminTab === 'home' && ( <div className="space-y-6"><SummaryCards /><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-101 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-101 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
                       {adminTab === 'events' && ( <div className="space-y-6"><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4><form onSubmit={createEvent} className="space-y-3"><FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required /><FormSelect label="Jenis Event & Bobot Poin" value={newEvent.eventType} onChange={(e)=>setNewEvent({...newEvent, eventType: e.target.value})} required><option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option><option value="touring_1day">Touring 1 Hari (+5 Pts)</option><option value="touring_member">Touring Tempat Anggota (+2 Pts)</option></FormSelect><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={newEvent.timestamp} onChange={(e)=>setNewEvent({...newEvent, timestamp: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label><textarea value={newEvent.description} onChange={(e)=>setNewEvent({...newEvent, description: e.target.value})} rows="4" required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none" placeholder="Detail rendezvous, rute, dan informasi penting lainnya..."></textarea></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95 flex items-center justify-center space-x-1"><I.Plus className="w-4 h-4" /> <span>Publikasikan Event</span></button></form></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Star className="w-4 h-4 text-amber-500" /> <span>Approval Poin Event</span></h4><div className="space-y-3">{events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).length > 0 ? events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).map(ev => { const eventInfo = getEventPoints(ev.eventType); const pendingMembers = Object.keys(ev.checkins).filter(uid => !ev.ptsApproved || !ev.ptsApproved[uid]); if(pendingMembers.length === 0) return null; return ( <div key={ev.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-2"><div className="flex justify-between items-center mb-2"><h5 className="font-bold text-xs text-slate-900 truncate">{ev.title}</h5><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${eventInfo.color}`}>+{eventInfo.pts} Pts</span></div><div className="space-y-2">{pendingMembers.map(uid => { const m = members.find(mem => mem.id === uid); const isReady = ev.readiness && ev.readiness[uid] && Object.keys(ev.readiness[uid]).length === READINESS_ITEMS.length; return ( <div key={uid} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-101"><div className="flex items-center space-x-2"><MemberAvatar user={m || {}} size="w-7 h-7" textSize="text-xs" /><span className="text-[11px] font-bold text-slate-800">{m ? m.name : 'Anggota'}</span>{isReady && <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full font-bold">Siap</span>}</div><button onClick={() => approveMemberPoints(ev.id, uid, eventInfo.pts)} className="text-[10px] bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg active:scale-95 transition">Approve Poin</button></div> ); })}</div></div> ); }) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada poin event yang perlu di-approve.</p>}</div></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Calendar className="w-4 h-4 text-amber-500" /> <span>Daftar Event Mendatang</span></h4><div className="space-y-3">{events.length > 0 ? events.map(ev => ( <EventCard key={ev.id} event={ev} isAdmin={true} onDelete={() => deleteEvent(ev.id)} onEdit={() => handleEditEventClick(ev)} onToggleVisibility={toggleEventVisibility} checkinCount={ev.checkins ? Object.keys(ev.checkins).length : 0} totalMembers={totalApprovedMembers} onViewCheckins={openCheckinsModal} onViewDetails={openEventDetailModal} /> )) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada event.</p>}</div></div></div> )}
                       {adminTab === 'members' && ( 
@@ -1425,18 +1472,18 @@
                       )}
                       {adminTab === 'forum' && ( <div className="bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.MessageSquare className="w-4 h-4 text-amber-500" /> <span>Forum Koordinasi Anggota</span></h4>{renderForum()}</div> )}
                       {adminTab === 'settings' && ( <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Settings className="w-4 h-4 text-amber-500" /> <span>Pengaturan Akses Admin</span></h4><form onSubmit={updateAdminCreds} className="space-y-3"><FormInput label="Username Admin Baru" icon={<I.User />} type="text" value={adminCreds.username} onChange={(e)=>setAdminCreds({...adminCreds, username: e.target.value})} placeholder="Masukkan username baru" required /><FormInput label="Password Admin Baru" icon={<I.Lock />} type="password" value={adminCreds.password} onChange={(e)=>setAdminCreds({...adminCreds, password: e.target.value})} placeholder="Masukkan password baru" required /><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Update Kredensial</button></form></div> )}
-                    </div>
+                    </PageTransition>
                   </div>
                 )}
               </div>
 
               {currentUser.role!=='Admin' && (
                 <div className="absolute bottom-0 left-0 right-0 bg-white/60 backdrop-blur-2xl border-t border-white/40 px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] flex justify-around items-center z-30 shadow-[0_-4px_30px_rgba(0,0,0,0.05)]">
-                  <button onClick={()=>setActiveTab('home')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='home'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Home /></button>
-                  <button onClick={()=>setActiveTab('events')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='events'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Calendar /></button>
-                  <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><BikeIcon type="Sport" className="w-[22px] h-[22px]" /></button>
-                  <button onClick={()=>setActiveTab('members')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='members'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Users /></button>
-                  <button onClick={()=>setActiveTab('profile')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='profile'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.User /></button>
+                  <button onClick={()=>setActiveTab('home')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='home'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Home /></button>
+                  <button onClick={()=>setActiveTab('events')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='events'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Calendar /></button>
+                  <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><BikeIcon type="Sport" className="w-[22px] h-[22px]" /></button>
+                  <button onClick={()=>setActiveTab('members')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='members'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Users /></button>
+                  <button onClick={()=>setActiveTab('profile')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='profile'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.User /></button>
                 </div>
               )}
             </>
