@@ -105,58 +105,37 @@
     // Script untuk Suara notifikasi dan getar di HP
     // Ganti dengan VAPID Key yang Anda dapatkan di Langkah 1
     const VAPID_KEY = "BAAKM-p8R3kEQl7Rn3qosWNLo2Zgmx9PvhK4nBLCNs9vXVpPR2g54UYGsIpX1MgDvrIWhcwZ41_xW-bmpGSE8fg"; 
-        
-    // Buat Audio Context global
-    let audioCtx = null;
-    const initAudio = () => {
-      if (!audioCtx) {
-        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-      }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    };
-
-    // Fungsi untuk memutar suara notifikasi (Tone)
+    
+    // Fungsi untuk memutar suara notifikasi
     const playNotificationSound = () => {
-      if (!audioCtx) return;
       try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        // Nada 1
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nada A5
-        // Nada 2 (Setelah 0.15 detik)
-        osc.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.15); // Nada C#6
-        
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880; // Nada bunyi
         osc.type = 'sine';
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
       } catch (e) { console.error("Sound error:", e); }
     };
 
     // Fungsi meminta izin dan menyimpan token FCM
     const requestNotificationPermission = async (userId) => {
       try {
-        // Minta izin notifikasi (ini juga mengizinkan getar dan suara di banyak browser)
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          initAudio(); // Inisialisasi audio setelah izin diberikan
-          if ('serviceWorker' in navigator) {
-            const reg = await navigator.serviceWorker.ready;
-            const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-            if (token) {
-              await db.ref('members/' + userId + '/fcmToken').set(token);
-              console.log('FCM Token saved');
-            }
+          const token = await messaging.getToken({ vapidKey: VAPID_KEY });
+          if (token) {
+            // Simpan token ke database Firebase di user tersebut
+            await db.ref('members/' + userId + '/fcmToken').set(token);
+            console.log('FCM Token saved');
           }
         } else {
-          console.log('Izin notifikasi ditolak. Suara dan getar mungkin tidak berfungsi.');
+          console.log('Izin notifikasi ditolak');
         }
       } catch (e) { console.error('Error FCM:', e); }
     };
@@ -512,24 +491,8 @@
       useEffect(() => { 
         const fadeTimer = setTimeout(() => setSplashFading(true), 2200);
         const removeTimer = setTimeout(() => setShowSplash(false), 2800);
-
-        // TAMBAHKAN INI: Aktifkan audio saat user pertama kali klik di mana saja
-        const handleFirstClick = () => {
-          initAudio();
-          window.removeEventListener('click', handleFirstClick);
-        };
-        window.addEventListener('click', handleFirstClick);
-        
-        return () => { 
-          clearTimeout(fadeTimer); 
-          clearTimeout(removeTimer);
-          window.removeEventListener('click', handleFirstClick);
-        };
-      }, []);
-        
         return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); };
       }, []);
-      
       useEffect(() => { const t = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })), 1000); return () => clearInterval(t); }, []);
       useEffect(() => { fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true').then(r=>r.json()).then(d=>d.current_weather&&setWeather(d.current_weather)).catch(e=>console.error(e)); }, []);
       
@@ -599,7 +562,7 @@
             if (showChatModalRef.current && activeChatIdRef.current === chatId) return;
 
             // TAMBAHKAN BARIS INI: Getar HP dan mainkan suara
-            if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
             playNotificationSound();
 
             // Tambah jumlah pesan belum dibaca
