@@ -1010,11 +1010,11 @@
                               <div className="relative z-10 p-5 h-full flex flex-col justify-between text-slate-800">
                                 <div className="flex justify-between items-start">
                                   <div className="pr-3 flex-1">
-                                    <h1 className="text-lg font-black tracking-wider uppercase text-slate-800 leading-none">ONE ASPAL</h1>
-                                    <p className="text-[10px] font-bold tracking-[0.15em] text-slate-500 uppercase mt-1.5">Riders Card Member</p>
+                                    <h1 className="text-lg font-black tracking-wider uppercase text-slate-800 leading-none">ONE ASPAL CLUB</h1>
+                                    <p className="text-[10px] font-bold tracking-[0.15em] text-slate-500 uppercase mt-1.5">Riders Card Official Member</p>
                                     <div className="mt-1.5">
-                                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">ID Anggota</p>
-                                      <p className="text-sm font-mono font-extrabold text-slate-800 tracking-wider">{mpd.memberId}</p>
+                                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest"></p>
+                                      <p className="text-sm font-mono font-extrabold text-slate-800 tracking-wider">ID: {mpd.memberId}</p>
                                     </div>
                                   </div>
                                   <div className="w-14 h-14 rounded-full bg-white p-1 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-slate-300/50">
@@ -1024,27 +1024,27 @@
                                 
                                 <div className="space-y-1 flex-1 flex flex-col justify-center mt-2">
                                   <div>
-                                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Nama Anggota</p>
+                                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest"> </p>
                                     <p className="text-[15px] font-extrabold tracking-normal uppercase leading-tight break-words text-slate-900">{mpd.name}</p>
+                                    <p className="text-[11px] font-bold text-slate-700 break-words leading-tight">{primaryBikeText}</p>
                                   </div>
                                   <div className="flex gap-3 mt-1">
                                     <div className="flex-1">
-                                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Asal Anggota</p>
+                                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest"></p>
                                       <p className="text-[11px] font-bold text-slate-700 break-words leading-tight">{mpd.city}</p>
                                     </div>
                                     <div className="flex-1">
-                                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Motor Utama</p>
-                                      <p className="text-[11px] font-bold text-slate-700 break-words leading-tight">{primaryBikeText}</p>
+                                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest"></p>
                                     </div>
                                   </div>
                                 </div>
 
                                 <div className="flex justify-between items-end border-t border-slate-300/50 pt-2.5">
                                   <div className="flex items-center space-x-1">
-                                    <I.CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
+                                    
                                     <p className="text-[9px] text-slate-600 font-semibold">Berlaku s/d {validThruText}</p>
                                   </div>
-                                  <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Official Member</p>
+                                  <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">driver's license (SIM C)</p>
                                 </div>
                               </div>
                             </div>
@@ -1503,11 +1503,11 @@
                     <div className="relative z-10 p-4 h-full flex flex-col justify-between text-slate-800">
                       <div className="flex justify-between items-start">
                         <div className="pr-2 flex-1">
-                          <h1 className="text-base font-black tracking-wider uppercase text-slate-800 leading-none">ONE ASPAL</h1>
-                          <p className="text-[8px] font-bold tracking-[0.15em] text-slate-500 uppercase mt-1">Riders Card Member</p>
+                          <h1 className="text-base font-black tracking-wider uppercase text-slate-800 leading-none">ONE ASPAL CLUB</h1>
+                          <p className="text-[8px] font-bold tracking-[0.15em] text-slate-500 uppercase mt-1">Riders Card Official Member</p>
                           <div className="mt-1.5">
-                            <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">ID Anggota</p>
-                            <p className="text-xs font-mono font-extrabold text-slate-800 tracking-wider">{mpd.memberId}</p>
+                            <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest"></p>
+                            <p className="text-xs font-mono font-extrabold text-slate-800 tracking-wider">ID: {mpd.memberId}</p>
                           </div>
                         </div>
                         <div className="w-12 h-12 rounded-full bg-white p-0.5 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-slate-300/50"><img crossOrigin="anonymous" src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" /></div>
@@ -1515,27 +1515,26 @@
                       
                       <div className="space-y-0.5 flex-1 flex flex-col justify-center mt-1">
                         <div>
-                          <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">Nama Anggota</p>
                           <p className="text-sm font-extrabold tracking-normal uppercase leading-tight break-words text-slate-900">{mpd.name}</p>
+                          <p className="text-[10px] font-bold text-slate-700 break-words leading-tight">{primaryBikeText}</p>
                         </div>
                         <div className="flex gap-2 mt-1">
                           <div className="flex-1">
-                            <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">Asal Anggota</p>
+                            <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest"></p>
                             <p className="text-[10px] font-bold text-slate-700 break-words leading-tight">{mpd.city}</p>
                           </div>
                           <div className="flex-1">
-                            <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">Motor Utama</p>
-                            <p className="text-[10px] font-bold text-slate-700 break-words leading-tight">{primaryBikeText}</p>
+                            
                           </div>
                         </div>
                       </div>
 
                       <div className="flex justify-between items-end border-t border-slate-300/50 pt-2">
                         <div className="flex items-center space-x-1">
-                          <I.CheckCircle2 className="w-2 h-2 text-emerald-500" />
+                          
                           <p className="text-[7px] text-slate-600 font-semibold">Berlaku s/d {validThruText}</p>
                         </div>
-                        <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">Official Member</p>
+                        <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">driver's license (SIM C)</p>
                       </div>
                     </div>
                   </div>
