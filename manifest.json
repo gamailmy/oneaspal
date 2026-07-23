@@ -20,5 +20,9 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "categories": [
+    "events",
+    "social"
   ]
 }
