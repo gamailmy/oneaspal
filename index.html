@@ -289,7 +289,7 @@
       };
       const defaultImage = 'https://i.postimg.cc/rs3by91Z/bike-motorcycle-icon.png';  
       const imgSrc = bikeImages[type] || defaultImage;
-      return <img src={imgSrc} alt={type || 'Sport'} className={`${className} object-contain inline-block`} />;
+      return <img src={imgSrc} alt={type || 'Motor'} className={`${className} object-contain inline-block`} />;
     };
 
     const I = {
@@ -1466,7 +1466,7 @@
                 <div className="absolute bottom-0 left-0 right-0 bg-white/60 backdrop-blur-2xl border-t border-white/40 px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] flex justify-around items-center z-30 shadow-[0_-4px_30px_rgba(0,0,0,0.05)]">
                   <button onClick={()=>setActiveTab('home')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='home'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Home /></button>
                   <button onClick={()=>setActiveTab('events')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='events'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Calendar /></button>
-                  <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><BikeIcon type="Motor" className="w-[30px] h-[30px]" /></button>
+                  <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><BikeIcon type="Sport" className="w-[22px] h-[22px]" /></button>
                   <button onClick={()=>setActiveTab('members')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='members'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Users /></button>
                   <button onClick={()=>setActiveTab('profile')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='profile'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.User /></button>
                 </div>
