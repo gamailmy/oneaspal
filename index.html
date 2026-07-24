@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
   <title>One Aspal Club - Riding and Touring Community</title>
+  <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png">
   <link rel="icon" type="image/png" href="https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png" />
@@ -35,8 +36,6 @@
     .card-font { font-family: 'Plus Jakarta Sans', sans-serif; }
     #root { padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
     
-    button { transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
-
     @media screen and (orientation: landscape) {
       #root { display: none !important; }
       #rotate-warning { display: flex !important; }
@@ -46,54 +45,25 @@
       flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
-
+    
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-    
-    @keyframes backdropBlurIn { 
-      from { opacity: 0; -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px); } 
-      to { opacity: 1; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); } 
-    }
-    .animate-backdrop-in { animation: backdropBlurIn 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
-    
-    @keyframes slideUp { from { opacity: 0; transform: translateY(15px); filter: blur(4px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
-    .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; }
-    
-    @keyframes scaleIn { 
-      from { opacity: 0; transform: scale(0.95) translateY(15px); filter: blur(8px); } 
-      to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); } 
-    }
-    .animate-scale-in { animation: scaleIn 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
-
-    .page-transition-container { position: relative; width: 100%; }
-    .page-transition-entering, .page-transition-entered { position: relative; z-index: 2; width: 100%; }
-    .page-transition-entering { animation: pageEnterSmooth 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
-    .page-transition-entered { animation: none; }
-    .page-transition-exiting { position: absolute; top: 0; left: 0; right: 0; z-index: 1; pointer-events: none; animation: pageExitSmooth 0.35s cubic-bezier(0.4, 0, 0.6, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
-    @keyframes pageEnterSmooth { 0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(8px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
-    @keyframes pageExitSmooth { 0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 100% { opacity: 0; transform: translateY(-15px) scale(1.02); filter: blur(8px); } }
-    
-    .nav-btn { transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
-
-    @keyframes slideDownBounce { 
-      0% { transform: translateY(-100px) scale(0.95); opacity: 0; filter: blur(5px); } 
-      60% { transform: translateY(5px) scale(1.01); opacity: 1; filter: blur(0); } 
-      80% { transform: translateY(-2px) scale(1); opacity: 1; filter: blur(0); } 
-      100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); } 
-    }
-    .toast-animate { animation: slideDownBounce 0.6s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; }
+    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .animate-scale-in { animation: scaleIn 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+    @keyframes slideDownBounce { 0% { transform: translateY(-100px); opacity: 0; } 60% { transform: translateY(10px); opacity: 1; } 80% { transform: translateY(-5px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+    @keyframes shrinkBar { 0% { width: 100%; } 100% { width: 0%; } }
+    .toast-animate { animation: slideDownBounce 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     .toast-progress { animation: shrinkBar 3s linear forwards; }
-    
     @keyframes breathAnimation { 0%, 100% { transform: scale(1) translateZ(0); } 50% { transform: scale(1.04) translateZ(0); } }
     .animate-breath { animation: breathAnimation 3s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: transform; backface-visibility: hidden; }
     @keyframes glowPulse { 0%, 100% { opacity: 0.4; transform: scale(0.95) translateZ(0); } 50% { opacity: 0.7; transform: scale(1.1) translateZ(0); } }
     .animate-glow-pulse { animation: glowPulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: opacity, transform; }
     @keyframes breathBtn { 0%, 100% { transform: scale(1); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 0 0 0 rgba(59, 130, 246, 0.5); } 50% { transform: scale(1.03); box-shadow: 0 20px 40px -5px rgba(59, 130, 246, 0.6), 0 0 0 12px rgba(59, 130, 246, 0); } }
     .animate-breath-btn { animation: breathBtn 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: transform, box-shadow; }
-    
-    @keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(0.95); filter: blur(3px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
-    .animate-msg-in { animation: msgIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; }
-    
+    @keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .animate-msg-in { animation: msgIn 0.3s ease-out forwards; }
     @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     .progress-bar-modern { position: relative; overflow: hidden; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
     .progress-bar-modern::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transform: translateX(-100%); animation: shimmer 2s infinite; }
@@ -131,39 +101,61 @@
     const messaging = firebase.messaging();
     
     const LOGO_URL = "https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png";
-    const VAPID_KEY = "BAAKM-p8R3kEQl7Rn3qosWNLo2Zgmx9PvhK4nBLCNs9vXVpPR2g54UYGsIpX1MgDvrIWhcwZ41_xW-bmpGSE8fg"; 
 
+    // Ganti dengan VAPID Key yang Anda dapatkan di Langkah 1
+    const VAPID_KEY = "BAAKM-p8R3kEQl7Rn3qosWNLo2Zgmx9PvhK4nBLCNs9vXVpPR2g54UYGsIpX1MgDvrIWhcwZ41_xW-bmpGSE8fg"; 
+        
+    // Buat Audio Context global
     let audioCtx = null;
     const initAudio = () => {
-      if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
-      if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume(); }
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
     };
 
+    // Fungsi untuk memutar suara notifikasi (Tone)
     const playNotificationSound = () => {
       if (!audioCtx) return;
       try {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
-        osc.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.15); 
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        // Nada 1
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nada A5
+        // Nada 2 (Setelah 0.15 detik)
+        osc.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.15); // Nada C#6
+        
         osc.type = 'sine';
         gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.4);
+        
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.4);
       } catch (e) { console.error("Sound error:", e); }
     };
 
+    // Fungsi meminta izin dan menyimpan token FCM
     const requestNotificationPermission = async (userId) => {
       try {
+        // Minta izin notifikasi (ini juga mengizinkan getar dan suara di banyak browser)
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          initAudio(); 
+          initAudio(); // Inisialisasi audio setelah izin diberikan
           if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.ready;
             const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-            if (token) { await db.ref('members/' + userId + '/fcmToken').set(token); }
+            if (token) {
+              await db.ref('members/' + userId + '/fcmToken').set(token);
+              console.log('FCM Token saved');
+            }
           }
+        } else {
+          console.log('Izin notifikasi ditolak. Suara dan getar mungkin tidak berfungsi.');
         }
       } catch (e) { console.error('Error FCM:', e); }
     };
@@ -172,15 +164,28 @@
     const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🏍️'];
 
     const READINESS_ITEMS = [
-      { key: 'sim', label: 'SIM motor masih Aktif' }, { key: 'stnk', label: 'STNK motor yang digunakan masih Aktif' },
-      { key: 'rem', label: 'Rem depan dan belakang Baik' }, { key: 'sein', label: 'Lampu sein kiri-kanan menyala baik' },
-      { key: 'lampu', label: 'Lampu malam menyala baik' }, { key: 'ban', label: 'Ban motor depan-belakang masih layak' },
-      { key: 'spion', label: 'Spion kiri-kanan terpasang' }, { key: 'service', label: 'Motor sudah di service' },
-      { key: 'oli', label: 'Oli mesin sudah di ganti' }, { key: 'izin', label: 'Sudah izin istri/suami/orang rumah' }
+      { key: 'sim', label: 'SIM motor masih Aktif' },
+      { key: 'stnk', label: 'STNK motor yang digunakan masih Aktif' },
+      { key: 'rem', label: 'Rem depan dan belakang Baik' },
+      { key: 'sein', label: 'Lampu sein kiri-kanan menyala baik' },
+      { key: 'lampu', label: 'Lampu malam menyala baik' },
+      { key: 'ban', label: 'Ban motor depan-belakang masih layak' },
+      { key: 'spion', label: 'Spion kiri-kanan terpasang' },
+      { key: 'service', label: 'Motor sudah di service' },
+      { key: 'oli', label: 'Oli mesin sudah di ganti' },
+      { key: 'izin', label: 'Sudah izin istri/suami/orang rumah' }
     ];
 
-    const AVATARS_MALE = ['https://i.postimg.cc/wMTWFGcY/1-m.jpg','https://i.postimg.cc/N9S7jbzk/2-m.jpg','https://i.postimg.cc/ygtX8nbF/3-m.jpg','https://i.postimg.cc/9RKtQ1nR/4-m.jpg','https://i.postimg.cc/Kkwr8QH7/5-m.jpg','https://i.postimg.cc/8J9Bzw0T/6-m.jpg','https://i.postimg.cc/k6BvCLfr/7-m.jpg','https://i.postimg.cc/7Gfn4jXj/8-m.jpg','https://i.postimg.cc/YGhz7Tbr/9-m.jpg','https://i.postimg.cc/wtWQS95F/10-m.jpg'];
-    const AVATARS_FEMALE = ['https://randomuser.me/api/portraits/women/44.jpg','https://randomuser.me/api/portraits/women/68.jpg','https://randomuser.me/api/portraits/women/90.jpg','https://randomuser.me/api/portraits/women/75.jpg','https://randomuser.me/api/portraits/women/81.jpg','https://randomuser.me/api/portraits/women/85.jpg','https://randomuser.me/api/portraits/women/33.jpg','https://randomuser.me/api/portraits/women/95.jpg','https://randomuser.me/api/portraits/women/12.jpg','https://randomuser.me/api/portraits/women/79.jpg'];
+    const AVATARS_MALE = [
+      'https://i.postimg.cc/wMTWFGcY/1-m.jpg','https://i.postimg.cc/N9S7jbzk/2-m.jpg','https://i.postimg.cc/ygtX8nbF/3-m.jpg',
+      'https://i.postimg.cc/9RKtQ1nR/4-m.jpg','https://i.postimg.cc/Kkwr8QH7/5-m.jpg','https://i.postimg.cc/8J9Bzw0T/6-m.jpg',
+      'https://i.postimg.cc/k6BvCLfr/7-m.jpg','https://i.postimg.cc/7Gfn4jXj/8-m.jpg','https://i.postimg.cc/YGhz7Tbr/9-m.jpg','https://i.postimg.cc/wtWQS95F/10-m.jpg'
+    ];
+    const AVATARS_FEMALE = [
+      'https://randomuser.me/api/portraits/women/44.jpg','https://randomuser.me/api/portraits/women/68.jpg','https://randomuser.me/api/portraits/women/90.jpg',
+      'https://randomuser.me/api/portraits/women/75.jpg','https://randomuser.me/api/portraits/women/81.jpg','https://randomuser.me/api/portraits/women/85.jpg',
+      'https://randomuser.me/api/portraits/women/33.jpg','https://randomuser.me/api/portraits/women/95.jpg','https://randomuser.me/api/portraits/women/12.jpg','https://randomuser.me/api/portraits/women/79.jpg'
+    ];
 
     const GlassLogo = ({ size = "w-28 h-28", animate = false }) => (
       <div className={`${size} mx-auto flex items-center justify-center relative`}>
@@ -199,38 +204,6 @@
       </div>
     );
 
-    const PageTransition = ({ pageKey, children }) => {
-      const [exitContent, setExitContent] = useState(null);
-      const timeoutRef = useRef(null);
-      const prevChildrenRef = useRef(children);
-      const prevKeyRef = useRef(pageKey);
-
-      useEffect(() => {
-        if (pageKey !== prevKeyRef.current) {
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          setExitContent({ key: prevKeyRef.current, content: prevChildrenRef.current });
-          timeoutRef.current = setTimeout(() => { setExitContent(null); }, 450);
-          prevKeyRef.current = pageKey;
-        }
-        prevChildrenRef.current = children;
-      }, [pageKey, children]);
-
-      useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
-
-      return (
-        <div className="page-transition-container">
-          {exitContent && (
-            <div key={exitContent.key} className="page-transition-exiting">
-              {exitContent.content}
-            </div>
-          )}
-          <div key={pageKey} className={exitContent ? 'page-transition-entering' : 'page-transition-entered'}>
-            {children}
-          </div>
-        </div>
-      );
-    };
-
     const MemberAvatar = ({ user, size = "w-10 h-10", textSize = "text-xl" }) => {
       const gender = user?.gender || 'Laki-laki';
       let content;
@@ -247,16 +220,16 @@
     };
 
     const BikeIcon = ({ type, className }) => {
-      const bikeImages = {
-        'Matic': 'https://i.postimg.cc/QNbJXVMZ/Matic.jpg',             
-        'Bebek': 'https://i.postimg.cc/nVkGHMLt/Bebek.jpg',             
-        'Sport': 'https://i.postimg.cc/y6PyVWNq/Sport.jpg',             
-        'Trail': 'https://i.postimg.cc/x1qRpYnn/Trail.jpg',             
-        'Classic (Custom)': 'https://i.postimg.cc/593Sxjtd/Classic.jpg' 
-      };
-      const defaultImage = 'https://i.postimg.cc/rs3by91Z/bike-motorcycle-icon.png';  
-      const imgSrc = bikeImages[type] || defaultImage;
-      return <img src={imgSrc} alt={type || 'Motor'} className={`${className} object-contain inline-block`} />;
+      const svgProps = { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round", className };
+      const Wheels = () => (<><circle cx="5.5" cy="17.5" r="3.5" /><circle cx="18.5" cy="17.5" r="3.5" /><path d="M5.5 17.5h13" /></>);
+      switch (type) {
+        case 'Matic': return (<svg {...svgProps}><Wheels /><path d="M8 17.5V14h6.5l3 3.5M8 14V10h6v4" /></svg>);
+        case 'Bebek': return (<svg {...svgProps}><Wheels /><path d="M9 17.5l2-5h4l2 5M11 12.5v-2h2v2M10 12.5h5" /></svg>);
+        case 'Sport': return (<svg {...svgProps}><Wheels /><path d="M7 17.5l4-2 2-4h3l-1 6M7 17.5l1.5-2.5M11 15.5l2-3" /></svg>);
+        case 'Trail': return (<svg {...svgProps}><Wheels /><path d="M9 17.5l2-6h2l3 6M11 11.5v-3h2v3M10 12.5h5" /></svg>);
+        case 'Classic (Custom)': return (<svg {...svgProps}><Wheels /><path d="M7 17.5l3-6h2l3 6M10 11.5v-2h2v2M8.5 14.5h5" /></svg>);
+        default: return (<svg {...svgProps}><Wheels /><path d="M15 11.5 13 14H6.5L10 8h5.5l-3 3.5H6" /><path d="M15 11.5V6H9" /></svg>);
+      }
     };
 
     const I = {
@@ -295,7 +268,7 @@
       Settings: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
       Camera: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>,
       Star: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-      Eye: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7s-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
+      Eye: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
       EyeOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>,
       FileText: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>,
       Image: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
@@ -462,7 +435,7 @@
       const logoutTimerRef = useRef(null);
       const fileInputRef = useRef(null);
       const chatScrollRef = useRef(null);
-      const heartbeatRef = useRef(null);
+      const heartbeatRef = useRef(null); // Ref untuk interval heartbeat
       const [showSplash, setShowSplash] = useState(true);
       const [splashFading, setSplashFading] = useState(false);
       const [regName, setRegName] = useState(''); const [regUsername, setRegUsername] = useState(''); const [regPassword, setRegPassword] = useState(''); const [regGender, setRegGender] = useState('Laki-laki'); const [regPhone, setRegPhone] = useState(''); const [regCity, setRegCity] = useState(''); const [regEmail, setRegEmail] = useState(''); const [regEmailDomain, setRegEmailDomain] = useState('@gmail.com'); const [regRidingStatus, setRegRidingStatus] = useState(''); const [regBikeBrand, setRegBikeBrand] = useState(''); const [regBikeModel, setRegBikeModel] = useState(''); const [regBikePlate, setRegBikePlate] = useState(''); const [regBikeCategory, setRegBikeCategory] = useState('Matic'); const [regBikeEngine, setRegBikeEngine] = useState('');
@@ -511,14 +484,16 @@
       const [cardFormat, setCardFormat] = useState('jpg');
       const [isProcessing, setIsProcessing] = useState(false);
 
+      // State Chat & Notifikasi Pesan Masuk
       const [showChatModal, setShowChatModal] = useState(false);
       const [activeChatUser, setActiveChatUser] = useState(null);
       const [activeChatId, setActiveChatId] = useState(null);
       const [chatMessages, setChatMessages] = useState([]);
       const [newMessage, setNewMessage] = useState('');
       const [incomingMessageAlert, setIncomingMessageAlert] = useState(null);
-      const [unreadChats, setUnreadChats] = useState({}); 
+      const [unreadChats, setUnreadChats] = useState({}); // { 'userId': jumlahPesan }
       
+      // Refs untuk listener global chat
       const showChatModalRef = useRef(false);
       const activeChatIdRef = useRef(null);
       const membersRef = useRef([]);
@@ -538,10 +513,18 @@
         const fadeTimer = setTimeout(() => setSplashFading(true), 1000);
         const removeTimer = setTimeout(() => setShowSplash(false), 1500);
 
-        const handleFirstClick = () => { initAudio(); window.removeEventListener('click', handleFirstClick); };
+        // TAMBAHKAN INI: Aktifkan audio saat user pertama kali klik di mana saja
+        const handleFirstClick = () => {
+          initAudio();
+          window.removeEventListener('click', handleFirstClick);
+        };
         window.addEventListener('click', handleFirstClick);
         
-        return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); window.removeEventListener('click', handleFirstClick); };
+        return () => { 
+          clearTimeout(fadeTimer); 
+          clearTimeout(removeTimer);
+          window.removeEventListener('click', handleFirstClick);
+        };
       }, []);
       
       useEffect(() => { const t = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })), 1000); return () => clearInterval(t); }, []);
@@ -553,7 +536,8 @@
         membersRefDb.on('value', (snapshot) => {
           const data = snapshot.val();
           const membersArray = data ? Object.keys(data).map(key => { const m = data[key]; const bikes = m.bikes ? Object.keys(m.bikes).map(bKey => ({ id: bKey, ...m.bikes[bKey] })) : []; return { id: key, ...m, bikes }; }) : [];
-          setMembers(membersArray); membersRef.current = membersArray;
+          setMembers(membersArray);
+          membersRef.current = membersArray;
         }, (error) => { console.error("Firebase Members Error:", error); addN(`Error DB: ${error.message}`, 'error'); });
         const threadsRef = db.ref('threads');
         threadsRef.on('value', (snapshot) => {
@@ -568,30 +552,55 @@
         if (storedSession) { try { const session = JSON.parse(storedSession); if (session.expiresAt > Date.now()) { setCurrentUser(session.user); setUserGears(session.gears || {}); setActiveTab(session.user.role === 'Admin' ? 'admin_dashboard' : 'home'); if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); logoutTimerRef.current = setTimeout(() => out(false), session.expiresAt - Date.now()); } else { localStorage.removeItem('oac_session'); } } catch (e) { localStorage.removeItem('oac_session'); } }
       }, []);
 
+      // Sinkronisasi ref untuk status chat modal
       useEffect(() => { showChatModalRef.current = showChatModal; }, [showChatModal]);
       useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
 
+      // Global Chat Listener untuk Notifikasi Pop-up & Badge (Persistent)
       useEffect(() => {
         if (!currentUser || members.length === 0) return;
+        
         const listeners = [];
         const newUnread = {};
 
         const checkUnreadMessages = async () => {
+          // 1. Check Broadcast
           const bChatId = 'broadcast_admin';
           const bLastRead = parseInt(localStorage.getItem('oac_last_read_' + bChatId) || '0');
           const bSnap = await db.ref('chats/' + bChatId + '/messages').orderByChild('timestamp').startAfter(bLastRead).once('value');
-          let bCount = 0; let bLatestTime = bLastRead;
-          bSnap.forEach(child => { if (child.val().senderId !== currentUser.id) { bCount++; if(child.val().timestamp > bLatestTime) bLatestTime = child.val().timestamp; } });
-          if (bCount > 0) { newUnread['ALL'] = bCount; localStorage.setItem('oac_last_read_' + bChatId, bLatestTime); }
+          let bCount = 0;
+          let bLatestTime = bLastRead;
+          bSnap.forEach(child => { 
+            if (child.val().senderId !== currentUser.id) {
+              bCount++; 
+              if(child.val().timestamp > bLatestTime) bLatestTime = child.val().timestamp;
+            }
+          });
+          if (bCount > 0) {
+            newUnread['ALL'] = bCount;
+            // Update last read time agar tidak terdeteksi ulang
+            localStorage.setItem('oac_last_read_' + bChatId, bLatestTime);
+          }
 
+          // 2. Check 1-on-1
           for (const m of members) {
             if (m.id !== currentUser.id) {
               const cId = [currentUser.id, m.id].sort().join('_');
               const lastRead = parseInt(localStorage.getItem('oac_last_read_' + cId) || '0');
               const cSnap = await db.ref('chats/' + cId + '/messages').orderByChild('timestamp').startAfter(lastRead).once('value');
-              let count = 0; let cLatestTime = lastRead;
-              cSnap.forEach(child => { if (child.val().senderId !== currentUser.id) { count++; if(child.val().timestamp > cLatestTime) cLatestTime = child.val().timestamp; } });
-              if (count > 0) { newUnread[m.id] = count; localStorage.setItem('oac_last_read_' + cId, cLatestTime); }
+              let count = 0;
+              let cLatestTime = lastRead;
+              cSnap.forEach(child => { 
+                if (child.val().senderId !== currentUser.id) {
+                  count++; 
+                  if(child.val().timestamp > cLatestTime) cLatestTime = child.val().timestamp;
+                }
+              });
+              if (count > 0) {
+                newUnread[m.id] = count;
+                // Update last read time agar tidak terdeteksi ulang
+                localStorage.setItem('oac_last_read_' + cId, cLatestTime);
+              }
             }
           }
           setUnreadChats(newUnread);
@@ -600,19 +609,35 @@
 
         const setupLiveListeners = () => {
           const handleNewMessage = (chatId, otherUserId, msg) => {
-            if (msg.senderId === currentUser.id) return; 
-            if (showChatModalRef.current && activeChatIdRef.current === chatId) { localStorage.setItem('oac_last_read_' + chatId, msg.timestamp); return; }
+            if (msg.senderId === currentUser.id) return; // Abaikan pesan kita sendiri
+            
+            // Jika chat sedang dibuka untuk user ini, update last read time secara real-time
+            if (showChatModalRef.current && activeChatIdRef.current === chatId) {
+              localStorage.setItem('oac_last_read_' + chatId, msg.timestamp);
+              return;
+            }
+
+            // Getar HP dan mainkan suara
             if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
             playNotificationSound();
+
+            // Tambah jumlah pesan belum dibaca
             setUnreadChats(prev => ({ ...prev, [otherUserId]: (prev[otherUserId] || 0) + 1 }));
+            
+            // Munculkan pop-up notifikasi (hanya jika tidak ada pop-up lain yang sedang aktif)
             setIncomingMessageAlert(prev => {
               if (prev) return prev; 
               const m = membersRef.current.find(mem => mem.id === otherUserId);
-              return { senderName: msg.senderName || (m ? m.name : 'Admin'), text: msg.text, recipientUser: m || { id: otherUserId, name: msg.senderName } };
+              return {
+                senderName: msg.senderName || (m ? m.name : 'Admin'),
+                text: msg.text,
+                recipientUser: m || { id: otherUserId, name: msg.senderName }
+              };
             });
             addN(`Pesan baru dari ${msg.senderName}`, 'info');
           };
 
+          // Listener Broadcast
           const broadcastId = 'broadcast_admin';
           const bLastReadVal = parseInt(localStorage.getItem('oac_last_read_' + broadcastId) || '0');
           const bRef = db.ref('chats/' + broadcastId + '/messages').orderByChild('timestamp').startAfter(bLastReadVal);
@@ -620,6 +645,7 @@
           bRef.on('child_added', bHandler);
           listeners.push(() => bRef.off('child_added', bHandler));
 
+          // Listener Chat 1-on-1
           members.forEach(m => {
             if (m.id !== currentUser.id) {
               const chatId = [currentUser.id, m.id].sort().join('_');
@@ -633,9 +659,12 @@
         };
 
         checkUnreadMessages();
+
         return () => listeners.forEach(fn => fn());
       }, [currentUser, members]);
 
+
+      // Listener untuk Chat Messages yang sedang aktif dibuka
       useEffect(() => {
         if (!activeChatId) return;
         const chatRef = db.ref('chats/' + activeChatId + '/messages');
@@ -643,7 +672,9 @@
           const data = snapshot.val();
           const msgs = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a,b) => a.timestamp - b.timestamp) : [];
           setChatMessages(msgs);
-          setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight; }, 100);
+          setTimeout(() => {
+            if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+          }, 100);
         });
         return () => chatRef.off();
       }, [activeChatId]);
@@ -654,8 +685,20 @@
       const addN = (m, t='info') => { setNotifications(p=>[{id:Date.now(),message:m,type:t,time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),read:false},...p]); setToast({show:true,message:m,type:t}); setTimeout(()=>setToast({show:false,message:'',type:'success'}),3000); };
       const updateSessionData = (newUser, newGears) => { const stored = localStorage.getItem('oac_session'); if (stored) { try { const session = JSON.parse(stored); const updatedSession = { user: newUser || session.user, gears: newGears || session.gears || {}, expiresAt: session.expiresAt }; localStorage.setItem('oac_session', JSON.stringify(updatedSession)); } catch (e) {} } };
       
-      const updateHeartbeat = async (userId) => { if (!userId || !db) return; try { await db.ref('members/' + userId + '/lastActive').set(firebase.database.ServerValue.TIMESTAMP); } catch (e) { console.error("Heartbeat error:", e); } };
-      const stopHeartbeat = () => { if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null; } };
+      // Fungsi Heartbeat untuk update status online
+      const updateHeartbeat = async (userId) => {
+        if (!userId || !db) return;
+        try {
+          await db.ref('members/' + userId + '/lastActive').set(firebase.database.ServerValue.TIMESTAMP);
+        } catch (e) { console.error("Heartbeat error:", e); }
+      };
+
+      const stopHeartbeat = () => {
+        if (heartbeatRef.current) {
+          clearInterval(heartbeatRef.current);
+          heartbeatRef.current = null;
+        }
+      };
 
       const setSession = (user, gears = {}) => { 
         const session = { user, gears, expiresAt: Date.now() + SESSION_DURATION }; 
@@ -663,13 +706,16 @@
         setCurrentUser(user); setUserGears(gears); 
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); 
         logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, SESSION_DURATION);
+        
+        // Minta izin notifikasi saat user login & mulai heartbeat
         if (user.id) {
           requestNotificationPermission(user.id);
-          updateHeartbeat(user.id); 
-          heartbeatRef.current = setInterval(() => updateHeartbeat(user.id), 30000); 
+          updateHeartbeat(user.id); // Langsung update
+          heartbeatRef.current = setInterval(() => updateHeartbeat(user.id), 30000); // Update tiap 30 detik
         }
       };
 
+      
       const handleLogin = async (e) => { 
         e.preventDefault(); 
         if(loginRole==='admin'){ db.ref('settings').once('value').then((snapshot) => { const settings = snapshot.val(); if(settings && username === settings.admin_username && password === settings.admin_password){ const adminUser = { name:'One-Admin', role:'Admin', avatar:'👑', id:'ADMIN-SYS', dbId:'admin', city:'Jakarta' }; setSession(adminUser, {}); setActiveTab('admin_dashboard'); addN('Selamat Datang, Admin Pengelola! ⚡','success'); } else { addN('Kredensial admin salah atau DB kosong!','error'); } }).catch(err => addN(`Error: ${err.message}`, 'error')); }
@@ -707,8 +753,11 @@
       };
       
       const out = (showMsg = true) => { 
-        stopHeartbeat(); 
-        if (currentUser?.id && db) { db.ref('members/' + currentUser.id + '/lastActive').set(0).catch(()=>{}); }
+        stopHeartbeat(); // Hentikan heartbeat
+        if (currentUser?.id && db) {
+          // Set status offline manual (lastActive ke 0)
+          db.ref('members/' + currentUser.id + '/lastActive').set(0).catch(()=>{});
+        }
         localStorage.removeItem('oac_session'); 
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); 
         setCurrentUser(null);setUserGears({});setActiveThread(null); 
@@ -716,12 +765,14 @@
         if (showMsg) addN('Anda telah keluar dari aplikasi.','info'); 
       };
       
+      // Helper untuk menentukan status online berdasarkan lastActive
       const getOnlineStatus = (lastActive) => {
-        if (!lastActive) return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' };
-        const now = Date.now(); const diff = now - lastActive;
-        if (diff < 60000) return { color: 'bg-emerald-500', text: 'Online', textColor: 'text-emerald-700', bgColor: 'bg-emerald-100' }; 
-        if (diff < 300000) return { color: 'bg-amber-500', text: 'Idle', textColor: 'text-amber-700', bgColor: 'bg-amber-100' }; 
-        return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; 
+        if (!lastActive) return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; // Abu-abu/Merah
+        const now = Date.now();
+        const diff = now - lastActive;
+        if (diff < 60000) return { color: 'bg-emerald-500', text: 'Online', textColor: 'text-emerald-700', bgColor: 'bg-emerald-100' }; // Hijau
+        if (diff < 300000) return { color: 'bg-amber-500', text: 'Idle', textColor: 'text-amber-700', bgColor: 'bg-amber-100' }; // Kuning
+        return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; // Abu-abu/Merah
       };
 
       const addBike = async (e) => { e.preventDefault(); if(!newBike.name || !newBike.plate) { addN('Data motor tidak boleh kosong!', 'error'); return; } if(mb.length >= 2) { addN('Maksimal 2 motor!', 'error'); return; } const bikeRef = db.ref('members/' + currentUser.id + '/bikes').push(); const newBikeData = { ...newBike, isPrimary: mb.length === 0 }; await bikeRef.set(newBikeData); setNewBike({ name: '', plate: '', type: 'Matic', engine: '' }); setShowAddBikeModal(false); addN('Motor berhasil ditambahkan! 🏍️', 'success'); };
@@ -762,12 +813,18 @@
       const getMemberPotentialPoints = (memberId) => { let pts = 0; events.forEach(ev => { if (ev.checkins && ev.checkins[memberId] && (!ev.ptsApproved || !ev.ptsApproved[memberId])) { pts += getEventPoints(ev.eventType).pts; } }); return pts; };
       const approveMemberPoints = async (eventId, memberId, pts) => { const memberRef = db.ref('members/' + memberId + '/points'); await memberRef.transaction((currentPoints) => { return (currentPoints || 0) + pts; }); await db.ref('events/' + eventId + '/ptsApproved/' + memberId).set(true); addN('Poin anggota berhasil di-approve! ⭐','success'); };
 
+      // Chat Functions
       const openChat = (recipient) => {
         if (recipient.id === currentUser.id) return;
         let chatId;
         if (recipient.id === 'ALL') { chatId = 'broadcast_admin'; } 
         else { const uids = [currentUser.id, recipient.id].sort(); chatId = uids.join('_'); }
-        setActiveChatUser(recipient); setActiveChatId(chatId); setShowChatModal(true);
+        
+        setActiveChatUser(recipient); 
+        setActiveChatId(chatId); 
+        setShowChatModal(true);
+        
+        // Reset jumlah pesan belum dibaca untuk user ini & update localStorage
         setUnreadChats(prev => ({ ...prev, [recipient.id]: 0 }));
         localStorage.setItem('oac_last_read_' + chatId, Date.now());
       };
@@ -796,7 +853,7 @@
         if(!cardRef.current) return null;
         const imgs = cardRef.current.querySelectorAll('img');
         await Promise.all(Array.from(imgs).map(img => { if (img.complete && img.naturalWidth !== 0) return Promise.resolve(); return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; }); }));
-        return await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, logging: false });
+        return await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#ffffff', useCORS: true, allowTaint: false, logging: false });
       };
 
       const openCardPreview = (action) => { setPreviewAction(action); setShowCardPreview(true); };
@@ -1030,11 +1087,11 @@
                           <div className="flex items-center space-x-2 text-amber-500 pt-2"><BikeIcon type={regBikeCategory} className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-wider">Data Garasi (Motor)</span></div>
                           <div className="grid grid-cols-2 gap-3">
                             <FormInput label="Merek Motor" icon={<BikeIcon type={regBikeCategory} className="w-4 h-4" />} type="text" value={regBikeBrand} onChange={(e)=>setRegBikeBrand(e.target.value.toUpperCase().replace(/[^A-Z ]/g,'').slice(0,10))} required placeholder="HONDA" hint="4-10 Kapital" />
-                            <FormInput label="Tipe Motor" icon={<BikeIcon type={regBikeCategory} className="w-4 h-4" />} type="text" value={regBikeModel} onChange={(e)=>setRegBikeModel(e.target.value.toUpperCase().replace(/[^A-Z0-9 -]/g,'').slice(0,20))} required placeholder="CBR-250 RR" hint="Pakai spasi/- maks 20" />
+                            <FormInput label="Tipe Motor" icon={<BikeIcon type={regBikeCategory} className="w-4 h-4" />} type="text" value={regBikeModel} onChange={(e)=>setRegBikeModel(e.target.value.toUpperCase().replace(/[^A-Z0-9 -]/g,'').slice(0,12))} required placeholder="CBR-250 RR" hint="Pakai spasi/- maks 12" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <FormInput label="Plat Nomor" icon={<I.MapPin />} type="text" maxLength="8" value={regBikePlate} onChange={(e)=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');setRegBikePlate(v);}} required placeholder="B1234ABC" hint="7-8 digit" />
-                            <FormSelect label="Kapasitas (CC)" value={regBikeEngine?`${regBikeEngine}cc`:''} onChange={(e)=>setRegBikeEngine(e.target.value.replace('cc',''))} required><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="135cc">135 cc</option><option value="150cc">150 cc</option><option value="155cc">155 cc</option><option value="160cc">160 cc</option><option value="180cc">180 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></FormSelect>
+                            <FormSelect label="Kapasitas (CC)" value={regBikeEngine?`${regBikeEngine}cc`:''} onChange={(e)=>setRegBikeEngine(e.target.value.replace('cc',''))} required><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="150cc">150 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></FormSelect>
                           </div>
                           <FormSelect label="Jenis Motor" icon={<BikeIcon type={regBikeCategory} className="w-4 h-4" />} value={regBikeCategory} onChange={(e)=>setRegBikeCategory(e.target.value)} required><option>Matic</option><option>Bebek</option><option>Sport</option><option>Trail</option><option>Classic (Custom)</option></FormSelect>
                         </div>
@@ -1060,7 +1117,7 @@
 
               <div className="flex-1 overflow-y-auto pb-24 px-5 pt-5 space-y-6 scrollbar-none" onClick={()=>setShowNotifPanel(false)}>
                 {currentUser.role!=='Admin' ? (
-                  <PageTransition pageKey={activeTab}>
+                  <div key={activeTab} className="animate-slide-up">
                     {activeTab==='home' && (
                       <div className="space-y-4">
                         {announcements.length>0 && (<div className="space-y-3">{announcements.map(an=>(<div key={an.id} className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm"><div className="flex justify-between items-start"><h4 className="font-black text-sm text-slate-900 flex items-center"><I.Megaphone className="w-4 h-4 text-amber-500 mr-2" /> {an.title}</h4><span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full uppercase animate-pulse">Baru</span></div><p className="text-xs text-slate-600 font-medium mt-1.5 leading-relaxed">{an.content}</p><p className="text-[9px] text-slate-400 font-bold mt-2">{an.date} • oleh {an.author}</p></div>))}</div>)}
@@ -1074,6 +1131,7 @@
                         <h3 className="text-lg font-black text-slate-900">Anggota Club</h3>
                         <SummaryCards />
                         
+                        {/* Broadcast Card dengan Badge Notifikasi */}
                         <div className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm mb-4 flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">📢</div>
@@ -1099,13 +1157,14 @@
                           const upcomingEvents = events.filter(ev => ev.checkins && ev.checkins[m.id] && ev.timestamp > Date.now()); 
                           const nearestUpcoming = upcomingEvents.sort((a,b) => a.timestamp - b.timestamp)[0]; 
                           const isReady = nearestUpcoming && nearestUpcoming.readiness && nearestUpcoming.readiness[m.id] && Object.keys(nearestUpcoming.readiness[m.id]).length === READINESS_ITEMS.length; 
-                          const status = getOnlineStatus(m.lastActive); 
+                          const status = getOnlineStatus(m.lastActive); // Dapatkan status online
                           
                           return ( 
                             <div key={m.id} className="bg-white/50 border border-white/60 rounded-2xl p-3 shadow-sm">
                               <div className="flex items-center space-x-3">
                                 <div className="relative">
                                   <MemberAvatar user={m} size="w-12 h-12" textSize="text-2xl" />
+                                  {/* Indikator Status Online */}
                                   <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${status.color}`}></span>
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -1114,6 +1173,7 @@
                                       {m.name} {m.simVerified && <I.CheckCircle2 className="ml-1 w-3 h-3 text-blue-500 flex-shrink-0" />}
                                     </h4>
                                     <div className="flex items-center space-x-1">
+                                      {/* Label Status Online */}
                                       <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${status.bgColor} ${status.textColor}`}>
                                         {status.text}
                                       </span>
@@ -1199,7 +1259,7 @@
                                     </div>
                                   </div>
                                   <div className="w-14 h-14 rounded-full bg-white p-1 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-slate-300/50">
-                                    <img src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" />
+                                    <img crossOrigin="anonymous" src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" />
                                   </div>
                                 </div>
                                 
@@ -1222,6 +1282,7 @@
 
                                 <div className="flex justify-between items-end border-t border-slate-300/50 pt-2.5">
                                   <div className="flex items-center space-x-1">
+                                    
                                     <p className="text-[9px] text-slate-600 font-semibold">Berlaku s/d {validThruText}</p>
                                   </div>
                                   <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">driver's license (SIM C)</p>
@@ -1251,7 +1312,7 @@
                         </div>
                       </div>
                     )}
-                  </PageTransition>
+                  </div>
                 ) : (
                   <div className="space-y-6">
                     <h3 className="text-lg font-black text-slate-900">Dashboard Admin</h3>
@@ -1262,13 +1323,14 @@
                       <button onClick={()=>setAdminTab('forum')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='forum'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Forum</button>
                       <button onClick={()=>setAdminTab('settings')} className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all ${adminTab==='settings'?'bg-white text-slate-900 shadow-md':'text-slate-500 hover:text-slate-700'}`}>Pengaturan</button>
                     </div>
-                      <PageTransition pageKey={adminTab}>
+                    <div key={adminTab} className="animate-slide-up">
                       {adminTab === 'home' && ( <div className="space-y-6"><SummaryCards /><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-101 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-101 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
                       {adminTab === 'events' && ( <div className="space-y-6"><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4><form onSubmit={createEvent} className="space-y-3"><FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required /><FormSelect label="Jenis Event & Bobot Poin" value={newEvent.eventType} onChange={(e)=>setNewEvent({...newEvent, eventType: e.target.value})} required><option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option><option value="touring_1day">Touring 1 Hari (+5 Pts)</option><option value="touring_member">Touring Tempat Anggota (+2 Pts)</option></FormSelect><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={newEvent.timestamp} onChange={(e)=>setNewEvent({...newEvent, timestamp: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div><div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label><textarea value={newEvent.description} onChange={(e)=>setNewEvent({...newEvent, description: e.target.value})} rows="4" required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none" placeholder="Detail rendezvous, rute, dan informasi penting lainnya..."></textarea></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95 flex items-center justify-center space-x-1"><I.Plus className="w-4 h-4" /> <span>Publikasikan Event</span></button></form></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Star className="w-4 h-4 text-amber-500" /> <span>Approval Poin Event</span></h4><div className="space-y-3">{events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).length > 0 ? events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).map(ev => { const eventInfo = getEventPoints(ev.eventType); const pendingMembers = Object.keys(ev.checkins).filter(uid => !ev.ptsApproved || !ev.ptsApproved[uid]); if(pendingMembers.length === 0) return null; return ( <div key={ev.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-2"><div className="flex justify-between items-center mb-2"><h5 className="font-bold text-xs text-slate-900 truncate">{ev.title}</h5><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${eventInfo.color}`}>+{eventInfo.pts} Pts</span></div><div className="space-y-2">{pendingMembers.map(uid => { const m = members.find(mem => mem.id === uid); const isReady = ev.readiness && ev.readiness[uid] && Object.keys(ev.readiness[uid]).length === READINESS_ITEMS.length; return ( <div key={uid} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-101"><div className="flex items-center space-x-2"><MemberAvatar user={m || {}} size="w-7 h-7" textSize="text-xs" /><span className="text-[11px] font-bold text-slate-800">{m ? m.name : 'Anggota'}</span>{isReady && <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full font-bold">Siap</span>}</div><button onClick={() => approveMemberPoints(ev.id, uid, eventInfo.pts)} className="text-[10px] bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg active:scale-95 transition">Approve Poin</button></div> ); })}</div></div> ); }) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada poin event yang perlu di-approve.</p>}</div></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Calendar className="w-4 h-4 text-amber-500" /> <span>Daftar Event Mendatang</span></h4><div className="space-y-3">{events.length > 0 ? events.map(ev => ( <EventCard key={ev.id} event={ev} isAdmin={true} onDelete={() => deleteEvent(ev.id)} onEdit={() => handleEditEventClick(ev)} onToggleVisibility={toggleEventVisibility} checkinCount={ev.checkins ? Object.keys(ev.checkins).length : 0} totalMembers={totalApprovedMembers} onViewCheckins={openCheckinsModal} onViewDetails={openEventDetailModal} /> )) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada event.</p>}</div></div></div> )}
                       {adminTab === 'members' && ( 
                         <div className="space-y-4">
                           <div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900">Data Lengkap Anggota & Safety Gear</h4></div>
                           
+                          {/* Admin Broadcast Card dengan Badge Notifikasi */}
                           <div className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm mb-4 flex items-center justify-between">
                             <div className="flex items-center space-x-3">
                               <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">📢</div>
@@ -1291,7 +1353,7 @@
                             const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]); 
                             const memberJourney = m.points || 0; 
                             const memberPotentialPts = getMemberPotentialPoints(m.id); 
-                            const status = getOnlineStatus(m.lastActive); 
+                            const status = getOnlineStatus(m.lastActive); // Dapatkan status online
                             
                             return ( 
                               <div key={m.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2">
@@ -1299,6 +1361,7 @@
                                   <div className="flex items-center space-x-2">
                                     <div className="relative">
                                       <MemberAvatar user={m} size="w-9 h-9" />
+                                      {/* Indikator Status Online */}
                                       <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${status.color}`}></span>
                                     </div>
                                     <div>
@@ -1310,6 +1373,7 @@
                                     </div>
                                   </div>
                                   <div className="flex items-center space-x-1.5 flex-wrap gap-1 justify-end">
+                                    {/* Label Status Online */}
                                     <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${status.bgColor} ${status.textColor}`}>
                                       {status.text}
                                     </span>
@@ -1361,18 +1425,18 @@
                       )}
                       {adminTab === 'forum' && ( <div className="bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.MessageSquare className="w-4 h-4 text-amber-500" /> <span>Forum Koordinasi Anggota</span></h4>{renderForum()}</div> )}
                       {adminTab === 'settings' && ( <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Settings className="w-4 h-4 text-amber-500" /> <span>Pengaturan Akses Admin</span></h4><form onSubmit={updateAdminCreds} className="space-y-3"><FormInput label="Username Admin Baru" icon={<I.User />} type="text" value={adminCreds.username} onChange={(e)=>setAdminCreds({...adminCreds, username: e.target.value})} placeholder="Masukkan username baru" required /><FormInput label="Password Admin Baru" icon={<I.Lock />} type="password" value={adminCreds.password} onChange={(e)=>setAdminCreds({...adminCreds, password: e.target.value})} placeholder="Masukkan password baru" required /><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Update Kredensial</button></form></div> )}
-                    </PageTransition>
+                    </div>
                   </div>
                 )}
               </div>
 
               {currentUser.role!=='Admin' && (
                 <div className="absolute bottom-0 left-0 right-0 bg-white/60 backdrop-blur-2xl border-t border-white/40 px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] flex justify-around items-center z-30 shadow-[0_-4px_30px_rgba(0,0,0,0.05)]">
-                  <button onClick={()=>setActiveTab('home')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='home'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Home /></button>
-                  <button onClick={()=>setActiveTab('events')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='events'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Calendar /></button>
-                  <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><BikeIcon type="Sport" className="w-[22px] h-[22px]" /></button>
-                  <button onClick={()=>setActiveTab('members')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='members'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Users /></button>
-                  <button onClick={()=>setActiveTab('profile')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='profile'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.User /></button>
+                  <button onClick={()=>setActiveTab('home')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='home'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Home /></button>
+                  <button onClick={()=>setActiveTab('events')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='events'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Calendar /></button>
+                  <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><BikeIcon type="Sport" className="w-[22px] h-[22px]" /></button>
+                  <button onClick={()=>setActiveTab('members')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='members'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Users /></button>
+                  <button onClick={()=>setActiveTab('profile')} className={`p-2 rounded-xl transition active:scale-90 ${activeTab==='profile'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.User /></button>
                 </div>
               )}
             </>
@@ -1380,7 +1444,7 @@
 
           {/* Modal Detail Event */}
           {showEventDetailModal && activeEventDetail && (
-            <div className="absolute inset-0 bg-slate-900/40 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEventDetailModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEventDetailModal(false)}>
               <div className="bg-white/80 backdrop-blur-2xl border border-white/80 rounded-[32px] shadow-2xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto scrollbar-none animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className="flex justify-between items-start mb-3">
                   <div><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${getEventPoints(activeEventDetail.eventType).color}`}>+{getEventPoints(activeEventDetail.eventType).pts} Pts</span><h3 className="text-lg font-black text-slate-900 mt-1">{activeEventDetail.title}</h3></div>
@@ -1404,9 +1468,9 @@
             </div>
           )}
 
-          {/* Modal Daftar Peserta Check-in Event */}
+          {/* Modal Daftar Peserta Check-in Event (Dengan Admin Control) */}
           {showCheckinsModal && activeEventCheckins && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowCheckinsModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowCheckinsModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in max-h-[80vh] flex flex-col" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.Users className="w-5 h-5 text-amber-500" /> Daftar Peserta Check-in</h3>
                 <p className="text-xs text-slate-500 mb-4 truncate">Event: {activeEventCheckins.title}</p>
@@ -1470,14 +1534,14 @@
 
           {/* Modal Tambah Motor */}
           {showAddBikeModal && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowAddBikeModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowAddBikeModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Plus className="w-5 h-5 text-amber-500" /> Tambah Motor Baru</h3>
                 <form onSubmit={addBike} className="space-y-3">
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Nama Motor</label><input type="text" value={newBike.name} onChange={(e)=>setNewBike({...newBike,name:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" required /></div>
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Plat Nomor</label><input type="text" maxLength="8" value={newBike.plate} onChange={(e)=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');setNewBike({...newBike,plate:v});}} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none uppercase" required /></div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Kapasitas (CC)</label><select value={newBike.engine} onChange={(e)=>setNewBike({...newBike,engine:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="135cc">135 cc</option><option value="150cc">150 cc</option><option value="155cc">155 cc</option><option value="160cc">160 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></select></div>
+                    <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Kapasitas (CC)</label><select value={newBike.engine} onChange={(e)=>setNewBike({...newBike,engine:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="150cc">150 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></select></div>
                     <div className="relative"><label className="text-[11px] font-bold text-slate-500 block mb-1">Jenis</label><div className="relative"><span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 mt-[14px]"><BikeIcon type={newBike.type} className="w-4 h-4" /></span><select value={newBike.type} onChange={(e)=>setNewBike({...newBike,type:e.target.value})} className="appearance-none w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-9 py-2.5 text-xs font-semibold focus:outline-none"><option>Matic</option><option>Bebek</option><option>Sport</option><option>Trail</option><option>Classic (Custom)</option></select><span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none mt-[14px]"><I.ChevronDown /></span></div></div>
                   </div>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Tambah Motor</button>
@@ -1488,7 +1552,7 @@
 
           {/* Modal Edit Event */}
           {showEditEventModal && editingEvent && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditEventModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditEventModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Edit className="w-5 h-5 text-amber-500" /> Edit Event</h3>
                 <form onSubmit={saveEditedEvent} className="space-y-3">
@@ -1504,7 +1568,7 @@
 
           {/* Modal Daftar Event Check-in Anggota */}
           {showMemberEventsModal && activeMemberEvents && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowMemberEventsModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowMemberEventsModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in max-h-[80vh] flex flex-col" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.Calendar className="w-5 h-5 text-amber-500" /> Event Tercheck-in</h3>
                 <p className="text-xs text-slate-500 mb-4 truncate">Anggota: {activeMemberEvents.memberName}</p>
@@ -1518,7 +1582,7 @@
 
           {/* Modal Foto Profil */}
           {showPhotoModal && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowPhotoModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowPhotoModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Camera className="w-5 h-5 text-amber-500" /> Ubah Foto Profil</h3>
                 <div className="bg-slate-101 p-1 rounded-2xl flex shadow-inner mb-4">
@@ -1533,7 +1597,7 @@
 
           {/* Modal Konfirmasi Admin */}
           {showAdminConfirmModal && adminConfirmData && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowAdminConfirmModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in" onClick={()=>setShowAdminConfirmModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${adminConfirmData.type==='approve'?'bg-emerald-100 text-emerald-500':'bg-rose-100 text-rose-500'}`}>{adminConfirmData.type==='approve'?<I.CheckCircle2 className="w-6 h-6" />:<I.XCircle className="w-6 h-6" />}</div>
                 <h3 className="text-base font-black text-slate-900 mb-1">Konfirmasi Aksi Admin</h3>
@@ -1546,7 +1610,7 @@
 
           {/* Modal Edit Touring */}
           {showEditTouringModal && editingTouringMember && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditTouringModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditTouringModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.Award className="w-5 h-5 text-amber-500" /> Edit Penugasan Touring</h3>
                 <p className="text-xs text-slate-500 mb-4">Anggota: <b>{editingTouringMember.name}</b></p>
@@ -1557,7 +1621,7 @@
 
           {/* Modal Buat Topik */}
           {showCreateThreadModal && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowCreateThreadModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowCreateThreadModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.MessageSquare className="w-5 h-5 text-amber-500" /> Buat Topik Obrolan</h3>
                 <form onSubmit={createThread} className="space-y-3"><textarea value={newThreadMsg} onChange={(e)=>setNewThreadMsg(e.target.value)} placeholder="Tulis judul atau isi topik obrolan..." rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Publikasi Topik</button></form>
@@ -1567,7 +1631,7 @@
 
           {/* Modal Edit Thread */}
           {showEditThreadModal && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditThreadModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditThreadModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Edit className="w-5 h-5 text-amber-500" /> Edit Pesan</h3>
                 <form onSubmit={handleEditThread} className="space-y-3"><textarea value={editingThreadMsg} onChange={(e)=>setEditingThreadMsg(e.target.value)} rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button></form>
@@ -1577,7 +1641,7 @@
 
           {/* Modal Edit Gear */}
           {showEditGearModal && editingGear && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditGearModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditGearModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-none animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.ShieldCheck className="w-5 h-5 text-amber-500" /> Edit Safety Gear</h3>
                 <p className="text-xs text-slate-500 mb-4">Lengkapi data helm, jaket, dan sepatu safety Anda.</p>
@@ -1599,7 +1663,7 @@
 
           {/* Modal Konfirmasi Pendaftaran */}
           {showConfirmRegModal && confirmRegData && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowConfirmRegModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowConfirmRegModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-none animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className="flex flex-col items-center text-center mb-4"><div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 mb-2"><I.ScrollText /></div><h3 className="text-lg font-black text-slate-900">Konfirmasi Data & Aturan</h3><p className="text-[10px] text-slate-500 font-medium">Pastikan data Anda benar dan setuju dengan aturan komunitas.</p></div>
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-1.5 text-xs text-slate-700 font-medium mb-4">
@@ -1625,14 +1689,14 @@
 
           {/* Modal Edit Motor */}
           {showEditBikeModal && editingBike && (
-            <div className="absolute inset-0 bg-slate-900/50 z-50 flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditBikeModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditBikeModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><BikeIcon type={editingBike.type} className="w-5 h-5 text-amber-500" /> Edit Data Motor</h3>
                 <form onSubmit={upBike} className="space-y-3">
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Nama Motor</label><input type="text" value={editingBike.name} onChange={(e)=>setEditingBike({...editingBike,name:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" /></div>
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Plat Nomor</label><input type="text" maxLength="8" value={editingBike.plate} onChange={(e)=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');setEditingBike({...editingBike,plate:v});}} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none uppercase" /></div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Kapasitas (CC)</label><select value={editingBike.engine} onChange={(e)=>setEditingBike({...editingBike,engine:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="135cc">135 cc</option><option value="150cc">150 cc</option><option value="155cc">155 cc</option><option value="160cc">160 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></select></div>
+                    <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Kapasitas (CC)</label><select value={editingBike.engine} onChange={(e)=>setEditingBike({...editingBike,engine:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="150cc">150 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></select></div>
                     <div className="relative"><label className="text-[11px] font-bold text-slate-500 block mb-1">Jenis</label><div className="relative"><span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 mt-[14px]"><BikeIcon type={editingBike.type} className="w-4 h-4" /></span><select value={editingBike.type} onChange={(e)=>setEditingBike({...editingBike,type:e.target.value})} className="appearance-none w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-9 py-2.5 text-xs font-semibold focus:outline-none"><option>Matic</option><option>Bebek</option><option>Sport</option><option>Trail</option><option>Classic (Custom)</option></select><span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none mt-[14px]"><I.ChevronDown /></span></div></div>
                   </div>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button>
@@ -1643,7 +1707,7 @@
           
           {/* Modal Edit Profil */}
           {showEditProfileModal && editingProfile && (
-            <div className="absolute inset-0 bg-slate-900/50 z-50 flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditProfileModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditProfileModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4">Edit Data Diri</h3>
                 <form onSubmit={upProf} className="space-y-3">
@@ -1660,7 +1724,7 @@
           
           {/* Modal Tambah Pengumuman */}
           {showAddAnnouncementModal && (
-            <div className="absolute inset-0 bg-slate-900/50 z-50 flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowAddAnnouncementModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowAddAnnouncementModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Megaphone className="w-5 h-5 text-amber-500" /> Buat Pengumuman</h3>
                 <form onSubmit={(e)=>{e.preventDefault(); if(!newAnnouncement.title||!newAnnouncement.content){addN('Judul dan isi wajib diisi!','error');return;} setAnnouncements([{id:Date.now(),title:newAnnouncement.title,content:newAnnouncement.content,date:new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}),author:currentUser.name},...announcements]); setShowAddAnnouncementModal(false); setNewAnnouncement({title:'',content:''}); addN('Pengumuman dipublish!','success');}} className="space-y-3">
@@ -1674,7 +1738,7 @@
 
           {/* === MODAL PREVIEW KARTU === */}
           {showCardPreview && (
-            <div className="absolute inset-0 bg-slate-900/80 z-[70] flex items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowCardPreview(false)}>
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[70] flex items-center justify-center p-4 animate-fade-in" onClick={()=>setShowCardPreview(false)}>
               <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto scrollbar-none" onClick={e=>e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
@@ -1707,7 +1771,7 @@
                             <p className="text-xs font-mono font-extrabold text-slate-800 tracking-wider">ID: {mpd.memberId}</p>
                           </div>
                         </div>
-                        <div className="w-12 h-12 rounded-full bg-white p-0.5 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-slate-300/50"><img src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" /></div>
+                        <div className="w-12 h-12 rounded-full bg-white p-0.5 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-slate-300/50"><img crossOrigin="anonymous" src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" /></div>
                       </div>
                       
                       <div className="space-y-0.5 flex-1 flex flex-col justify-center mt-1">
@@ -1728,6 +1792,7 @@
 
                       <div className="flex justify-between items-end border-t border-slate-300/50 pt-2">
                         <div className="flex items-center space-x-1">
+                          
                           <p className="text-[7px] text-slate-600 font-semibold">Berlaku s/d {validThruText}</p>
                         </div>
                         <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">driver's license (SIM C)</p>
@@ -1833,7 +1898,7 @@
 
           {/* === MODAL CHAT === */}
           {showChatModal && activeChatUser && (
-            <div className="absolute inset-0 bg-slate-900/80 z-[70] flex items-end justify-center animate-backdrop-in" onClick={closeChat}>
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[70] flex items-end justify-center animate-fade-in" onClick={closeChat}>
               <div className="bg-white w-full max-w-md h-[85vh] rounded-t-[32px] shadow-2xl flex flex-col animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className="p-4 border-b border-slate-101 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -1886,7 +1951,7 @@
 
           {/* === MODAL NOTIFIKASI PESAN MASUK (POP-UP KONFIRMASI) === */}
           {incomingMessageAlert && (
-            <div className="absolute inset-0 bg-slate-900/80 z-[80] flex items-center justify-center p-4 animate-backdrop-in">
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[80] flex items-center justify-center p-4 animate-fade-in">
               <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center animate-scale-in">
                 <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4 text-3xl">📩</div>
                 <h3 className="text-base font-black text-slate-900 mb-1">Pesan Baru Masuk!</h3>
