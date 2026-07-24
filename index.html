@@ -8,7 +8,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
   <title>One Aspal Club - Riding and Touring Community</title>
-  <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png">
   <link rel="icon" type="image/png" href="https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png" />
@@ -36,7 +35,6 @@
     .card-font { font-family: 'Plus Jakarta Sans', sans-serif; }
     #root { padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
     
-    /* Global Tactile Transition for Buttons */
     button { transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
 
     @media screen and (orientation: landscape) {
@@ -49,11 +47,9 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* MODERN SMOOTH BLUR TRANSITIONS */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
     
-    /* Backdrop Blur Animation */
     @keyframes backdropBlurIn { 
       from { opacity: 0; -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px); } 
       to { opacity: 1; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); } 
@@ -63,14 +59,12 @@
     @keyframes slideUp { from { opacity: 0; transform: translateY(15px); filter: blur(4px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
     .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; }
     
-    /* Modal Content Blur Scale Animation */
     @keyframes scaleIn { 
       from { opacity: 0; transform: scale(0.95) translateY(15px); filter: blur(8px); } 
       to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); } 
     }
     .animate-scale-in { animation: scaleIn 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
 
-    /* SMOOTH PAGE TRANSITIONS */
     .page-transition-container { position: relative; width: 100%; }
     .page-transition-entering, .page-transition-entered { position: relative; z-index: 2; width: 100%; }
     .page-transition-entering { animation: pageEnterSmooth 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
@@ -81,7 +75,6 @@
     
     .nav-btn { transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
 
-    /* Modern Toast with Blur */
     @keyframes slideDownBounce { 
       0% { transform: translateY(-100px) scale(0.95); opacity: 0; filter: blur(5px); } 
       60% { transform: translateY(5px) scale(1.01); opacity: 1; filter: blur(0); } 
@@ -98,7 +91,6 @@
     @keyframes breathBtn { 0%, 100% { transform: scale(1); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 0 0 0 rgba(59, 130, 246, 0.5); } 50% { transform: scale(1.03); box-shadow: 0 20px 40px -5px rgba(59, 130, 246, 0.6), 0 0 0 12px rgba(59, 130, 246, 0); } }
     .animate-breath-btn { animation: breathBtn 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: transform, box-shadow; }
     
-    /* Chat Message Animation */
     @keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(0.95); filter: blur(3px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
     .animate-msg-in { animation: msgIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; }
     
@@ -139,17 +131,12 @@
     const messaging = firebase.messaging();
     
     const LOGO_URL = "https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png";
-
     const VAPID_KEY = "BAAKM-p8R3kEQl7Rn3qosWNLo2Zgmx9PvhK4nBLCNs9vXVpPR2g54UYGsIpX1MgDvrIWhcwZ41_xW-bmpGSE8fg"; 
-        
+
     let audioCtx = null;
     const initAudio = () => {
-      if (!audioCtx) {
-        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-      }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+      if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume(); }
     };
 
     const playNotificationSound = () => {
@@ -157,18 +144,13 @@
       try {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        
+        osc.connect(gain); gain.connect(audioCtx.destination);
         osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
         osc.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.15); 
-        
         osc.type = 'sine';
         gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + 0.4);
+        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.4);
       } catch (e) { console.error("Sound error:", e); }
     };
 
@@ -180,9 +162,7 @@
           if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.ready;
             const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-            if (token) {
-              await db.ref('members/' + userId + '/fcmToken').set(token);
-            }
+            if (token) { await db.ref('members/' + userId + '/fcmToken').set(token); }
           }
         }
       } catch (e) { console.error('Error FCM:', e); }
@@ -192,28 +172,15 @@
     const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🏍️'];
 
     const READINESS_ITEMS = [
-      { key: 'sim', label: 'SIM motor masih Aktif' },
-      { key: 'stnk', label: 'STNK motor yang digunakan masih Aktif' },
-      { key: 'rem', label: 'Rem depan dan belakang Baik' },
-      { key: 'sein', label: 'Lampu sein kiri-kanan menyala baik' },
-      { key: 'lampu', label: 'Lampu malam menyala baik' },
-      { key: 'ban', label: 'Ban motor depan-belakang masih layak' },
-      { key: 'spion', label: 'Spion kiri-kanan terpasang' },
-      { key: 'service', label: 'Motor sudah di service' },
-      { key: 'oli', label: 'Oli mesin sudah di ganti' },
-      { key: 'izin', label: 'Sudah izin istri/suami/orang rumah' }
+      { key: 'sim', label: 'SIM motor masih Aktif' }, { key: 'stnk', label: 'STNK motor yang digunakan masih Aktif' },
+      { key: 'rem', label: 'Rem depan dan belakang Baik' }, { key: 'sein', label: 'Lampu sein kiri-kanan menyala baik' },
+      { key: 'lampu', label: 'Lampu malam menyala baik' }, { key: 'ban', label: 'Ban motor depan-belakang masih layak' },
+      { key: 'spion', label: 'Spion kiri-kanan terpasang' }, { key: 'service', label: 'Motor sudah di service' },
+      { key: 'oli', label: 'Oli mesin sudah di ganti' }, { key: 'izin', label: 'Sudah izin istri/suami/orang rumah' }
     ];
 
-    const AVATARS_MALE = [
-      'https://i.postimg.cc/wMTWFGcY/1-m.jpg','https://i.postimg.cc/N9S7jbzk/2-m.jpg','https://i.postimg.cc/ygtX8nbF/3-m.jpg',
-      'https://i.postimg.cc/9RKtQ1nR/4-m.jpg','https://i.postimg.cc/Kkwr8QH7/5-m.jpg','https://i.postimg.cc/8J9Bzw0T/6-m.jpg',
-      'https://i.postimg.cc/k6BvCLfr/7-m.jpg','https://i.postimg.cc/7Gfn4jXj/8-m.jpg','https://i.postimg.cc/YGhz7Tbr/9-m.jpg','https://i.postimg.cc/wtWQS95F/10-m.jpg'
-    ];
-    const AVATARS_FEMALE = [
-      'https://randomuser.me/api/portraits/women/44.jpg','https://randomuser.me/api/portraits/women/68.jpg','https://randomuser.me/api/portraits/women/90.jpg',
-      'https://randomuser.me/api/portraits/women/75.jpg','https://randomuser.me/api/portraits/women/81.jpg','https://randomuser.me/api/portraits/women/85.jpg',
-      'https://randomuser.me/api/portraits/women/33.jpg','https://randomuser.me/api/portraits/women/95.jpg','https://randomuser.me/api/portraits/women/12.jpg','https://randomuser.me/api/portraits/women/79.jpg'
-    ];
+    const AVATARS_MALE = ['https://i.postimg.cc/wMTWFGcY/1-m.jpg','https://i.postimg.cc/N9S7jbzk/2-m.jpg','https://i.postimg.cc/ygtX8nbF/3-m.jpg','https://i.postimg.cc/9RKtQ1nR/4-m.jpg','https://i.postimg.cc/Kkwr8QH7/5-m.jpg','https://i.postimg.cc/8J9Bzw0T/6-m.jpg','https://i.postimg.cc/k6BvCLfr/7-m.jpg','https://i.postimg.cc/7Gfn4jXj/8-m.jpg','https://i.postimg.cc/YGhz7Tbr/9-m.jpg','https://i.postimg.cc/wtWQS95F/10-m.jpg'];
+    const AVATARS_FEMALE = ['https://randomuser.me/api/portraits/women/44.jpg','https://randomuser.me/api/portraits/women/68.jpg','https://randomuser.me/api/portraits/women/90.jpg','https://randomuser.me/api/portraits/women/75.jpg','https://randomuser.me/api/portraits/women/81.jpg','https://randomuser.me/api/portraits/women/85.jpg','https://randomuser.me/api/portraits/women/33.jpg','https://randomuser.me/api/portraits/women/95.jpg','https://randomuser.me/api/portraits/women/12.jpg','https://randomuser.me/api/portraits/women/79.jpg'];
 
     const GlassLogo = ({ size = "w-28 h-28", animate = false }) => (
       <div className={`${size} mx-auto flex items-center justify-center relative`}>
@@ -571,17 +538,10 @@
         const fadeTimer = setTimeout(() => setSplashFading(true), 1000);
         const removeTimer = setTimeout(() => setShowSplash(false), 1500);
 
-        const handleFirstClick = () => {
-          initAudio();
-          window.removeEventListener('click', handleFirstClick);
-        };
+        const handleFirstClick = () => { initAudio(); window.removeEventListener('click', handleFirstClick); };
         window.addEventListener('click', handleFirstClick);
         
-        return () => { 
-          clearTimeout(fadeTimer); 
-          clearTimeout(removeTimer);
-          window.removeEventListener('click', handleFirstClick);
-        };
+        return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); window.removeEventListener('click', handleFirstClick); };
       }, []);
       
       useEffect(() => { const t = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })), 1000); return () => clearInterval(t); }, []);
@@ -593,8 +553,7 @@
         membersRefDb.on('value', (snapshot) => {
           const data = snapshot.val();
           const membersArray = data ? Object.keys(data).map(key => { const m = data[key]; const bikes = m.bikes ? Object.keys(m.bikes).map(bKey => ({ id: bKey, ...m.bikes[bKey] })) : []; return { id: key, ...m, bikes }; }) : [];
-          setMembers(membersArray);
-          membersRef.current = membersArray;
+          setMembers(membersArray); membersRef.current = membersArray;
         }, (error) => { console.error("Firebase Members Error:", error); addN(`Error DB: ${error.message}`, 'error'); });
         const threadsRef = db.ref('threads');
         threadsRef.on('value', (snapshot) => {
@@ -614,7 +573,6 @@
 
       useEffect(() => {
         if (!currentUser || members.length === 0) return;
-        
         const listeners = [];
         const newUnread = {};
 
@@ -622,36 +580,18 @@
           const bChatId = 'broadcast_admin';
           const bLastRead = parseInt(localStorage.getItem('oac_last_read_' + bChatId) || '0');
           const bSnap = await db.ref('chats/' + bChatId + '/messages').orderByChild('timestamp').startAfter(bLastRead).once('value');
-          let bCount = 0;
-          let bLatestTime = bLastRead;
-          bSnap.forEach(child => { 
-            if (child.val().senderId !== currentUser.id) {
-              bCount++; 
-              if(child.val().timestamp > bLatestTime) bLatestTime = child.val().timestamp;
-            }
-          });
-          if (bCount > 0) {
-            newUnread['ALL'] = bCount;
-            localStorage.setItem('oac_last_read_' + bChatId, bLatestTime);
-          }
+          let bCount = 0; let bLatestTime = bLastRead;
+          bSnap.forEach(child => { if (child.val().senderId !== currentUser.id) { bCount++; if(child.val().timestamp > bLatestTime) bLatestTime = child.val().timestamp; } });
+          if (bCount > 0) { newUnread['ALL'] = bCount; localStorage.setItem('oac_last_read_' + bChatId, bLatestTime); }
 
           for (const m of members) {
             if (m.id !== currentUser.id) {
               const cId = [currentUser.id, m.id].sort().join('_');
               const lastRead = parseInt(localStorage.getItem('oac_last_read_' + cId) || '0');
               const cSnap = await db.ref('chats/' + cId + '/messages').orderByChild('timestamp').startAfter(lastRead).once('value');
-              let count = 0;
-              let cLatestTime = lastRead;
-              cSnap.forEach(child => { 
-                if (child.val().senderId !== currentUser.id) {
-                  count++; 
-                  if(child.val().timestamp > cLatestTime) cLatestTime = child.val().timestamp;
-                }
-              });
-              if (count > 0) {
-                newUnread[m.id] = count;
-                localStorage.setItem('oac_last_read_' + cId, cLatestTime);
-              }
+              let count = 0; let cLatestTime = lastRead;
+              cSnap.forEach(child => { if (child.val().senderId !== currentUser.id) { count++; if(child.val().timestamp > cLatestTime) cLatestTime = child.val().timestamp; } });
+              if (count > 0) { newUnread[m.id] = count; localStorage.setItem('oac_last_read_' + cId, cLatestTime); }
             }
           }
           setUnreadChats(newUnread);
@@ -661,25 +601,14 @@
         const setupLiveListeners = () => {
           const handleNewMessage = (chatId, otherUserId, msg) => {
             if (msg.senderId === currentUser.id) return; 
-            
-            if (showChatModalRef.current && activeChatIdRef.current === chatId) {
-              localStorage.setItem('oac_last_read_' + chatId, msg.timestamp);
-              return;
-            }
-
+            if (showChatModalRef.current && activeChatIdRef.current === chatId) { localStorage.setItem('oac_last_read_' + chatId, msg.timestamp); return; }
             if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
             playNotificationSound();
-
             setUnreadChats(prev => ({ ...prev, [otherUserId]: (prev[otherUserId] || 0) + 1 }));
-            
             setIncomingMessageAlert(prev => {
               if (prev) return prev; 
               const m = membersRef.current.find(mem => mem.id === otherUserId);
-              return {
-                senderName: msg.senderName || (m ? m.name : 'Admin'),
-                text: msg.text,
-                recipientUser: m || { id: otherUserId, name: msg.senderName }
-              };
+              return { senderName: msg.senderName || (m ? m.name : 'Admin'), text: msg.text, recipientUser: m || { id: otherUserId, name: msg.senderName } };
             });
             addN(`Pesan baru dari ${msg.senderName}`, 'info');
           };
@@ -704,10 +633,8 @@
         };
 
         checkUnreadMessages();
-
         return () => listeners.forEach(fn => fn());
       }, [currentUser, members]);
-
 
       useEffect(() => {
         if (!activeChatId) return;
@@ -716,9 +643,7 @@
           const data = snapshot.val();
           const msgs = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a,b) => a.timestamp - b.timestamp) : [];
           setChatMessages(msgs);
-          setTimeout(() => {
-            if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-          }, 100);
+          setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight; }, 100);
         });
         return () => chatRef.off();
       }, [activeChatId]);
@@ -729,19 +654,8 @@
       const addN = (m, t='info') => { setNotifications(p=>[{id:Date.now(),message:m,type:t,time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),read:false},...p]); setToast({show:true,message:m,type:t}); setTimeout(()=>setToast({show:false,message:'',type:'success'}),3000); };
       const updateSessionData = (newUser, newGears) => { const stored = localStorage.getItem('oac_session'); if (stored) { try { const session = JSON.parse(stored); const updatedSession = { user: newUser || session.user, gears: newGears || session.gears || {}, expiresAt: session.expiresAt }; localStorage.setItem('oac_session', JSON.stringify(updatedSession)); } catch (e) {} } };
       
-      const updateHeartbeat = async (userId) => {
-        if (!userId || !db) return;
-        try {
-          await db.ref('members/' + userId + '/lastActive').set(firebase.database.ServerValue.TIMESTAMP);
-        } catch (e) { console.error("Heartbeat error:", e); }
-      };
-
-      const stopHeartbeat = () => {
-        if (heartbeatRef.current) {
-          clearInterval(heartbeatRef.current);
-          heartbeatRef.current = null;
-        }
-      };
+      const updateHeartbeat = async (userId) => { if (!userId || !db) return; try { await db.ref('members/' + userId + '/lastActive').set(firebase.database.ServerValue.TIMESTAMP); } catch (e) { console.error("Heartbeat error:", e); } };
+      const stopHeartbeat = () => { if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null; } };
 
       const setSession = (user, gears = {}) => { 
         const session = { user, gears, expiresAt: Date.now() + SESSION_DURATION }; 
@@ -749,7 +663,6 @@
         setCurrentUser(user); setUserGears(gears); 
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); 
         logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, SESSION_DURATION);
-        
         if (user.id) {
           requestNotificationPermission(user.id);
           updateHeartbeat(user.id); 
@@ -757,7 +670,6 @@
         }
       };
 
-      
       const handleLogin = async (e) => { 
         e.preventDefault(); 
         if(loginRole==='admin'){ db.ref('settings').once('value').then((snapshot) => { const settings = snapshot.val(); if(settings && username === settings.admin_username && password === settings.admin_password){ const adminUser = { name:'One-Admin', role:'Admin', avatar:'👑', id:'ADMIN-SYS', dbId:'admin', city:'Jakarta' }; setSession(adminUser, {}); setActiveTab('admin_dashboard'); addN('Selamat Datang, Admin Pengelola! ⚡','success'); } else { addN('Kredensial admin salah atau DB kosong!','error'); } }).catch(err => addN(`Error: ${err.message}`, 'error')); }
@@ -796,9 +708,7 @@
       
       const out = (showMsg = true) => { 
         stopHeartbeat(); 
-        if (currentUser?.id && db) {
-          db.ref('members/' + currentUser.id + '/lastActive').set(0).catch(()=>{});
-        }
+        if (currentUser?.id && db) { db.ref('members/' + currentUser.id + '/lastActive').set(0).catch(()=>{}); }
         localStorage.removeItem('oac_session'); 
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); 
         setCurrentUser(null);setUserGears({});setActiveThread(null); 
@@ -808,8 +718,7 @@
       
       const getOnlineStatus = (lastActive) => {
         if (!lastActive) return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' };
-        const now = Date.now();
-        const diff = now - lastActive;
+        const now = Date.now(); const diff = now - lastActive;
         if (diff < 60000) return { color: 'bg-emerald-500', text: 'Online', textColor: 'text-emerald-700', bgColor: 'bg-emerald-100' }; 
         if (diff < 300000) return { color: 'bg-amber-500', text: 'Idle', textColor: 'text-amber-700', bgColor: 'bg-amber-100' }; 
         return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; 
@@ -858,11 +767,7 @@
         let chatId;
         if (recipient.id === 'ALL') { chatId = 'broadcast_admin'; } 
         else { const uids = [currentUser.id, recipient.id].sort(); chatId = uids.join('_'); }
-        
-        setActiveChatUser(recipient); 
-        setActiveChatId(chatId); 
-        setShowChatModal(true);
-        
+        setActiveChatUser(recipient); setActiveChatId(chatId); setShowChatModal(true);
         setUnreadChats(prev => ({ ...prev, [recipient.id]: 0 }));
         localStorage.setItem('oac_last_read_' + chatId, Date.now());
       };
@@ -891,7 +796,7 @@
         if(!cardRef.current) return null;
         const imgs = cardRef.current.querySelectorAll('img');
         await Promise.all(Array.from(imgs).map(img => { if (img.complete && img.naturalWidth !== 0) return Promise.resolve(); return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; }); }));
-        return await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#ffffff', useCORS: true, allowTaint: false, logging: false });
+        return await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, logging: false });
       };
 
       const openCardPreview = (action) => { setPreviewAction(action); setShowCardPreview(true); };
@@ -1294,7 +1199,7 @@
                                     </div>
                                   </div>
                                   <div className="w-14 h-14 rounded-full bg-white p-1 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-slate-300/50">
-                                    <img crossOrigin="anonymous" src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" />
+                                    <img src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" />
                                   </div>
                                 </div>
                                 
@@ -1317,7 +1222,6 @@
 
                                 <div className="flex justify-between items-end border-t border-slate-300/50 pt-2.5">
                                   <div className="flex items-center space-x-1">
-                                    
                                     <p className="text-[9px] text-slate-600 font-semibold">Berlaku s/d {validThruText}</p>
                                   </div>
                                   <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">driver's license (SIM C)</p>
@@ -1803,7 +1707,7 @@
                             <p className="text-xs font-mono font-extrabold text-slate-800 tracking-wider">ID: {mpd.memberId}</p>
                           </div>
                         </div>
-                        <div className="w-12 h-12 rounded-full bg-white p-0.5 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-slate-300/50"><img crossOrigin="anonymous" src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" /></div>
+                        <div className="w-12 h-12 rounded-full bg-white p-0.5 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-slate-300/50"><img src={LOGO_URL} alt="Logo" className="w-full h-full object-cover rounded-full" /></div>
                       </div>
                       
                       <div className="space-y-0.5 flex-1 flex flex-col justify-center mt-1">
@@ -1824,7 +1728,6 @@
 
                       <div className="flex justify-between items-end border-t border-slate-300/50 pt-2">
                         <div className="flex items-center space-x-1">
-                          
                           <p className="text-[7px] text-slate-600 font-semibold">Berlaku s/d {validThruText}</p>
                         </div>
                         <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">driver's license (SIM C)</p>
