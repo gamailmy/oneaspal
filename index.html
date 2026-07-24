@@ -36,9 +36,6 @@
     .card-font { font-family: 'Plus Jakarta Sans', sans-serif; }
     #root { padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
     
-    /* Global Tactile Transition for Buttons */
-    button { transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
-
     @media screen and (orientation: landscape) {
       #root { display: none !important; }
       #rotate-warning { display: flex !important; }
@@ -49,59 +46,37 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* MODERN SMOOTH BLUR TRANSITIONS */
+   
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-    
-    /* Backdrop Blur Animation */
-    @keyframes backdropBlurIn { 
-      from { opacity: 0; -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px); } 
-      to { opacity: 1; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); } 
-    }
-    .animate-backdrop-in { animation: backdropBlurIn 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
-    
-    @keyframes slideUp { from { opacity: 0; transform: translateY(15px); filter: blur(4px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
-    .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; }
-    
-    /* Modal Content Blur Scale Animation */
-    @keyframes scaleIn { 
-      from { opacity: 0; transform: scale(0.95) translateY(15px); filter: blur(8px); } 
-      to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); } 
-    }
-    .animate-scale-in { animation: scaleIn 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
+    .animate-fade-in { animation: fadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.92) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .animate-scale-in { animation: scaleIn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
     /* SMOOTH PAGE TRANSITIONS */
     .page-transition-container { position: relative; width: 100%; }
     .page-transition-entering, .page-transition-entered { position: relative; z-index: 2; width: 100%; }
-    .page-transition-entering { animation: pageEnterSmooth 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
+    .page-transition-entering { animation: pageEnterSmooth 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
     .page-transition-entered { animation: none; }
-    .page-transition-exiting { position: absolute; top: 0; left: 0; right: 0; z-index: 1; pointer-events: none; animation: pageExitSmooth 0.35s cubic-bezier(0.4, 0, 0.6, 1) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
-    @keyframes pageEnterSmooth { 0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(8px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
-    @keyframes pageExitSmooth { 0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 100% { opacity: 0; transform: translateY(-15px) scale(1.02); filter: blur(8px); } }
+    .page-transition-exiting { position: absolute; top: 0; left: 0; right: 0; z-index: 1; pointer-events: none; animation: pageExitSmooth 0.32s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; will-change: transform, opacity, filter; backface-visibility: hidden; }
+    @keyframes pageEnterSmooth { 0% { opacity: 0; transform: translateY(18px) scale(0.985); filter: blur(3px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+    @keyframes pageExitSmooth { 0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 100% { opacity: 0; transform: translateY(-14px) scale(1.015); filter: blur(3px); } }
     
-    .nav-btn { transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+    .nav-btn { transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
 
-    /* Modern Toast with Blur */
-    @keyframes slideDownBounce { 
-      0% { transform: translateY(-100px) scale(0.95); opacity: 0; filter: blur(5px); } 
-      60% { transform: translateY(5px) scale(1.01); opacity: 1; filter: blur(0); } 
-      80% { transform: translateY(-2px) scale(1); opacity: 1; filter: blur(0); } 
-      100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); } 
-    }
-    .toast-animate { animation: slideDownBounce 0.6s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; }
+    @keyframes slideDownBounce { 0% { transform: translateY(-100px); opacity: 0; } 60% { transform: translateY(10px); opacity: 1; } 80% { transform: translateY(-5px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+    @keyframes shrinkBar { 0% { width: 100%; } 100% { width: 0%; } }
+    .toast-animate { animation: slideDownBounce 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     .toast-progress { animation: shrinkBar 3s linear forwards; }
-    
     @keyframes breathAnimation { 0%, 100% { transform: scale(1) translateZ(0); } 50% { transform: scale(1.04) translateZ(0); } }
     .animate-breath { animation: breathAnimation 3s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: transform; backface-visibility: hidden; }
     @keyframes glowPulse { 0%, 100% { opacity: 0.4; transform: scale(0.95) translateZ(0); } 50% { opacity: 0.7; transform: scale(1.1) translateZ(0); } }
     .animate-glow-pulse { animation: glowPulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: opacity, transform; }
     @keyframes breathBtn { 0%, 100% { transform: scale(1); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 0 0 0 rgba(59, 130, 246, 0.5); } 50% { transform: scale(1.03); box-shadow: 0 20px 40px -5px rgba(59, 130, 246, 0.6), 0 0 0 12px rgba(59, 130, 246, 0); } }
     .animate-breath-btn { animation: breathBtn 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; will-change: transform, box-shadow; }
-    
-    /* Chat Message Animation */
-    @keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(0.95); filter: blur(3px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
-    .animate-msg-in { animation: msgIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards; will-change: transform, opacity, filter; }
-    
+    @keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .animate-msg-in { animation: msgIn 0.3s ease-out forwards; }
     @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     .progress-bar-modern { position: relative; overflow: hidden; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
     .progress-bar-modern::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transform: translateX(-100%); animation: shimmer 2s infinite; }
@@ -140,8 +115,10 @@
     
     const LOGO_URL = "https://i.postimg.cc/YCrpY1s3/e2e70242-703a-4a42-a314-b94ea4b1a0d4.png";
 
+    // Ganti dengan VAPID Key yang Anda dapatkan di Langkah 1
     const VAPID_KEY = "BAAKM-p8R3kEQl7Rn3qosWNLo2Zgmx9PvhK4nBLCNs9vXVpPR2g54UYGsIpX1MgDvrIWhcwZ41_xW-bmpGSE8fg"; 
         
+    // Buat Audio Context global
     let audioCtx = null;
     const initAudio = () => {
       if (!audioCtx) {
@@ -152,6 +129,7 @@
       }
     };
 
+    // Fungsi untuk memutar suara notifikasi (Tone)
     const playNotificationSound = () => {
       if (!audioCtx) return;
       try {
@@ -160,8 +138,10 @@
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
-        osc.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.15); 
+        // Nada 1
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nada A5
+        // Nada 2 (Setelah 0.15 detik)
+        osc.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.15); // Nada C#6
         
         osc.type = 'sine';
         gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
@@ -172,18 +152,23 @@
       } catch (e) { console.error("Sound error:", e); }
     };
 
+    // Fungsi meminta izin dan menyimpan token FCM
     const requestNotificationPermission = async (userId) => {
       try {
+        // Minta izin notifikasi (ini juga mengizinkan getar dan suara di banyak browser)
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          initAudio(); 
+          initAudio(); // Inisialisasi audio setelah izin diberikan
           if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.ready;
             const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
             if (token) {
               await db.ref('members/' + userId + '/fcmToken').set(token);
+              console.log('FCM Token saved');
             }
           }
+        } else {
+          console.log('Izin notifikasi ditolak. Suara dan getar mungkin tidak berfungsi.');
         }
       } catch (e) { console.error('Error FCM:', e); }
     };
@@ -232,7 +217,8 @@
       </div>
     );
 
-    const PageTransition = ({ pageKey, children }) => {
+
+      const PageTransition = ({ pageKey, children }) => {
       const [exitContent, setExitContent] = useState(null);
       const timeoutRef = useRef(null);
       const prevChildrenRef = useRef(children);
@@ -242,7 +228,7 @@
         if (pageKey !== prevKeyRef.current) {
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
           setExitContent({ key: prevKeyRef.current, content: prevChildrenRef.current });
-          timeoutRef.current = setTimeout(() => { setExitContent(null); }, 450);
+          timeoutRef.current = setTimeout(() => { setExitContent(null); }, 420);
           prevKeyRef.current = pageKey;
         }
         prevChildrenRef.current = children;
@@ -264,6 +250,7 @@
       );
     };
 
+
     const MemberAvatar = ({ user, size = "w-10 h-10", textSize = "text-xl" }) => {
       const gender = user?.gender || 'Laki-laki';
       let content;
@@ -280,15 +267,24 @@
     };
 
     const BikeIcon = ({ type, className }) => {
+      // 1. Masukkan URL gambar Anda di sini sesuai jenis motornya
       const bikeImages = {
-        'Matic': 'https://i.postimg.cc/QNbJXVMZ/Matic.jpg',             
-        'Bebek': 'https://i.postimg.cc/nVkGHMLt/Bebek.jpg',             
-        'Sport': 'https://i.postimg.cc/y6PyVWNq/Sport.jpg',             
-        'Trail': 'https://i.postimg.cc/x1qRpYnn/Trail.jpg',             
-        'Classic (Custom)': 'https://i.postimg.cc/593Sxjtd/Classic.jpg' 
+        'Matic': 'https://i.postimg.cc/QNbJXVMZ/Matic.jpg',             // Ganti dengan URL gambar Matic Anda
+        'Bebek': 'https://i.postimg.cc/nVkGHMLt/Bebek.jpg',             // Ganti dengan URL gambar Bebek Anda
+        'Sport': 'https://i.postimg.cc/y6PyVWNq/Sport.jpg',             // Ganti dengan URL gambar Sport Anda
+        'Trail': 'https://i.postimg.cc/x1qRpYnn/Trail.jpg',             // Ganti dengan URL gambar Trail Anda
+        'Classic (Custom)': 'https://i.postimg.cc/593Sxjtd/Classic.jpg' // Ganti dengan URL gambar Classic Anda
       };
-      const defaultImage = 'https://i.postimg.cc/rs3by91Z/bike-motorcycle-icon.png';  
+
+      // 2. Tentukan gambar default jika jenis motor tidak ditemukan
+      const defaultImage = 'https://i.postimg.cc/rs3by91Z/bike-motorcycle-icon.png';  // Ganti dengan URL gambar default Anda
+      
+      // 3. Pilih gambar berdasarkan tipe motor
       const imgSrc = bikeImages[type] || defaultImage;
+      
+      // 4. Tampilkan gambar
+      // Catatan: class "object-contain" digunakan agar gambar tidak terpotong, 
+      // dan "inline-block" agar sejajar dengan teks.
       return <img src={imgSrc} alt={type || 'Motor'} className={`${className} object-contain inline-block`} />;
     };
 
@@ -328,7 +324,7 @@
       Settings: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
       Camera: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>,
       Star: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-      Eye: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7s-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
+      Eye: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
       EyeOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>,
       FileText: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>,
       Image: ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
@@ -495,7 +491,7 @@
       const logoutTimerRef = useRef(null);
       const fileInputRef = useRef(null);
       const chatScrollRef = useRef(null);
-      const heartbeatRef = useRef(null);
+      const heartbeatRef = useRef(null); // Ref untuk interval heartbeat
       const [showSplash, setShowSplash] = useState(true);
       const [splashFading, setSplashFading] = useState(false);
       const [regName, setRegName] = useState(''); const [regUsername, setRegUsername] = useState(''); const [regPassword, setRegPassword] = useState(''); const [regGender, setRegGender] = useState('Laki-laki'); const [regPhone, setRegPhone] = useState(''); const [regCity, setRegCity] = useState(''); const [regEmail, setRegEmail] = useState(''); const [regEmailDomain, setRegEmailDomain] = useState('@gmail.com'); const [regRidingStatus, setRegRidingStatus] = useState(''); const [regBikeBrand, setRegBikeBrand] = useState(''); const [regBikeModel, setRegBikeModel] = useState(''); const [regBikePlate, setRegBikePlate] = useState(''); const [regBikeCategory, setRegBikeCategory] = useState('Matic'); const [regBikeEngine, setRegBikeEngine] = useState('');
@@ -544,14 +540,16 @@
       const [cardFormat, setCardFormat] = useState('jpg');
       const [isProcessing, setIsProcessing] = useState(false);
 
+      // State Chat & Notifikasi Pesan Masuk
       const [showChatModal, setShowChatModal] = useState(false);
       const [activeChatUser, setActiveChatUser] = useState(null);
       const [activeChatId, setActiveChatId] = useState(null);
       const [chatMessages, setChatMessages] = useState([]);
       const [newMessage, setNewMessage] = useState('');
       const [incomingMessageAlert, setIncomingMessageAlert] = useState(null);
-      const [unreadChats, setUnreadChats] = useState({}); 
+      const [unreadChats, setUnreadChats] = useState({}); // { 'userId': jumlahPesan }
       
+      // Refs untuk listener global chat
       const showChatModalRef = useRef(false);
       const activeChatIdRef = useRef(null);
       const membersRef = useRef([]);
@@ -571,6 +569,7 @@
         const fadeTimer = setTimeout(() => setSplashFading(true), 1000);
         const removeTimer = setTimeout(() => setShowSplash(false), 1500);
 
+        // TAMBAHKAN INI: Aktifkan audio saat user pertama kali klik di mana saja
         const handleFirstClick = () => {
           initAudio();
           window.removeEventListener('click', handleFirstClick);
@@ -609,9 +608,11 @@
         if (storedSession) { try { const session = JSON.parse(storedSession); if (session.expiresAt > Date.now()) { setCurrentUser(session.user); setUserGears(session.gears || {}); setActiveTab(session.user.role === 'Admin' ? 'admin_dashboard' : 'home'); if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); logoutTimerRef.current = setTimeout(() => out(false), session.expiresAt - Date.now()); } else { localStorage.removeItem('oac_session'); } } catch (e) { localStorage.removeItem('oac_session'); } }
       }, []);
 
+      // Sinkronisasi ref untuk status chat modal
       useEffect(() => { showChatModalRef.current = showChatModal; }, [showChatModal]);
       useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
 
+      // Global Chat Listener untuk Notifikasi Pop-up & Badge (Persistent)
       useEffect(() => {
         if (!currentUser || members.length === 0) return;
         
@@ -619,6 +620,7 @@
         const newUnread = {};
 
         const checkUnreadMessages = async () => {
+          // 1. Check Broadcast
           const bChatId = 'broadcast_admin';
           const bLastRead = parseInt(localStorage.getItem('oac_last_read_' + bChatId) || '0');
           const bSnap = await db.ref('chats/' + bChatId + '/messages').orderByChild('timestamp').startAfter(bLastRead).once('value');
@@ -632,9 +634,11 @@
           });
           if (bCount > 0) {
             newUnread['ALL'] = bCount;
+            // Update last read time agar tidak terdeteksi ulang
             localStorage.setItem('oac_last_read_' + bChatId, bLatestTime);
           }
 
+          // 2. Check 1-on-1
           for (const m of members) {
             if (m.id !== currentUser.id) {
               const cId = [currentUser.id, m.id].sort().join('_');
@@ -650,6 +654,7 @@
               });
               if (count > 0) {
                 newUnread[m.id] = count;
+                // Update last read time agar tidak terdeteksi ulang
                 localStorage.setItem('oac_last_read_' + cId, cLatestTime);
               }
             }
@@ -660,18 +665,22 @@
 
         const setupLiveListeners = () => {
           const handleNewMessage = (chatId, otherUserId, msg) => {
-            if (msg.senderId === currentUser.id) return; 
+            if (msg.senderId === currentUser.id) return; // Abaikan pesan kita sendiri
             
+            // Jika chat sedang dibuka untuk user ini, update last read time secara real-time
             if (showChatModalRef.current && activeChatIdRef.current === chatId) {
               localStorage.setItem('oac_last_read_' + chatId, msg.timestamp);
               return;
             }
 
+            // Getar HP dan mainkan suara
             if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
             playNotificationSound();
 
+            // Tambah jumlah pesan belum dibaca
             setUnreadChats(prev => ({ ...prev, [otherUserId]: (prev[otherUserId] || 0) + 1 }));
             
+            // Munculkan pop-up notifikasi (hanya jika tidak ada pop-up lain yang sedang aktif)
             setIncomingMessageAlert(prev => {
               if (prev) return prev; 
               const m = membersRef.current.find(mem => mem.id === otherUserId);
@@ -684,6 +693,7 @@
             addN(`Pesan baru dari ${msg.senderName}`, 'info');
           };
 
+          // Listener Broadcast
           const broadcastId = 'broadcast_admin';
           const bLastReadVal = parseInt(localStorage.getItem('oac_last_read_' + broadcastId) || '0');
           const bRef = db.ref('chats/' + broadcastId + '/messages').orderByChild('timestamp').startAfter(bLastReadVal);
@@ -691,6 +701,7 @@
           bRef.on('child_added', bHandler);
           listeners.push(() => bRef.off('child_added', bHandler));
 
+          // Listener Chat 1-on-1
           members.forEach(m => {
             if (m.id !== currentUser.id) {
               const chatId = [currentUser.id, m.id].sort().join('_');
@@ -709,6 +720,7 @@
       }, [currentUser, members]);
 
 
+      // Listener untuk Chat Messages yang sedang aktif dibuka
       useEffect(() => {
         if (!activeChatId) return;
         const chatRef = db.ref('chats/' + activeChatId + '/messages');
@@ -729,6 +741,7 @@
       const addN = (m, t='info') => { setNotifications(p=>[{id:Date.now(),message:m,type:t,time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),read:false},...p]); setToast({show:true,message:m,type:t}); setTimeout(()=>setToast({show:false,message:'',type:'success'}),3000); };
       const updateSessionData = (newUser, newGears) => { const stored = localStorage.getItem('oac_session'); if (stored) { try { const session = JSON.parse(stored); const updatedSession = { user: newUser || session.user, gears: newGears || session.gears || {}, expiresAt: session.expiresAt }; localStorage.setItem('oac_session', JSON.stringify(updatedSession)); } catch (e) {} } };
       
+      // Fungsi Heartbeat untuk update status online
       const updateHeartbeat = async (userId) => {
         if (!userId || !db) return;
         try {
@@ -750,10 +763,11 @@
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current); 
         logoutTimerRef.current = setTimeout(() => { out(false); addN('Sesi login Anda telah berakhir. Silakan login kembali.', 'info'); }, SESSION_DURATION);
         
+        // Minta izin notifikasi saat user login & mulai heartbeat
         if (user.id) {
           requestNotificationPermission(user.id);
-          updateHeartbeat(user.id); 
-          heartbeatRef.current = setInterval(() => updateHeartbeat(user.id), 30000); 
+          updateHeartbeat(user.id); // Langsung update
+          heartbeatRef.current = setInterval(() => updateHeartbeat(user.id), 30000); // Update tiap 30 detik
         }
       };
 
@@ -795,8 +809,9 @@
       };
       
       const out = (showMsg = true) => { 
-        stopHeartbeat(); 
+        stopHeartbeat(); // Hentikan heartbeat
         if (currentUser?.id && db) {
+          // Set status offline manual (lastActive ke 0)
           db.ref('members/' + currentUser.id + '/lastActive').set(0).catch(()=>{});
         }
         localStorage.removeItem('oac_session'); 
@@ -806,13 +821,14 @@
         if (showMsg) addN('Anda telah keluar dari aplikasi.','info'); 
       };
       
+      // Helper untuk menentukan status online berdasarkan lastActive
       const getOnlineStatus = (lastActive) => {
-        if (!lastActive) return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' };
+        if (!lastActive) return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; // Abu-abu/Merah
         const now = Date.now();
         const diff = now - lastActive;
-        if (diff < 60000) return { color: 'bg-emerald-500', text: 'Online', textColor: 'text-emerald-700', bgColor: 'bg-emerald-100' }; 
-        if (diff < 300000) return { color: 'bg-amber-500', text: 'Idle', textColor: 'text-amber-700', bgColor: 'bg-amber-100' }; 
-        return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; 
+        if (diff < 60000) return { color: 'bg-emerald-500', text: 'Online', textColor: 'text-emerald-700', bgColor: 'bg-emerald-100' }; // Hijau
+        if (diff < 300000) return { color: 'bg-amber-500', text: 'Idle', textColor: 'text-amber-700', bgColor: 'bg-amber-100' }; // Kuning
+        return { color: 'bg-slate-400', text: 'Offline', textColor: 'text-slate-500', bgColor: 'bg-slate-100' }; // Abu-abu/Merah
       };
 
       const addBike = async (e) => { e.preventDefault(); if(!newBike.name || !newBike.plate) { addN('Data motor tidak boleh kosong!', 'error'); return; } if(mb.length >= 2) { addN('Maksimal 2 motor!', 'error'); return; } const bikeRef = db.ref('members/' + currentUser.id + '/bikes').push(); const newBikeData = { ...newBike, isPrimary: mb.length === 0 }; await bikeRef.set(newBikeData); setNewBike({ name: '', plate: '', type: 'Matic', engine: '' }); setShowAddBikeModal(false); addN('Motor berhasil ditambahkan! 🏍️', 'success'); };
@@ -853,6 +869,7 @@
       const getMemberPotentialPoints = (memberId) => { let pts = 0; events.forEach(ev => { if (ev.checkins && ev.checkins[memberId] && (!ev.ptsApproved || !ev.ptsApproved[memberId])) { pts += getEventPoints(ev.eventType).pts; } }); return pts; };
       const approveMemberPoints = async (eventId, memberId, pts) => { const memberRef = db.ref('members/' + memberId + '/points'); await memberRef.transaction((currentPoints) => { return (currentPoints || 0) + pts; }); await db.ref('events/' + eventId + '/ptsApproved/' + memberId).set(true); addN('Poin anggota berhasil di-approve! ⭐','success'); };
 
+      // Chat Functions
       const openChat = (recipient) => {
         if (recipient.id === currentUser.id) return;
         let chatId;
@@ -863,6 +880,7 @@
         setActiveChatId(chatId); 
         setShowChatModal(true);
         
+        // Reset jumlah pesan belum dibaca untuk user ini & update localStorage
         setUnreadChats(prev => ({ ...prev, [recipient.id]: 0 }));
         localStorage.setItem('oac_last_read_' + chatId, Date.now());
       };
@@ -1125,11 +1143,11 @@
                           <div className="flex items-center space-x-2 text-amber-500 pt-2"><BikeIcon type={regBikeCategory} className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-wider">Data Garasi (Motor)</span></div>
                           <div className="grid grid-cols-2 gap-3">
                             <FormInput label="Merek Motor" icon={<BikeIcon type={regBikeCategory} className="w-4 h-4" />} type="text" value={regBikeBrand} onChange={(e)=>setRegBikeBrand(e.target.value.toUpperCase().replace(/[^A-Z ]/g,'').slice(0,10))} required placeholder="HONDA" hint="4-10 Kapital" />
-                            <FormInput label="Tipe Motor" icon={<BikeIcon type={regBikeCategory} className="w-4 h-4" />} type="text" value={regBikeModel} onChange={(e)=>setRegBikeModel(e.target.value.toUpperCase().replace(/[^A-Z0-9 -]/g,'').slice(0,20))} required placeholder="CBR-250 RR" hint="Pakai spasi/- maks 20" />
+                            <FormInput label="Tipe Motor" icon={<BikeIcon type={regBikeCategory} className="w-4 h-4" />} type="text" value={regBikeModel} onChange={(e)=>setRegBikeModel(e.target.value.toUpperCase().replace(/[^A-Z0-9 -]/g,'').slice(0,12))} required placeholder="CBR-250 RR" hint="Pakai spasi/- maks 12" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <FormInput label="Plat Nomor" icon={<I.MapPin />} type="text" maxLength="8" value={regBikePlate} onChange={(e)=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');setRegBikePlate(v);}} required placeholder="B1234ABC" hint="7-8 digit" />
-                            <FormSelect label="Kapasitas (CC)" value={regBikeEngine?`${regBikeEngine}cc`:''} onChange={(e)=>setRegBikeEngine(e.target.value.replace('cc',''))} required><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="135cc">135 cc</option><option value="150cc">150 cc</option><option value="155cc">155 cc</option><option value="160cc">160 cc</option><option value="180cc">180 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></FormSelect>
+                            <FormSelect label="Kapasitas (CC)" value={regBikeEngine?`${regBikeEngine}cc`:''} onChange={(e)=>setRegBikeEngine(e.target.value.replace('cc',''))} required><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="150cc">150 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></FormSelect>
                           </div>
                           <FormSelect label="Jenis Motor" icon={<BikeIcon type={regBikeCategory} className="w-4 h-4" />} value={regBikeCategory} onChange={(e)=>setRegBikeCategory(e.target.value)} required><option>Matic</option><option>Bebek</option><option>Sport</option><option>Trail</option><option>Classic (Custom)</option></FormSelect>
                         </div>
@@ -1169,6 +1187,7 @@
                         <h3 className="text-lg font-black text-slate-900">Anggota Club</h3>
                         <SummaryCards />
                         
+                        {/* Broadcast Card dengan Badge Notifikasi */}
                         <div className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm mb-4 flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">📢</div>
@@ -1194,13 +1213,14 @@
                           const upcomingEvents = events.filter(ev => ev.checkins && ev.checkins[m.id] && ev.timestamp > Date.now()); 
                           const nearestUpcoming = upcomingEvents.sort((a,b) => a.timestamp - b.timestamp)[0]; 
                           const isReady = nearestUpcoming && nearestUpcoming.readiness && nearestUpcoming.readiness[m.id] && Object.keys(nearestUpcoming.readiness[m.id]).length === READINESS_ITEMS.length; 
-                          const status = getOnlineStatus(m.lastActive); 
+                          const status = getOnlineStatus(m.lastActive); // Dapatkan status online
                           
                           return ( 
                             <div key={m.id} className="bg-white/50 border border-white/60 rounded-2xl p-3 shadow-sm">
                               <div className="flex items-center space-x-3">
                                 <div className="relative">
                                   <MemberAvatar user={m} size="w-12 h-12" textSize="text-2xl" />
+                                  {/* Indikator Status Online */}
                                   <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${status.color}`}></span>
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -1209,6 +1229,7 @@
                                       {m.name} {m.simVerified && <I.CheckCircle2 className="ml-1 w-3 h-3 text-blue-500 flex-shrink-0" />}
                                     </h4>
                                     <div className="flex items-center space-x-1">
+                                      {/* Label Status Online */}
                                       <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${status.bgColor} ${status.textColor}`}>
                                         {status.text}
                                       </span>
@@ -1365,6 +1386,7 @@
                         <div className="space-y-4">
                           <div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900">Data Lengkap Anggota & Safety Gear</h4></div>
                           
+                          {/* Admin Broadcast Card dengan Badge Notifikasi */}
                           <div className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm mb-4 flex items-center justify-between">
                             <div className="flex items-center space-x-3">
                               <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">📢</div>
@@ -1387,7 +1409,7 @@
                             const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]); 
                             const memberJourney = m.points || 0; 
                             const memberPotentialPts = getMemberPotentialPoints(m.id); 
-                            const status = getOnlineStatus(m.lastActive); 
+                            const status = getOnlineStatus(m.lastActive); // Dapatkan status online
                             
                             return ( 
                               <div key={m.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2">
@@ -1395,6 +1417,7 @@
                                   <div className="flex items-center space-x-2">
                                     <div className="relative">
                                       <MemberAvatar user={m} size="w-9 h-9" />
+                                      {/* Indikator Status Online */}
                                       <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${status.color}`}></span>
                                     </div>
                                     <div>
@@ -1406,6 +1429,7 @@
                                     </div>
                                   </div>
                                   <div className="flex items-center space-x-1.5 flex-wrap gap-1 justify-end">
+                                    {/* Label Status Online */}
                                     <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${status.bgColor} ${status.textColor}`}>
                                       {status.text}
                                     </span>
@@ -1466,7 +1490,7 @@
                 <div className="absolute bottom-0 left-0 right-0 bg-white/60 backdrop-blur-2xl border-t border-white/40 px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] flex justify-around items-center z-30 shadow-[0_-4px_30px_rgba(0,0,0,0.05)]">
                   <button onClick={()=>setActiveTab('home')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='home'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Home /></button>
                   <button onClick={()=>setActiveTab('events')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='events'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Calendar /></button>
-                  <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><BikeIcon type="Motor" className="w-[22px] h-[22px]" /></button>
+                  <button onClick={()=>setActiveTab('garage')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='garage'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><BikeIcon type="Sport" className="w-[22px] h-[22px]" /></button>
                   <button onClick={()=>setActiveTab('members')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='members'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.Users /></button>
                   <button onClick={()=>setActiveTab('profile')} className={`p-2 rounded-xl nav-btn active:scale-90 ${activeTab==='profile'?'text-amber-600 bg-amber-50':'text-slate-500'}`}><I.User /></button>
                 </div>
@@ -1476,7 +1500,7 @@
 
           {/* Modal Detail Event */}
           {showEventDetailModal && activeEventDetail && (
-            <div className="absolute inset-0 bg-slate-900/40 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEventDetailModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEventDetailModal(false)}>
               <div className="bg-white/80 backdrop-blur-2xl border border-white/80 rounded-[32px] shadow-2xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto scrollbar-none animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className="flex justify-between items-start mb-3">
                   <div><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${getEventPoints(activeEventDetail.eventType).color}`}>+{getEventPoints(activeEventDetail.eventType).pts} Pts</span><h3 className="text-lg font-black text-slate-900 mt-1">{activeEventDetail.title}</h3></div>
@@ -1500,9 +1524,9 @@
             </div>
           )}
 
-          {/* Modal Daftar Peserta Check-in Event */}
+          {/* Modal Daftar Peserta Check-in Event (Dengan Admin Control) */}
           {showCheckinsModal && activeEventCheckins && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowCheckinsModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowCheckinsModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in max-h-[80vh] flex flex-col" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.Users className="w-5 h-5 text-amber-500" /> Daftar Peserta Check-in</h3>
                 <p className="text-xs text-slate-500 mb-4 truncate">Event: {activeEventCheckins.title}</p>
@@ -1566,14 +1590,14 @@
 
           {/* Modal Tambah Motor */}
           {showAddBikeModal && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowAddBikeModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowAddBikeModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Plus className="w-5 h-5 text-amber-500" /> Tambah Motor Baru</h3>
                 <form onSubmit={addBike} className="space-y-3">
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Nama Motor</label><input type="text" value={newBike.name} onChange={(e)=>setNewBike({...newBike,name:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" required /></div>
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Plat Nomor</label><input type="text" maxLength="8" value={newBike.plate} onChange={(e)=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');setNewBike({...newBike,plate:v});}} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none uppercase" required /></div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Kapasitas (CC)</label><select value={newBike.engine} onChange={(e)=>setNewBike({...newBike,engine:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="135cc">135 cc</option><option value="150cc">150 cc</option><option value="155cc">155 cc</option><option value="160cc">160 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></select></div>
+                    <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Kapasitas (CC)</label><select value={newBike.engine} onChange={(e)=>setNewBike({...newBike,engine:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="150cc">150 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></select></div>
                     <div className="relative"><label className="text-[11px] font-bold text-slate-500 block mb-1">Jenis</label><div className="relative"><span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 mt-[14px]"><BikeIcon type={newBike.type} className="w-4 h-4" /></span><select value={newBike.type} onChange={(e)=>setNewBike({...newBike,type:e.target.value})} className="appearance-none w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-9 py-2.5 text-xs font-semibold focus:outline-none"><option>Matic</option><option>Bebek</option><option>Sport</option><option>Trail</option><option>Classic (Custom)</option></select><span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none mt-[14px]"><I.ChevronDown /></span></div></div>
                   </div>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Tambah Motor</button>
@@ -1584,7 +1608,7 @@
 
           {/* Modal Edit Event */}
           {showEditEventModal && editingEvent && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditEventModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditEventModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Edit className="w-5 h-5 text-amber-500" /> Edit Event</h3>
                 <form onSubmit={saveEditedEvent} className="space-y-3">
@@ -1600,7 +1624,7 @@
 
           {/* Modal Daftar Event Check-in Anggota */}
           {showMemberEventsModal && activeMemberEvents && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowMemberEventsModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowMemberEventsModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in max-h-[80vh] flex flex-col" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.Calendar className="w-5 h-5 text-amber-500" /> Event Tercheck-in</h3>
                 <p className="text-xs text-slate-500 mb-4 truncate">Anggota: {activeMemberEvents.memberName}</p>
@@ -1614,7 +1638,7 @@
 
           {/* Modal Foto Profil */}
           {showPhotoModal && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowPhotoModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowPhotoModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Camera className="w-5 h-5 text-amber-500" /> Ubah Foto Profil</h3>
                 <div className="bg-slate-101 p-1 rounded-2xl flex shadow-inner mb-4">
@@ -1629,7 +1653,7 @@
 
           {/* Modal Konfirmasi Admin */}
           {showAdminConfirmModal && adminConfirmData && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowAdminConfirmModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in" onClick={()=>setShowAdminConfirmModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${adminConfirmData.type==='approve'?'bg-emerald-100 text-emerald-500':'bg-rose-100 text-rose-500'}`}>{adminConfirmData.type==='approve'?<I.CheckCircle2 className="w-6 h-6" />:<I.XCircle className="w-6 h-6" />}</div>
                 <h3 className="text-base font-black text-slate-900 mb-1">Konfirmasi Aksi Admin</h3>
@@ -1642,7 +1666,7 @@
 
           {/* Modal Edit Touring */}
           {showEditTouringModal && editingTouringMember && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditTouringModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditTouringModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.Award className="w-5 h-5 text-amber-500" /> Edit Penugasan Touring</h3>
                 <p className="text-xs text-slate-500 mb-4">Anggota: <b>{editingTouringMember.name}</b></p>
@@ -1653,7 +1677,7 @@
 
           {/* Modal Buat Topik */}
           {showCreateThreadModal && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowCreateThreadModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowCreateThreadModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.MessageSquare className="w-5 h-5 text-amber-500" /> Buat Topik Obrolan</h3>
                 <form onSubmit={createThread} className="space-y-3"><textarea value={newThreadMsg} onChange={(e)=>setNewThreadMsg(e.target.value)} placeholder="Tulis judul atau isi topik obrolan..." rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Publikasi Topik</button></form>
@@ -1663,7 +1687,7 @@
 
           {/* Modal Edit Thread */}
           {showEditThreadModal && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditThreadModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditThreadModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Edit className="w-5 h-5 text-amber-500" /> Edit Pesan</h3>
                 <form onSubmit={handleEditThread} className="space-y-3"><textarea value={editingThreadMsg} onChange={(e)=>setEditingThreadMsg(e.target.value)} rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button></form>
@@ -1673,7 +1697,7 @@
 
           {/* Modal Edit Gear */}
           {showEditGearModal && editingGear && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditGearModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditGearModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-none animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center space-x-2"><I.ShieldCheck className="w-5 h-5 text-amber-500" /> Edit Safety Gear</h3>
                 <p className="text-xs text-slate-500 mb-4">Lengkapi data helm, jaket, dan sepatu safety Anda.</p>
@@ -1695,7 +1719,7 @@
 
           {/* Modal Konfirmasi Pendaftaran */}
           {showConfirmRegModal && confirmRegData && (
-            <div className="absolute inset-0 bg-slate-900/60 z-[60] flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowConfirmRegModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowConfirmRegModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-none animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className="flex flex-col items-center text-center mb-4"><div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 mb-2"><I.ScrollText /></div><h3 className="text-lg font-black text-slate-900">Konfirmasi Data & Aturan</h3><p className="text-[10px] text-slate-500 font-medium">Pastikan data Anda benar dan setuju dengan aturan komunitas.</p></div>
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-1.5 text-xs text-slate-700 font-medium mb-4">
@@ -1721,14 +1745,14 @@
 
           {/* Modal Edit Motor */}
           {showEditBikeModal && editingBike && (
-            <div className="absolute inset-0 bg-slate-900/50 z-50 flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditBikeModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditBikeModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><BikeIcon type={editingBike.type} className="w-5 h-5 text-amber-500" /> Edit Data Motor</h3>
                 <form onSubmit={upBike} className="space-y-3">
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Nama Motor</label><input type="text" value={editingBike.name} onChange={(e)=>setEditingBike({...editingBike,name:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" /></div>
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Plat Nomor</label><input type="text" maxLength="8" value={editingBike.plate} onChange={(e)=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');setEditingBike({...editingBike,plate:v});}} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none uppercase" /></div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Kapasitas (CC)</label><select value={editingBike.engine} onChange={(e)=>setEditingBike({...editingBike,engine:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="135cc">135 cc</option><option value="150cc">150 cc</option><option value="155cc">155 cc</option><option value="160cc">160 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></select></div>
+                    <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Kapasitas (CC)</label><select value={editingBike.engine} onChange={(e)=>setEditingBike({...editingBike,engine:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none"><option value="">Pilih CC</option><option value="110cc">110 cc</option><option value="125cc">125 cc</option><option value="150cc">150 cc</option><option value="160cc">160 cc</option><option value="200cc">200 cc</option><option value="250cc">250 cc</option></select></div>
                     <div className="relative"><label className="text-[11px] font-bold text-slate-500 block mb-1">Jenis</label><div className="relative"><span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 mt-[14px]"><BikeIcon type={editingBike.type} className="w-4 h-4" /></span><select value={editingBike.type} onChange={(e)=>setEditingBike({...editingBike,type:e.target.value})} className="appearance-none w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-9 py-2.5 text-xs font-semibold focus:outline-none"><option>Matic</option><option>Bebek</option><option>Sport</option><option>Trail</option><option>Classic (Custom)</option></select><span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none mt-[14px]"><I.ChevronDown /></span></div></div>
                   </div>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button>
@@ -1739,7 +1763,7 @@
           
           {/* Modal Edit Profil */}
           {showEditProfileModal && editingProfile && (
-            <div className="absolute inset-0 bg-slate-900/50 z-50 flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowEditProfileModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowEditProfileModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4">Edit Data Diri</h3>
                 <form onSubmit={upProf} className="space-y-3">
@@ -1756,7 +1780,7 @@
           
           {/* Modal Tambah Pengumuman */}
           {showAddAnnouncementModal && (
-            <div className="absolute inset-0 bg-slate-900/50 z-50 flex items-end md:items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowAddAnnouncementModal(false)}>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={()=>setShowAddAnnouncementModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Megaphone className="w-5 h-5 text-amber-500" /> Buat Pengumuman</h3>
                 <form onSubmit={(e)=>{e.preventDefault(); if(!newAnnouncement.title||!newAnnouncement.content){addN('Judul dan isi wajib diisi!','error');return;} setAnnouncements([{id:Date.now(),title:newAnnouncement.title,content:newAnnouncement.content,date:new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}),author:currentUser.name},...announcements]); setShowAddAnnouncementModal(false); setNewAnnouncement({title:'',content:''}); addN('Pengumuman dipublish!','success');}} className="space-y-3">
@@ -1770,7 +1794,7 @@
 
           {/* === MODAL PREVIEW KARTU === */}
           {showCardPreview && (
-            <div className="absolute inset-0 bg-slate-900/80 z-[70] flex items-center justify-center p-4 animate-backdrop-in" onClick={()=>setShowCardPreview(false)}>
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[70] flex items-center justify-center p-4 animate-fade-in" onClick={()=>setShowCardPreview(false)}>
               <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto scrollbar-none" onClick={e=>e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
@@ -1930,7 +1954,7 @@
 
           {/* === MODAL CHAT === */}
           {showChatModal && activeChatUser && (
-            <div className="absolute inset-0 bg-slate-900/80 z-[70] flex items-end justify-center animate-backdrop-in" onClick={closeChat}>
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[70] flex items-end justify-center animate-fade-in" onClick={closeChat}>
               <div className="bg-white w-full max-w-md h-[85vh] rounded-t-[32px] shadow-2xl flex flex-col animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <div className="p-4 border-b border-slate-101 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -1983,7 +2007,7 @@
 
           {/* === MODAL NOTIFIKASI PESAN MASUK (POP-UP KONFIRMASI) === */}
           {incomingMessageAlert && (
-            <div className="absolute inset-0 bg-slate-900/80 z-[80] flex items-center justify-center p-4 animate-backdrop-in">
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[80] flex items-center justify-center p-4 animate-fade-in">
               <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center animate-scale-in">
                 <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4 text-3xl">📩</div>
                 <h3 className="text-base font-black text-slate-900 mb-1">Pesan Baru Masuk!</h3>
