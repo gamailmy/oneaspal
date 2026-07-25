@@ -484,6 +484,10 @@
       const postImageRef = useRef(null);
       const [viewingImage, setViewingImage] = useState(null);
       const [zoomLevel, setZoomLevel] = useState(1);
+      const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+      const touchStartRef = useRef({ x: 0, y: 0, dist: 0, zoom: 1 });
+      const panStartRef = useRef({ x: 0, y: 0 });
+      
       const [editingPost, setEditingPost] = useState(null);
       const [showEditPostModal, setShowEditPostModal] = useState(false);
       const [editingComment, setEditingComment] = useState(null);
@@ -906,20 +910,64 @@
         addN('Komentar dihapus.', 'info');
       };
 
-      // Image Viewer Functions
+            // Image Viewer Functions
       const openImageViewer = (url) => {
         setViewingImage(url);
         setZoomLevel(1);
+        setPanPosition({ x: 0, y: 0 });
         document.body.classList.add('allow-landscape');
       };
 
       const closeImageViewer = () => {
         setViewingImage(null);
+        setZoomLevel(1);
+        setPanPosition({ x: 0, y: 0 });
         document.body.classList.remove('allow-landscape');
       };
 
-      const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.5, 4));
-      const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.5, 1));
+      const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.5, 5));
+      const handleZoomOut = () => {
+        setZoomLevel(prev => {
+          const newZoom = Math.max(prev - 0.5, 1);
+          if (newZoom === 1) setPanPosition({ x: 0, y: 0 });
+          return newZoom;
+        });
+      };
+
+      // Touch Handlers untuk Pinch & Pan
+      const handleTouchStart = (e) => {
+        if (e.touches.length === 1) {
+          touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dist: 0, zoom: zoomLevel };
+          panStartRef.current = { ...panPosition };
+        } else if (e.touches.length === 2) {
+          const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          touchStartRef.current.dist = dist;
+          touchStartRef.current.zoom = zoomLevel;
+        }
+      };
+
+      const handleTouchMove = (e) => {
+        if (e.touches.length === 1 && zoomLevel > 1) {
+          // Geser (Pan) dengan 1 jari saat sudah di-zoom
+          const deltaX = e.touches[0].clientX - touchStartRef.current.x;
+          const deltaY = e.touches[0].clientY - touchStartRef.current.y;
+          setPanPosition({
+            x: panStartRef.current.x + deltaX,
+            y: panStartRef.current.y + deltaY
+          });
+        } else if (e.touches.length === 2) {
+          // Pinch to Zoom dengan 2 jari
+          const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          const startDist = touchStartRef.current.dist;
+          const startZoom = touchStartRef.current.zoom;
+          if (startDist > 0) {
+            let newZoom = startZoom * (dist / startDist);
+            newZoom = Math.max(1, Math.min(newZoom, 5));
+            setZoomLevel(newZoom);
+            if (newZoom === 1) setPanPosition({ x: 0, y: 0 });
+          }
+        }
+      };
 
       const tA = members.filter(m=>m.status==='approved').length; 
       const tP = members.filter(m=>m.status==='pending').length; 
@@ -1636,14 +1684,23 @@
 
           {/* Modal Image Viewer (Full Screen & Zoomable) */}
           {viewingImage && (
-            <div className="fixed inset-0 bg-black z-[90] flex flex-col items-center animate-fade-in">
+            <div 
+              className="fixed inset-0 bg-black z-[90] flex flex-col items-center animate-fade-in"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              style={{ touchAction: 'none' }} // Mencegah browser melakukan scroll/zoom bawaan
+            >
               {/* Area Gambar (Menyesuaikan layar tanpa terpotong) */}
-              <div className="flex-1 w-full h-full flex items-center justify-center overflow-auto scrollbar-none pt-4 pb-20">
+              <div className="flex-1 w-full h-full flex items-center justify-center overflow-hidden pt-4 pb-20">
                 <img 
                   src={viewingImage} 
                   alt="Full View" 
-                  className="max-w-full max-h-full object-contain transition-transform duration-300 ease-out" 
-                  style={{ transform: `scale(${zoomLevel})` }} 
+                  className="max-w-full max-h-full object-contain pointer-events-none select-none" 
+                  style={{ 
+                    transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
+                    transition: 'transform 0.05s linear' // Transisi cepat agar geseran jari terasa mulus
+                  }} 
+                  draggable="false"
                 />
               </div>
               
