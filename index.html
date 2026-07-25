@@ -1636,20 +1636,28 @@
 
           {/* Modal Image Viewer (Full Screen & Zoomable) */}
           {viewingImage && (
-            <div className="fixed inset-0 bg-black z-[90] flex flex-col items-center justify-center animate-fade-in">
-              <div className="absolute top-4 right-4 z-10 flex items-center space-x-2">
-                <button onClick={handleZoomOut} className="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center active:scale-90 backdrop-blur-md">
+            <div className="fixed inset-0 bg-black z-[90] flex flex-col items-center animate-fade-in">
+              {/* Area Gambar (Menyesuaikan layar tanpa terpotong) */}
+              <div className="flex-1 w-full h-full flex items-center justify-center overflow-auto scrollbar-none pt-4 pb-20">
+                <img 
+                  src={viewingImage} 
+                  alt="Full View" 
+                  className="max-w-full max-h-full object-contain transition-transform duration-300 ease-out" 
+                  style={{ transform: `scale(${zoomLevel})` }} 
+                />
+              </div>
+              
+              {/* Tombol Navigasi di Bawah Tengah */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center space-x-4 bg-black/60 backdrop-blur-md p-3 rounded-full shadow-2xl border border-white/10">
+                <button onClick={handleZoomOut} className="w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center active:scale-90 transition hover:bg-white/30">
                   <I.ZoomOut />
                 </button>
-                <button onClick={handleZoomIn} className="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center active:scale-90 backdrop-blur-md">
-                  <I.ZoomIn />
-                </button>
-                <button onClick={closeImageViewer} className="w-10 h-10 bg-rose-500 text-white rounded-full flex items-center justify-center active:scale-90 backdrop-blur-md">
+                <button onClick={closeImageViewer} className="w-12 h-12 bg-rose-500 text-white rounded-full flex items-center justify-center active:scale-90 transition hover:bg-rose-600 shadow-lg">
                   <I.X />
                 </button>
-              </div>
-              <div className="w-full h-full flex items-center justify-center overflow-auto scrollbar-none">
-                <img src={viewingImage} alt="Full View" className="max-w-none transition-transform duration-300 ease-out" style={{ transform: `scale(${zoomLevel})` }} />
+                <button onClick={handleZoomIn} className="w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center active:scale-90 transition hover:bg-white/30">
+                  <I.ZoomIn />
+                </button>
               </div>
             </div>
           )}
