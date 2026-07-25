@@ -2226,7 +2226,7 @@
             </div>
           )}
 
-                   {/* === HAMBURGER MENU PUBLIK === */}
+          {/* === HAMBURGER MENU PUBLIK === */}
           {showPublicMenu && (
             <div className="absolute inset-0 z-[85] flex animate-fade-in" onClick={() => setShowPublicMenu(false)}>
               <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
@@ -2254,14 +2254,14 @@
           {/* === MODAL GALLERY PUBLIK === */}
           {showPublicGalleryModal && (
             <div className="absolute inset-0 z-[80] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={() => setShowPublicGalleryModal(false)}>
-              <div className="bg-white rounded-3xl p-6 w-full max-w-sm max-h-[90vh] flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+              <div className="bg-white rounded-3xl p-6 w-full max-w-sm max-h-[90vh] flex flex-col animate-scale-in shadow-[0_20px_60px_rgba(0,0,0,0.25)] ring-1 ring-black/5" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2"><I.Image className="w-5 h-5 text-amber-500" /> Gallery Riders</h3>
-                  <button onClick={() => setShowPublicGalleryModal(false)} className="p-1.5 bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200"><I.X /></button>
+                  <button onClick={() => setShowPublicGalleryModal(false)} className="p-2 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 active:scale-90 transition"><I.X /></button>
                 </div>
-                <div className="flex-1 overflow-y-auto scrollbar-none space-y-4 pb-4">
+                <div className="flex-1 overflow-y-auto scrollbar-none space-y-4 pb-2">
                   {galleryPosts.length > 0 ? galleryPosts.map(post => (
-                    <div key={post.id} className="bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden">
+                    <div key={post.id} className="bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
                       <img src={post.image} alt={post.title} className="w-full h-40 object-cover" />
                       <div className="p-3">
                         <p className="text-xs font-bold text-slate-800">{post.title}</p>
@@ -2277,10 +2277,10 @@
           {/* === MODAL BERITA RIDERS === */}
           {showPublicNewsModal && (
             <div className="absolute inset-0 z-[80] flex items-end md:items-center justify-center p-4 animate-fade-in" onClick={() => setShowPublicNewsModal(false)}>
-              <div className="bg-white rounded-3xl p-6 w-full max-w-sm max-h-[90vh] flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+              <div className="bg-white rounded-3xl p-6 w-full max-w-sm max-h-[90vh] flex flex-col animate-scale-in shadow-[0_20px_60px_rgba(0,0,0,0.25)] ring-1 ring-black/5" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-5 h-5 text-amber-500" /> Berita Riders</h3>
-                  <button onClick={() => setShowPublicNewsModal(false)} className="p-1.5 bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200"><I.X /></button>
+                  <button onClick={() => setShowPublicNewsModal(false)} className="p-2 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 active:scale-90 transition"><I.X /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto scrollbar-none space-y-3 pb-4">
                   {loadingNews ? (
@@ -2289,7 +2289,7 @@
                     </div>
                   ) : newsItems.length > 0 ? (
                     newsItems.map((news, idx) => (
-                      <a key={idx} href={news.link} target="_blank" rel="noopener noreferrer" className="block p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition active:scale-95">
+                      <a key={idx} href={news.link} target="_blank" rel="noopener noreferrer" className="block p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition active:scale-95 shadow-sm">
                         <h4 className="font-bold text-sm text-slate-800 line-clamp-2">{news.title}</h4>
                         <p className="text-[10px] text-slate-500 mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: news.description }}></p>
                         <p className="text-[9px] text-amber-600 font-bold mt-2">
@@ -2301,6 +2301,11 @@
                     <div className="text-center py-10 text-slate-400 text-xs italic">Gagal memuat berita.</div>
                   )}
                 </div>
+                
+                {/* Tombol Close untuk Kembali ke Halaman Publik */}
+                <button onClick={() => setShowPublicNewsModal(false)} className="w-full mt-2 bg-slate-900 text-white font-bold text-xs py-3 rounded-xl active:scale-95 transition flex items-center justify-center space-x-1 shadow-lg">
+                  <I.ArrowLeft className="w-4 h-4" /> <span>Kembali ke Halaman Publik</span>
+                </button>
               </div>
             </div>
           )}
