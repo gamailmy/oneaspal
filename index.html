@@ -640,9 +640,10 @@
                 
                 // Jika status berubah
                 if (prevStatus !== currStatus) {
-                  if (currStatus === 'online') showStatusToast('online +1', 'online');
-                  else if (currStatus === 'idle') showStatusToast('idle +1', 'idle');
-                  else if (currStatus === 'offline') showStatusToast('logout +1', 'logout');
+                  // Perbaikan: Panggil fungsi dengan 1 parameter type saja
+                  if (currStatus === 'online') showStatusToast('online');
+                  else if (currStatus === 'idle') showStatusToast('idle');
+                  else if (currStatus === 'offline') showStatusToast('logout');
                 }
               }
             });
@@ -655,18 +656,6 @@
           setMembers(membersArray);
           membersRef.current = membersArray;
         }, (error) => { console.error("Firebase Members Error:", error); addN(`Error DB: ${error.message}`, 'error'); });
-        
-        const galleryRef = db.ref('gallery');
-        galleryRef.on('value', (snapshot) => {
-          const data = snapshot.val();
-          const postsArray = data ? Object.keys(data).map(key => {
-            const p = data[key];
-            const likes = p.likes ? Object.keys(p.likes) : [];
-            const comments = p.comments ? Object.keys(p.comments).map(cKey => ({ id: cKey, ...p.comments[cKey] })).sort((a,b) => a.timestamp - b.timestamp) : [];
-            return { id: key, ...p, likes, comments };
-          }).sort((a,b) => b.timestamp - a.timestamp) : [];
-          setGalleryPosts(postsArray);
-        }, (error) => { console.error("Firebase Gallery Error:", error); addN(`Error DB: ${error.message}`, 'error'); });
 
         const eventsRef = db.ref('events');
         eventsRef.on('value', (snapshot) => { const data = snapshot.val(); const eventsArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []; eventsArray.sort((a,b) => a.timestamp - b.timestamp); setEvents(eventsArray); });
