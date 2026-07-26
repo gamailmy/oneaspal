@@ -79,7 +79,9 @@
     @keyframes splashGlow { 0%, 100% { box-shadow: 0 0 40px 10px rgba(245, 158, 11, 0.3); } 50% { box-shadow: 0 0 70px 20px rgba(245, 158, 11, 0.6); } }
     .animate-splash-glow { animation: splashGlow 2s ease-in-out infinite; }
     @keyframes dropDownNotch { 0% { transform: translateY(-100px) scale(0.8); opacity: 0; } 15% { transform: translateY(0) scale(1); opacity: 1; } 85% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-20px) scale(0.9); opacity: 0; } }
-    .animate-notch { animation: dropDownNotch 2s ease-in-out forwards; }
+    .animate-notch { animation: dropDownNotch 3s ease-in-out forwards; }
+    @keyframes floatLikes { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 15% { opacity: 1; transform: translateY(0) scale(1); } 85% { opacity: 1; transform: translateY(-5px) scale(1); } 100% { opacity: 0; transform: translateY(-15px) scale(0.9); } }
+    .animate-float-likes { animation: floatLikes 2s ease-in-out forwards; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-100 via-slate-50 to-amber-50 text-slate-800 flex justify-center items-center">
@@ -514,7 +516,18 @@
       const [isProcessing, setIsProcessing] = useState(false);
 
       const [showChatModal, setShowChatModal] = useState(false);
-            // State untuk Notifikasi Status Online/Offline/Idle
+
+      // State untuk Notifikasi Status Online/Offline/Idle
+      const [viewingLikes, setViewingLikes] = useState(null);
+      const likesTimeoutRef = useRef(null);
+      const openLikesViewer = (post) => {
+        if (likesTimeoutRef.current) clearTimeout(likesTimeoutRef.current);
+        setViewingLikes(post);
+        likesTimeoutRef.current = setTimeout(() => {
+          setViewingLikes(null);
+        }, 2000); // Melayang selama 2 detik
+      };
+      // State untuk Notifikasi Status Online/Offline/Idle
       const [statusCounts, setStatusCounts] = useState({ online: 0, idle: 0, logout: 0 });
       const prevMembersRef = useRef({});
       const currentUserRef = useRef(null);
@@ -1098,12 +1111,16 @@
         }
       };
 
-      const toggleLike = async (postId) => {
+        const toggleLike = async (postId) => {
         if (!currentUser) return;
         const likeRef = db.ref('gallery/' + postId + '/likes/' + currentUser.id);
         const snapshot = await likeRef.once('value');
-        if (snapshot.exists()) { await likeRef.remove(); } 
-        else { await likeRef.set(true); }
+        if (snapshot.exists()) { 
+          await likeRef.remove(); 
+        } else { 
+          // Simpan userId dan userName agar bisa ditampilkan di pop-up
+          await likeRef.set({ userId: currentUser.id, userName: currentUser.name }); 
+        }
       };
 
       const submitComment = async (postId) => {
@@ -1313,9 +1330,24 @@
                   
                   <div className="p-3">
                     <div className="flex items-center space-x-4 mb-2">
-                      <button onClick={() => toggleLike(post.id)} className={`flex items-center space-x-1 transition active:scale-90 ${isLiked ? 'text-rose-500' : 'text-slate-600'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); toggleLike(post.id); openLikesViewer(post); }} className={`relative flex items-center space-x-1 transition active:scale-90 ${isLiked ? 'text-rose-500' : 'text-slate-600'}`}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
                         <span className="text-xs font-bold">{post.likes?.length || 0}</span>
+                        
+                        {/* Pop-up Melayang Daftar Likes */}
+                        {viewingLikes?.id === post.id && (
+                          <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-2xl border border-slate-100 p-2 z-30 w-40 animate-float-likes">
+                            <p className="text-[10px] font-bold text-slate-700 mb-1">Disukai oleh:</p>
+                            <div className="max-h-24 overflow-y-auto scrollbar-none space-y-1">
+                              {post.likes?.length > 0 ? post.likes.map(l => (
+                                <div key={l.userId} className="text-[9px] text-slate-600 flex items-center space-x-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                                  <span className="truncate">{l.userName || 'Anggota'}</span>
+                                </div>
+                              )) : <p className="text-[9px] text-slate-400 italic">Belum ada yang like</p>}
+                            </div>
+                          </div>
+                        )}
                       </button>
                       <div className="flex items-center space-x-1 text-slate-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
