@@ -614,7 +614,7 @@
         }
       }, [showPublicNewsModal, newsItems.length]);
 
-      useEffect(() => {
+        useEffect(() => {
         if (!db) return;
         const membersRefDb = db.ref('members');
         membersRefDb.on('value', (snapshot) => {
@@ -640,7 +640,6 @@
                 
                 // Jika status berubah
                 if (prevStatus !== currStatus) {
-                  // Perbaikan: Panggil fungsi dengan 1 parameter type saja
                   if (currStatus === 'online') showStatusToast('online');
                   else if (currStatus === 'idle') showStatusToast('idle');
                   else if (currStatus === 'offline') showStatusToast('logout');
@@ -656,6 +655,24 @@
           setMembers(membersArray);
           membersRef.current = membersArray;
         }, (error) => { console.error("Firebase Members Error:", error); addN(`Error DB: ${error.message}`, 'error'); });
+        
+        // Listener Gallery yang Aman dari Crash
+        const galleryRef = db.ref('gallery');
+        galleryRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          const postsArray = data ? Object.keys(data).map(key => {
+            const p = data[key];
+            if (!p) return null; // Lewati data kosong
+            
+            const likes = p.likes ? Object.keys(p.likes) : [];
+            // Cek keamanan data komentar
+            const comments = p.comments ? Object.keys(p.comments).map(cKey => ({ id: cKey, ...(p.comments[cKey] || {}) })).sort((a,b) => (a.timestamp||0) - (b.timestamp||0)) : [];
+            
+            return { id: key, ...p, likes, comments };
+          }).filter(p => p !== null).sort((a,b) => (b.timestamp||0) - (a.timestamp||0)) : [];
+          
+          setGalleryPosts(postsArray);
+        }, (error) => { console.error("Firebase Gallery Error:", error); addN(`Error DB: ${error.message}`, 'error'); });
 
         const eventsRef = db.ref('events');
         eventsRef.on('value', (snapshot) => { const data = snapshot.val(); const eventsArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []; eventsArray.sort((a,b) => a.timestamp - b.timestamp); setEvents(eventsArray); });
@@ -1027,7 +1044,7 @@
         setNewMessage('');
       };
 
-      // Fungsi Gallery Riders
+            // Fungsi Gallery Riders
       const handlePostImageSelect = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1041,36 +1058,44 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             let { width, height } = img;
-            const maxWidth = 800;
+            const maxWidth = 600; // Kecilkan maksimal lebar agar base64 tidak terlalu panjang
             if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
             canvas.width = width; canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
-            const compressedUrl = canvas.toDataURL('image/jpeg', 0.7);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.6); // Turunkan kualitas ke 60%
             setNewPost(prev => ({ ...prev, image: compressedUrl }));
             setUploadingImage(false);
           };
+          img.onerror = () => { addN('Gagal memuat gambar, coba gambar lain.', 'error'); setUploadingImage(false); };
         };
+        reader.onerror = () => { addN('Gagal membaca file.', 'error'); setUploadingImage(false); };
         reader.readAsDataURL(file);
       };
 
       const submitPost = async (e) => {
         e.preventDefault();
         if (!newPost.title.trim() || !newPost.image) { addN('Judul dan gambar wajib diisi!', 'error'); return; }
+        
         const newPostRef = db.ref('gallery').push();
-        await newPostRef.set({
-          authorId: currentUser.id,
-          authorName: currentUser.name,
-          authorPhotoURL: currentUser.photoURL || '',
-          authorGender: currentUser.gender || 'Laki-laki',
-          title: newPost.title,
-          image: newPost.image,
-          timestamp: Date.now(),
-          likes: {},
-          comments: {}
-        });
-        setNewPost({ title: '', image: '' });
-        setShowAddPostModal(false);
-        addN('Postingan galeri berhasil dibuat! 📸', 'success');
+        try {
+          await newPostRef.set({
+            authorId: currentUser.id,
+            authorName: currentUser.name,
+            authorPhotoURL: currentUser.photoURL || '',
+            authorGender: currentUser.gender || 'Laki-laki',
+            title: newPost.title,
+            image: newPost.image,
+            timestamp: Date.now(),
+            likes: {},
+            comments: {}
+          });
+          setNewPost({ title: '', image: '' });
+          setShowAddPostModal(false);
+          addN('Postingan galeri berhasil dibuat! 📸', 'success');
+        } catch (err) {
+          console.error("Upload Error:", err);
+          addN('Gagal mengunggah: Ukuran gambar mungkin melebihi batas database.', 'error');
+        }
       };
 
       const toggleLike = async (postId) => {
@@ -1244,7 +1269,7 @@
         </div>
       );
 
-      const renderGallery = () => (
+        const renderGallery = () => (
         <div className="bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-2xl border border-white/40 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-4 flex flex-col h-[500px] overflow-hidden">
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/30">
             <div className="flex items-center space-x-2">
@@ -1266,7 +1291,7 @@
                     <div className="flex items-center space-x-2">
                       <MemberAvatar user={{ photoURL: post.authorPhotoURL, gender: post.authorGender }} size="w-8 h-8" textSize="text-sm" />
                       <div>
-                        <h4 className="text-xs font-bold text-slate-900">{post.authorName}</h4>
+                        <h4 className="text-xs font-bold text-slate-900">{post.authorName || 'Anonim'}</h4>
                         <p className="text-[9px] text-slate-500 font-medium">{new Date(post.timestamp).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
@@ -1298,7 +1323,7 @@
                       </div>
                     </div>
                     <p className="text-xs text-slate-800 font-medium leading-relaxed">
-                      <span className="font-bold mr-1">{post.authorName.split(' ')[0]}</span>
+                      <span className="font-bold mr-1">{post.authorName?.split(' ')[0] || 'Anonim'}</span>
                       {post.title}
                     </p>
                   </div>
@@ -1307,7 +1332,7 @@
                     {post.comments?.map(c => (
                       <div key={c.id} className="flex items-start space-x-2 group">
                         <div className="flex-1">
-                          <span className="text-[10px] font-bold text-slate-700">{c.userName.split(' ')[0]}: <span className="text-slate-600 font-medium">{c.text}</span></span>
+                          <span className="text-[10px] font-bold text-slate-700">{c.userName?.split(' ')[0] || 'Anonim'}: <span className="text-slate-600 font-medium">{c.text}</span></span>
                           <p className="text-[8px] text-slate-400 font-medium mt-0.5">{new Date(c.timestamp).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                         {c.userId === currentUser.id && (
