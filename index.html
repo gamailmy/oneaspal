@@ -78,6 +78,8 @@
     .shine-sweep::after { content: ''; position: absolute; top: -100%; left: 0; width: 50%; height: 300%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); transform: translateX(-150%) rotate(25deg); animation: shineSweep 2s infinite linear; pointer-events: none; z-index: 20; }
     @keyframes splashGlow { 0%, 100% { box-shadow: 0 0 40px 10px rgba(245, 158, 11, 0.3); } 50% { box-shadow: 0 0 70px 20px rgba(245, 158, 11, 0.6); } }
     .animate-splash-glow { animation: splashGlow 2s ease-in-out infinite; }
+    @keyframes dropDownNotch { 0% { transform: translateY(-100px) scale(0.8); opacity: 0; } 15% { transform: translateY(0) scale(1); opacity: 1; } 85% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-20px) scale(0.9); opacity: 0; } }
+    .animate-notch { animation: dropDownNotch 2s ease-in-out forwards; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-100 via-slate-50 to-amber-50 text-slate-800 flex justify-center items-center">
@@ -611,8 +613,9 @@
         membersRefDb.on('value', (snapshot) => {
           const data = snapshot.val();
           const prevData = prevMembersRef.current || {};
+          const now = Date.now();
           
-          // Deteksi siapa yang baru saja login atau logout
+          // Deteksi siapa yang baru saja login, logout, atau idle
           if (currentUserRef.current) {
             const currentUserId = currentUserRef.current.id;
             Object.keys(data || {}).forEach(id => {
@@ -621,17 +624,18 @@
               const prev = prevData[id];
               const curr = data[id];
               
-              if (prev) {
-                const prevWasOnline = prev.lastActive && prev.lastActive > 0;
-                const currIsOnline = curr.lastActive && curr.lastActive > 0;
+              if (prev && curr) {
+                const prevLast = prev.lastActive || 0;
+                const currLast = curr.lastActive || 0;
                 
-                // Jika sebelumnya offline, sekarang online
-                if (!prevWasOnline && currIsOnline) {
-                  showStatusToast('online +1', 'online');
-                } 
-                // Jika sebelumnya online, sekarang offline (logout)
-                else if (prevWasOnline && !currIsOnline) {
-                  showStatusToast('logout +1', 'logout');
+                const prevStatus = !prevLast ? 'offline' : (now - prevLast < 60000 ? 'online' : (now - prevLast < 300000 ? 'idle' : 'offline'));
+                const currStatus = !currLast ? 'offline' : (now - currLast < 60000 ? 'online' : (now - currLast < 300000 ? 'idle' : 'offline'));
+                
+                // Jika status berubah
+                if (prevStatus !== currStatus) {
+                  if (currStatus === 'online') showStatusToast('online +1', 'online');
+                  else if (currStatus === 'idle') showStatusToast('idle +1', 'idle');
+                  else if (currStatus === 'offline') showStatusToast('logout +1', 'logout');
                 }
               }
             });
@@ -1349,11 +1353,11 @@
 
       return (
         <div className="w-full max-w-md h-full flex flex-col overflow-hidden relative">
-          {/* Notifikasi Status Online/Logout */}
+          {/* Notifikasi Status (Gaya Notch iPhone) */}
           {statusToast && (
-            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[150] pointer-events-none animate-scale-in">
-              <div className={`px-5 py-2.5 rounded-full shadow-2xl backdrop-blur-md border font-bold text-xs flex items-center space-x-2 text-white ${statusToast.type === 'online' ? 'bg-emerald-500/80 border-emerald-300' : 'bg-slate-500/80 border-slate-300'}`}>
-                <span className={`w-2.5 h-2.5 rounded-full ${statusToast.type === 'online' ? 'bg-white animate-ping' : 'bg-slate-200'}`}></span>
+            <div className="absolute top-3 right-3 z-[150] pointer-events-none animate-notch">
+              <div className={`px-4 py-2 rounded-2xl shadow-2xl border font-bold text-[10px] flex items-center space-x-2 text-white ${statusToast.type === 'online' ? 'bg-emerald-500/90 border-emerald-300/50' : statusToast.type === 'idle' ? 'bg-amber-500/90 border-amber-300/50' : 'bg-slate-500/90 border-slate-300/50'}`}>
+                <span className={`w-2 h-2 rounded-full ${statusToast.type === 'online' ? 'bg-white animate-ping' : 'bg-white/80'}`}></span>
                 <span>{statusToast.message}</span>
               </div>
             </div>
