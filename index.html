@@ -82,6 +82,8 @@
     .animate-notch { animation: dropDownNotch 3s ease-in-out forwards; }
     @keyframes floatLikes { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 15% { opacity: 1; transform: translateY(0) scale(1); } 85% { opacity: 1; transform: translateY(-5px) scale(1); } 100% { opacity: 0; transform: translateY(-15px) scale(0.9); } }
     .animate-float-likes { animation: floatLikes 2s ease-in-out forwards; }
+    @keyframes rollDown { 0% { transform: translateY(-100%); opacity: 0; } 10% { transform: translateY(0); opacity: 1; } 90% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(100%); opacity: 0; } }
+    .animate-roll-down { animation: rollDown 4s ease-in-out forwards; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-100 via-slate-50 to-amber-50 text-slate-800 flex justify-center items-center">
@@ -460,6 +462,15 @@
       const chatScrollRef = useRef(null);
       const heartbeatRef = useRef(null);
       const [showSplash, setShowSplash] = useState(true);
+      const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
+      useEffect(() => {
+        if (announcements.length > 1) {
+          const interval = setInterval(() => {
+            setCurrentAnnouncementIndex(prev => (prev + 1) % announcements.length);
+          }, 4000); // Ganti setiap 4 detik
+          return () => clearInterval(interval);
+        }
+      }, [announcements]);
       const [splashFading, setSplashFading] = useState(false);
       const [regName, setRegName] = useState(''); const [regUsername, setRegUsername] = useState(''); const [regPassword, setRegPassword] = useState(''); const [regGender, setRegGender] = useState('Laki-laki'); const [regPhone, setRegPhone] = useState(''); const [regCity, setRegCity] = useState(''); const [regEmail, setRegEmail] = useState(''); const [regEmailDomain, setRegEmailDomain] = useState('@gmail.com'); const [regRidingStatus, setRegRidingStatus] = useState(''); const [regBikeBrand, setRegBikeBrand] = useState(''); const [regBikeModel, setRegBikeModel] = useState(''); const [regBikePlate, setRegBikePlate] = useState(''); const [regBikeCategory, setRegBikeCategory] = useState('Matic'); const [regBikeEngine, setRegBikeEngine] = useState('');
       const [showConfirmRegModal, setShowConfirmRegModal] = useState(false); const [confirmRegData, setConfirmRegData] = useState(null);
@@ -479,17 +490,40 @@
       const [showMemberEventsModal, setShowMemberEventsModal] = useState(false);
       const [activeMemberEvents, setActiveMemberEvents] = useState(null);
       const [localReadiness, setLocalReadiness] = useState({});
-      const [announcements, setAnnouncements] = useState([{ id: 1, title: 'Selamat Datang Rider!', content: 'Selamat bergabung di One Aspal Club. Pastikan data motor dan profil kalian sudah lengkap. Safety riding!', date: '10 Jan 2026', author: 'Admin' }]);
+            const [announcements, setAnnouncements] = useState([]);
       const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false); const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
       const [editingAnnouncement, setEditingAnnouncement] = useState(null);
       const [showEditAnnouncementModal, setShowEditAnnouncementModal] = useState(false);
-      const handleEditAnnouncement = (e) => {
+      const handleEditAnnouncement = async (e) => {
         e.preventDefault();
         if (!editingAnnouncement.title || !editingAnnouncement.content) { addN('Judul dan isi wajib diisi!', 'error'); return; }
-        setAnnouncements(prev => prev.map(an => an.id === editingAnnouncement.id ? editingAnnouncement : an));
+        await db.ref('announcements/' + editingAnnouncement.id).update({
+          title: editingAnnouncement.title,
+          content: editingAnnouncement.content
+        });
         setShowEditAnnouncementModal(false);
         setEditingAnnouncement(null);
         addN('Pengumuman berhasil diperbarui! ✨', 'success');
+      };
+      const createAnnouncement = async (e) => {
+        e.preventDefault();
+        if (!newAnnouncement.title || !newAnnouncement.content) { addN('Judul dan isi wajib diisi!', 'error'); return; }
+        const newAnnRef = db.ref('announcements').push();
+        await newAnnRef.set({
+          title: newAnnouncement.title,
+          content: newAnnouncement.content,
+          date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }),
+          author: currentUser.name,
+          createdAt: Date.now()
+        });
+        setNewAnnouncement({ title: '', content: '' });
+        setShowAddAnnouncementModal(false);
+        addN('Pengumuman dipublish! 📢', 'success');
+      };
+      const deleteAnnouncement = async (annId) => {
+        if (!window.confirm("Hapus pengumuman ini?")) return;
+        await db.ref('announcements/' + annId).remove();
+        addN('Pengumuman dihapus. 🗑️', 'info');
       };
       const [showAdminConfirmModal, setShowAdminConfirmModal] = useState(false); const [adminConfirmData, setAdminConfirmData] = useState(null); const [selectedClassName, setSelectedClassName] = useState('Rider Addict');
       const [editingProfile, setEditingProfile] = useState(null); const [showEditProfileModal, setShowEditProfileModal] = useState(false);
@@ -704,7 +738,14 @@
 
         const eventsRef = db.ref('events');
         eventsRef.on('value', (snapshot) => { const data = snapshot.val(); const eventsArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []; eventsArray.sort((a,b) => a.timestamp - b.timestamp); setEvents(eventsArray); });
-        
+         // Tambahan ke Firebase Listener untuk info Pengumuman
+        const annRef = db.ref('announcements');
+        annRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          const annArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a,b) => (b.createdAt||0) - (a.createdAt||0)) : [];
+          setAnnouncements(annArray);
+        });
+
         // Tambahan ke Firebase Listener lupa Password Anggota
         const resetReqRef = db.ref('passwordResetRequests');
         resetReqRef.on('value', (snapshot) => {
@@ -1602,7 +1643,28 @@
                   <div key={activeTab} className="animate-slide-up">
                     {activeTab==='home' && (
                       <div className="space-y-4">
-                        {announcements.length>0 && (<div className="space-y-3">{announcements.map(an=>(<div key={an.id} className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-500 rounded-2xl p-4 shadow-sm"><div className="flex justify-between items-start"><h4 className="font-black text-sm text-slate-900 flex items-center"><I.Megaphone className="w-4 h-4 text-amber-500 mr-2" /> {an.title}</h4><span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full uppercase animate-pulse">Baru</span></div><p className="text-xs text-slate-600 font-medium mt-1.5 leading-relaxed">{an.content}</p><p className="text-[9px] text-slate-400 font-bold mt-2">{an.date} • oleh {an.author}</p></div>))}</div>)}
+                        {announcements.length > 0 && (
+                          <div className="bg-gradient-to-r from-amber-500 to-amber-400 rounded-2xl p-0.5 shadow-lg animate-breath">
+                            <div className="bg-white/90 backdrop-blur-md rounded-[14px] px-4 py-3 flex items-center justify-between overflow-hidden">
+                              <div className="flex items-center space-x-3 flex-1 min-w-0 overflow-hidden">
+                                <div className="p-1.5 bg-amber-100 rounded-full flex-shrink-0">
+                                  <I.Megaphone className="w-4 h-4 text-amber-600" />
+                                </div>
+                                <div className="flex-1 min-w-0 overflow-hidden h-5 relative">
+                                  {announcements.map((an, idx) => (
+                                    <div key={an.id} className={`absolute inset-0 flex items-center transition-opacity duration-500 ${idx === currentAnnouncementIndex ? 'opacity-100 animate-roll-down' : 'opacity-0'}`}>
+                                      <p className="text-xs font-bold text-slate-800 truncate">
+                                        <span className="text-amber-600 mr-1">{an.title}:</span>
+                                        <span className="text-slate-600 font-medium">{an.content}</span>
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full uppercase animate-pulse flex-shrink-0 ml-2">Pengumuman</span>
+                            </div>
+                          </div>
+                        )}
                         {renderGallery()}
                       </div>
                     )}
@@ -1850,7 +1912,7 @@
                           </div>
                         )}
                       <SummaryCards />
-                      <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={() => { setEditingAnnouncement(a); setShowEditAnnouncementModal(true); }} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 active:scale-95"><I.Edit className="w-3 h-3" /></button><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-101 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-101 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
+                      <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>                {announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={() => { setEditingAnnouncement(a); setShowEditAnnouncementModal(true); }} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 active:scale-95"><I.Edit className="w-3 h-3" /></button><button onClick={() => deleteAnnouncement(a.id)} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-101 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-101 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
                       {adminTab === 'events' && ( <div className="space-y-6"><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4><form onSubmit={createEvent} className="space-y-3"><FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required />
                       
                       <FormSelect label="Jenis Event & Bobot Poin" value={newEvent.eventType} onChange={(e)=>setNewEvent({...newEvent, eventType: e.target.value})} required><option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option><option value="touring_1day">Touring 1 Hari (+5 Pts)</option><option value="touring_member">Touring Tempat Anggota (+2 Pts)</option></FormSelect>
@@ -2516,7 +2578,7 @@
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 pt-16 animate-fade-in" onClick={()=>setShowAddAnnouncementModal(false)}>
               <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Megaphone className="w-5 h-5 text-amber-500" /> Buat Pengumuman</h3>
-                <form onSubmit={(e)=>{e.preventDefault(); if(!newAnnouncement.title||!newAnnouncement.content){addN('Judul dan isi wajib diisi!','error');return;} setAnnouncements([{id:Date.now(),title:newAnnouncement.title,content:newAnnouncement.content,date:new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}),author:currentUser.name},...announcements]); setShowAddAnnouncementModal(false); setNewAnnouncement({title:'',content:''}); addN('Pengumuman dipublish!','success');}} className="space-y-3">
+                  <form onSubmit={createAnnouncement} className="space-y-3">
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Judul</label><input type="text" value={newAnnouncement.title} onChange={(e)=>setNewAnnouncement({...newAnnouncement,title:e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" required /></div>
                   <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Isi</label><textarea value={newAnnouncement.content} onChange={(e)=>setNewAnnouncement({...newAnnouncement,content:e.target.value})} rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea></div>
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Publish</button>
