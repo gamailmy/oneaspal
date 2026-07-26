@@ -82,7 +82,7 @@
     .animate-notch { animation: dropDownNotch 3s ease-in-out forwards; }
     @keyframes floatLikes { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 15% { opacity: 1; transform: translateY(0) scale(1); } 85% { opacity: 1; transform: translateY(-5px) scale(1); } 100% { opacity: 0; transform: translateY(-15px) scale(0.9); } }
     .animate-float-likes { animation: floatLikes 2s ease-in-out forwards; }
-    @keyframes rollDown { 0% { transform: translateY(-100%); opacity: 0; } 10% { transform: translateY(0); opacity: 1; } 90% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(100%); opacity: 0; } }
+    @keyframes rollDown { 0% { transform: translateY(-15px); opacity: 0; } 15% { transform: translateY(0); opacity: 1; } 85% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(15px); opacity: 0; } }
     .animate-roll-down { animation: rollDown 4s ease-in-out forwards; }
   </style>
 </head>
@@ -1644,24 +1644,27 @@
                     {activeTab==='home' && (
                       <div className="space-y-4">
                         {announcements.length > 0 && (
-                          <div className="bg-gradient-to-r from-amber-500 to-amber-400 rounded-2xl p-0.5 shadow-lg animate-breath">
-                            <div className="bg-white/90 backdrop-blur-md rounded-[14px] px-4 py-3 flex items-center justify-between overflow-hidden">
-                              <div className="flex items-center space-x-3 flex-1 min-w-0 overflow-hidden">
-                                <div className="p-1.5 bg-amber-100 rounded-full flex-shrink-0">
-                                  <I.Megaphone className="w-4 h-4 text-amber-600" />
-                                </div>
-                                <div className="flex-1 min-w-0 overflow-hidden h-5 relative">
-                                  {announcements.map((an, idx) => (
-                                    <div key={an.id} className={`absolute inset-0 flex items-center transition-opacity duration-500 ${idx === currentAnnouncementIndex ? 'opacity-100 animate-roll-down' : 'opacity-0'}`}>
-                                      <p className="text-xs font-bold text-slate-800 truncate">
-                                        <span className="text-amber-600 mr-1">{an.title}:</span>
-                                        <span className="text-slate-600 font-medium">{an.content}</span>
-                                      </p>
-                                    </div>
-                                  ))}
+                          <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/40 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-400/20 rounded-full blur-2xl pointer-events-none"></div>
+                            <div className="relative z-10 flex items-start space-x-3">
+                              <div className="p-2 bg-amber-100/80 rounded-xl flex-shrink-0">
+                                <I.Megaphone className="w-4 h-4 text-amber-600" />
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                {/* key pada div ini akan memicu animasi rolling setiap 4 detik */}
+                                <div key={currentAnnouncementIndex} className="animate-roll-down">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <h4 className="text-xs font-black text-slate-800">{announcements[currentAnnouncementIndex]?.title || 'Pengumuman'}</h4>
+                                    <span className="text-[8px] font-bold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full uppercase">Baru</span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                                    {announcements[currentAnnouncementIndex]?.content || ''}
+                                  </p>
+                                  <p className="text-[8px] text-slate-400 font-bold mt-1.5">
+                                    {announcements[currentAnnouncementIndex]?.date || ''} • oleh {announcements[currentAnnouncementIndex]?.author || 'Admin'}
+                                  </p>
                                 </div>
                               </div>
-                              <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full uppercase animate-pulse flex-shrink-0 ml-2">Pengumuman</span>
                             </div>
                           </div>
                         )}
