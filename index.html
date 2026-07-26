@@ -1653,18 +1653,29 @@
                                 <I.Megaphone className="w-4 h-4 text-amber-600" />
                               </div>
                               <div className="flex-1 overflow-hidden">
-                                {/* key pada div ini akan memicu animasi rolling setiap 4 detik */}
-                                <div key={currentAnnouncementIndex} className="animate-roll-down">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <h4 className="text-xs font-black text-slate-800">{announcements[currentAnnouncementIndex]?.title || 'Pengumuman'}</h4>
-                                    <span className="text-[8px] font-bold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full uppercase">Baru</span>
-                                  </div>
-                                  <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                                    {announcements[currentAnnouncementIndex]?.content || ''}
-                                  </p>
-                                  <p className="text-[8px] text-slate-400 font-bold mt-1.5">
-                                    {announcements[currentAnnouncementIndex]?.date || ''} • oleh {announcements[currentAnnouncementIndex]?.author || 'Admin'}
-                                  </p>
+                              {/* Container dengan tinggi dinamis h-32 untuk menampung 4 baris teks */}
+                                <div className="relative h-28">
+                                  {announcements.map((an, idx) => (
+                                    <div 
+                                      key={an.id} 
+                                      className={`absolute inset-0 transition-all duration-700 ease-in-out flex flex-col justify-start ${
+                                        idx === currentAnnouncementIndex 
+                                          ? 'opacity-100 translate-y-0' 
+                                          : 'opacity-0 -translate-y-4'
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between mb-1">
+                                        <h4 className="text-xs font-black text-slate-800 truncate">{an.title}</h4>
+                                        <span className="text-[8px] font-bold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full uppercase flex-shrink-0 ml-2">Baru</span>
+                                      </div>
+                                      <p className="text-[11px] text-slate-600 font-medium leading-relaxed break-words">
+                                        {an.content}
+                                      </p>
+                                      <p className="text-[8px] text-slate-400 font-bold mt-1">
+                                        {an.date} • oleh {an.author}
+                                      </p>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             </div>
