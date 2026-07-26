@@ -481,6 +481,16 @@
       const [localReadiness, setLocalReadiness] = useState({});
       const [announcements, setAnnouncements] = useState([{ id: 1, title: 'Selamat Datang Rider!', content: 'Selamat bergabung di One Aspal Club. Pastikan data motor dan profil kalian sudah lengkap. Safety riding!', date: '10 Jan 2026', author: 'Admin' }]);
       const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false); const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
+      const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+      const [showEditAnnouncementModal, setShowEditAnnouncementModal] = useState(false);
+      const handleEditAnnouncement = (e) => {
+        e.preventDefault();
+        if (!editingAnnouncement.title || !editingAnnouncement.content) { addN('Judul dan isi wajib diisi!', 'error'); return; }
+        setAnnouncements(prev => prev.map(an => an.id === editingAnnouncement.id ? editingAnnouncement : an));
+        setShowEditAnnouncementModal(false);
+        setEditingAnnouncement(null);
+        addN('Pengumuman berhasil diperbarui! ✨', 'success');
+      };
       const [showAdminConfirmModal, setShowAdminConfirmModal] = useState(false); const [adminConfirmData, setAdminConfirmData] = useState(null); const [selectedClassName, setSelectedClassName] = useState('Rider Addict');
       const [editingProfile, setEditingProfile] = useState(null); const [showEditProfileModal, setShowEditProfileModal] = useState(false);
       const [editingTouringMember, setEditingTouringMember] = useState(null); const [showEditTouringModal, setShowEditTouringModal] = useState(false); const [selectedTouringRole, setSelectedTouringRole] = useState('');
@@ -677,7 +687,12 @@
             const p = data[key];
             if (!p) return null; // Lewati data kosong
             
-            const likes = p.likes ? Object.keys(p.likes) : [];
+            // Ambil nama pengguna yang like
+            const likes = p.likes ? Object.keys(p.likes).map(likeKey => {
+              const likeData = p.likes[likeKey];
+              return likeData ? { userId: likeKey, userName: likeData.userName || 'Anggota' } : null;
+            }).filter(Boolean) : [];
+            
             // Cek keamanan data komentar
             const comments = p.comments ? Object.keys(p.comments).map(cKey => ({ id: cKey, ...(p.comments[cKey] || {}) })).sort((a,b) => (a.timestamp||0) - (b.timestamp||0)) : [];
             
@@ -1299,8 +1314,8 @@
           </div>
           
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-none">
-            {galleryPosts.length > 0 ? galleryPosts.map(post => {
-              const isLiked = post.likes?.includes(currentUser.id);
+              {galleryPosts.length > 0 ? galleryPosts.map(post => {
+              const isLiked = post.likes?.some(l => l.userId === currentUser.id);
               const isMyPost = post.authorId === currentUser.id;
               return (
                 <div key={post.id} className="bg-white/70 backdrop-blur-md border border-white/80 rounded-2xl overflow-hidden shadow-sm">
@@ -1334,17 +1349,20 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
                         <span className="text-xs font-bold">{post.likes?.length || 0}</span>
                         
-                        {/* Pop-up Melayang Daftar Likes */}
+                        {/* Pop-up Melayang Daftar Likes (iOS Glass Style) */}
                         {viewingLikes?.id === post.id && (
-                          <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-2xl border border-slate-100 p-2 z-30 w-40 animate-float-likes">
-                            <p className="text-[10px] font-bold text-slate-700 mb-1">Disukai oleh:</p>
+                          <div className="absolute bottom-full mb-2 left-0 bg-white/30 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/50 ring-1 ring-white/40 p-2 z-30 w-40 animate-float-likes">
+                            <p className="text-[10px] font-bold text-slate-800 mb-1 flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-rose-500 mr-1"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
+                              Disukai oleh:
+                            </p>
                             <div className="max-h-24 overflow-y-auto scrollbar-none space-y-1">
                               {post.likes?.length > 0 ? post.likes.map(l => (
-                                <div key={l.userId} className="text-[9px] text-slate-600 flex items-center space-x-1">
+                                <div key={l.userId} className="text-[9px] text-slate-800 flex items-center space-x-1 bg-white/20 rounded-md px-1 py-0.5">
                                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-                                  <span className="truncate">{l.userName || 'Anggota'}</span>
+                                  <span className="truncate font-medium">{l.userName || 'Anggota'}</span>
                                 </div>
-                              )) : <p className="text-[9px] text-slate-400 italic">Belum ada yang like</p>}
+                              )) : <p className="text-[9px] text-slate-500 italic">Belum ada yang like</p>}
                             </div>
                           </div>
                         )}
@@ -1832,7 +1850,7 @@
                           </div>
                         )}
                       <SummaryCards />
-                      <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-101 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-101 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
+                      <div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><div className="flex justify-between items-center mb-3"><h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2"><I.Megaphone className="w-4 h-4 text-amber-500" /> <span>Kelola Pengumuman</span></h4><button onClick={()=>setShowAddAnnouncementModal(true)} className="text-[10px] bg-slate-900 text-white font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 active:scale-95"><I.Plus /><span>Buat</span></button></div>{announcements.length>0?announcements.map(a=>(<div key={a.id} className="bg-white/80 border border-slate-101 rounded-2xl p-3 mb-2 flex items-center justify-between"><div className="flex-1 mr-2"><h5 className="font-bold text-xs text-slate-900">{a.title}</h5><p className="text-[10px] text-slate-500 font-medium mt-1 line-clamp-2">{a.content}</p><p className="text-[9px] text-slate-400 font-bold mt-1">{a.date} • {a.author}</p></div><div className="flex space-x-1 flex-shrink-0"><button onClick={() => { setEditingAnnouncement(a); setShowEditAnnouncementModal(true); }} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 active:scale-95"><I.Edit className="w-3 h-3" /></button><button onClick={()=>setAnnouncements(announcements.filter(an=>an.id!==a.id))} className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-101 active:scale-95"><I.Trash className="w-3 h-3" /></button></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Belum ada pengumuman.</p>}</div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3">Pendaftaran Menunggu Approval</h4>{members.filter(m=>m.status==='pending').length>0?members.filter(m=>m.status==='pending').map(m=>(<div key={m.id} className="bg-amber-50/50 border border-amber-101 rounded-2xl p-3 mb-2"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2"><MemberAvatar user={m} size="w-9 h-9" /><div><h5 className="font-bold text-xs text-slate-900">{m.name}</h5><p className="text-[10px] text-slate-500 font-medium">{m.role} • {m.name ? 'Motor Terdaftar' : ''}</p></div></div><div className="flex space-x-1"><button onClick={()=>reqA('approve',m)} className="p-2 bg-emerald-500 text-white rounded-lg active:scale-95"><I.CheckCircle2 className="w-4 h-4" /></button><button onClick={()=>reqA('reject',m)} className="p-2 bg-rose-500 text-white rounded-lg active:scale-95"><I.XCircle className="w-4 h-4" /></button></div></div><div className="border-t border-amber-101 pt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-600"><div className="flex items-center space-x-1"><I.MapPin className="w-3 h-3 text-rose-500" /><span className="font-semibold">{m.city}</span></div><div className="flex items-center space-x-1"><I.Phone className="w-3 h-3 text-blue-500" /><span className="font-semibold">{m.phone}</span></div></div></div>)):<p className="text-xs text-slate-400 italic text-center py-4">Tidak ada pendaftar baru.</p>}</div></div> )}
                       {adminTab === 'events' && ( <div className="space-y-6"><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Plus className="w-4 h-4 text-amber-500" /> <span>Buat Event Baru</span></h4><form onSubmit={createEvent} className="space-y-3"><FormInput label="Judul Event" type="text" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title: e.target.value})} placeholder="Contoh: Touring Akhir Tahun" required />
                       
                       <FormSelect label="Jenis Event & Bobot Poin" value={newEvent.eventType} onChange={(e)=>setNewEvent({...newEvent, eventType: e.target.value})} required><option value="touring_2day">Touring Min 2 Hari (+10 Pts)</option><option value="touring_1day">Touring 1 Hari (+5 Pts)</option><option value="touring_member">Touring Tempat Anggota (+2 Pts)</option></FormSelect>
@@ -2479,6 +2497,20 @@
             </div>
           )}
           
+          {/* Modal Edit Pengumuman */}
+          {showEditAnnouncementModal && editingAnnouncement && (
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 pt-16 animate-fade-in" onClick={()=>setShowEditAnnouncementModal(false)}>
+              <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center space-x-2"><I.Edit className="w-5 h-5 text-amber-500" /> Edit Pengumuman</h3>
+                <form onSubmit={handleEditAnnouncement} className="space-y-3">
+                  <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Judul</label><input type="text" value={editingAnnouncement.title} onChange={(e)=>setEditingAnnouncement({...editingAnnouncement, title: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none" required /></div>
+                  <div><label className="text-[11px] font-bold text-slate-500 block mb-1">Isi</label><textarea value={editingAnnouncement.content} onChange={(e)=>setEditingAnnouncement({...editingAnnouncement, content: e.target.value})} rows="4" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none resize-none" required></textarea></div>
+                  <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* Modal Tambah Pengumuman */}
           {showAddAnnouncementModal && (
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 pt-16 animate-fade-in" onClick={()=>setShowAddAnnouncementModal(false)}>
