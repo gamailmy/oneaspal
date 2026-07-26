@@ -514,14 +514,21 @@
       const [isProcessing, setIsProcessing] = useState(false);
 
       const [showChatModal, setShowChatModal] = useState(false);
-      // State untuk Notifikasi Status Online/Offline
-      const [statusToast, setStatusToast] = useState(null);
+            // State untuk Notifikasi Status Online/Offline/Idle
+      const [statusCounts, setStatusCounts] = useState({ online: 0, idle: 0, logout: 0 });
       const prevMembersRef = useRef({});
       const currentUserRef = useRef(null);
+      const toastTimeoutRef = useRef(null);
+      
       useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
-      const showStatusToast = (message, type) => {
-        setStatusToast({ message, type });
-        setTimeout(() => setStatusToast(null), 2000);
+
+      const showStatusToast = (type) => {
+        setStatusCounts(prev => ({ ...prev, [type]: prev[type] + 1 }));
+        
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = setTimeout(() => {
+          setStatusCounts({ online: 0, idle: 0, logout: 0 });
+        }, 3000); // Hilang dalam 3 detik
       };
       // Aksi Lupa Password Anggota
       const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
@@ -1351,17 +1358,37 @@
         </div>
       );
 
-      return (
+        return (
         <div className="w-full max-w-md h-full flex flex-col overflow-hidden relative">
-          {/* Notifikasi Status (Gaya Notch iPhone) */}
-          {statusToast && (
-            <div className="absolute top-3 right-3 z-[150] pointer-events-none animate-notch">
-              <div className={`px-4 py-2 rounded-2xl shadow-2xl border font-bold text-[10px] flex items-center space-x-2 text-white ${statusToast.type === 'online' ? 'bg-emerald-500/90 border-emerald-300/50' : statusToast.type === 'idle' ? 'bg-amber-500/90 border-amber-300/50' : 'bg-slate-500/90 border-slate-300/50'}`}>
-                <span className={`w-2 h-2 rounded-full ${statusToast.type === 'online' ? 'bg-white animate-ping' : 'bg-white/80'}`}></span>
-                <span>{statusToast.message}</span>
+          
+          {/* Notifikasi Status (Gaya Notch iPhone dengan Penghitung) */}
+          <div className="absolute top-3 right-3 z-[150] pointer-events-none flex flex-col items-end space-y-2">
+            {statusCounts.online > 0 && (
+              <div className="animate-notch">
+                <div className="px-4 py-2 rounded-2xl shadow-2xl border font-bold text-[10px] flex items-center space-x-2 text-white bg-emerald-500/90 border-emerald-300/50">
+                  <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                  <span>online +{statusCounts.online}</span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            {statusCounts.idle > 0 && (
+              <div className="animate-notch">
+                <div className="px-4 py-2 rounded-2xl shadow-2xl border font-bold text-[10px] flex items-center space-x-2 text-white bg-amber-500/90 border-amber-300/50">
+                  <span className="w-2 h-2 rounded-full bg-white/80"></span>
+                  <span>idle +{statusCounts.idle}</span>
+                </div>
+              </div>
+            )}
+            {statusCounts.logout > 0 && (
+              <div className="animate-notch">
+                <div className="px-4 py-2 rounded-2xl shadow-2xl border font-bold text-[10px] flex items-center space-x-2 text-white bg-slate-500/90 border-slate-300/50">
+                  <span className="w-2 h-2 rounded-full bg-white/80"></span>
+                  <span>logout +{statusCounts.logout}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {showSplash && (
             <div className={`absolute inset-0 z-[200] bg-white/70 backdrop-blur-2xl flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${splashFading ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100'}`}>
               <div className="relative mb-8 animate-scale-in flex items-center justify-center">
