@@ -461,7 +461,9 @@
       const fileInputRef = useRef(null);
       const chatScrollRef = useRef(null);
       const heartbeatRef = useRef(null);
+
       const [showSplash, setShowSplash] = useState(true);
+      const [announcements, setAnnouncements] = useState([]); // PINDAHKAN KE SINI
       const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
       useEffect(() => {
         if (announcements.length > 1) {
@@ -472,6 +474,7 @@
         }
       }, [announcements]);
       const [splashFading, setSplashFading] = useState(false);
+
       const [regName, setRegName] = useState(''); const [regUsername, setRegUsername] = useState(''); const [regPassword, setRegPassword] = useState(''); const [regGender, setRegGender] = useState('Laki-laki'); const [regPhone, setRegPhone] = useState(''); const [regCity, setRegCity] = useState(''); const [regEmail, setRegEmail] = useState(''); const [regEmailDomain, setRegEmailDomain] = useState('@gmail.com'); const [regRidingStatus, setRegRidingStatus] = useState(''); const [regBikeBrand, setRegBikeBrand] = useState(''); const [regBikeModel, setRegBikeModel] = useState(''); const [regBikePlate, setRegBikePlate] = useState(''); const [regBikeCategory, setRegBikeCategory] = useState('Matic'); const [regBikeEngine, setRegBikeEngine] = useState('');
       const [showConfirmRegModal, setShowConfirmRegModal] = useState(false); const [confirmRegData, setConfirmRegData] = useState(null);
       const [editingBike, setEditingBike] = useState(null); const [showEditBikeModal, setShowEditBikeModal] = useState(false);
@@ -490,7 +493,6 @@
       const [showMemberEventsModal, setShowMemberEventsModal] = useState(false);
       const [activeMemberEvents, setActiveMemberEvents] = useState(null);
       const [localReadiness, setLocalReadiness] = useState({});
-            const [announcements, setAnnouncements] = useState([]);
       const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false); const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
       const [editingAnnouncement, setEditingAnnouncement] = useState(null);
       const [showEditAnnouncementModal, setShowEditAnnouncementModal] = useState(false);
