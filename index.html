@@ -566,6 +566,28 @@
       const [showMemberInfoModal, setShowMemberInfoModal] = useState(false);
       const [showMemberCashModal, setShowMemberCashModal] = useState(false);
 
+      // State untuk PWA Install Prompt
+      const [deferredPrompt, setDeferredPrompt] = useState(null);
+      const [showInstallButton, setShowInstallButton] = useState(false);
+
+      useEffect(() => {
+        const handler = (e) => {
+          e.preventDefault(); // Mencegah prompt otomatis di minimenu browser
+          setDeferredPrompt(e); // Simpan event untuk dipanggil saat tombol diklik
+          setShowInstallButton(true); // Tampilkan tombol install kustom
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+      }, []);
+
+      const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt(); // Tampilkan prompt install resmi dari browser
+        const { outcome } = await deferredPrompt.userChoice;
+        setDeferredPrompt(null);
+        setShowInstallButton(false);
+      };
+
       // State untuk Notifikasi Status Online/Offline/Idle
       const [viewingLikes, setViewingLikes] = useState(null);
       const likesTimeoutRef = useRef(null);
@@ -3466,6 +3488,18 @@
             </div>
           )}
 
+          {/* Tombol Install PWA Mengambang */}
+          {showInstallButton && (
+            <button 
+              onClick={handleInstallClick} 
+              className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[95] bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center space-x-2 animate-slide-up active:scale-95 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+              </svg>
+              <span className="font-bold text-sm">Pasang Aplikasi</span>
+            </button>
+          )}  
           {/* === MODAL NOTIFIKASI PESAN MASUK (POP-UP KONFIRMASI) === */}
           {incomingMessageAlert && (
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[80] flex items-center justify-center p-4 animate-fade-in">
