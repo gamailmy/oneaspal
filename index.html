@@ -481,7 +481,7 @@
       const [showAddBikeModal, setShowAddBikeModal] = useState(false);
       const [newBike, setNewBike] = useState({ name: '', plate: '', type: 'Matic', engine: '' });
       const [events, setEvents] = useState([]);
-            const [newEvent, setNewEvent] = useState({ title: '', timestamp: '', description: '', eventType: 'touring_1day', requiresReadiness: true, province: 'DKI Jakarta', city: '', latitude: '', longitude: '' });
+      const [newEvent, setNewEvent] = useState({ title: '', timestamp: '', description: '', eventType: 'touring_1day', requiresReadiness: true, province: 'DKI Jakarta', city: '', mapLink: '' });
       const [showEditEventModal, setShowEditEventModal] = useState(false);
       const [editingEvent, setEditingEvent] = useState(null);
       const [showCheckinsModal, setShowCheckinsModal] = useState(false);
@@ -1017,12 +1017,11 @@
           requiresReadiness: newEvent.requiresReadiness, 
           province: newEvent.province, 
           city: newEvent.city,
-          latitude: newEvent.latitude || '',
-          longitude: newEvent.longitude || '',
+          mapLink: newEvent.mapLink || '',
           isVisible: true, 
           checkins: {} 
         }); 
-        setNewEvent({ title: '', timestamp: '', description: '', eventType: 'touring_1day', requiresReadiness: true, province: 'DKI Jakarta', city: '', latitude: '', longitude: '' }); 
+        setNewEvent({ title: '', timestamp: '', description: '', eventType: 'touring_1day', requiresReadiness: true, province: 'DKI Jakarta', city: '', mapLink: '' }); 
         addN('Event berhasil dibuat! 📅','success'); 
       };
 
@@ -1041,8 +1040,7 @@
           requiresReadiness: ev.requiresReadiness !== undefined ? ev.requiresReadiness : true,
           province: ev.province || 'DKI Jakarta',
           city: ev.city || '',
-          latitude: ev.latitude || '',
-          longitude: ev.longitude || ''
+          mapLink: ev.mapLink || ''
         }); 
         setShowEditEventModal(true); 
       };
@@ -1058,8 +1056,7 @@
           requiresReadiness: editingEvent.requiresReadiness,
           province: editingEvent.province,
           city: editingEvent.city,
-          latitude: editingEvent.latitude || '',
-          longitude: editingEvent.longitude || ''
+          mapLink: editingEvent.mapLink || ''
         }); 
         setShowEditEventModal(false); 
         addN('Event berhasil diperbarui! ✨','success'); 
@@ -2235,10 +2232,7 @@
                         {JAVA_LOCATIONS[newEvent.province]?.map(c => <option key={c} value={c}>{c}</option>)}
                       </FormSelect>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormInput label="Latitude (Opsional)" type="text" value={newEvent.latitude} onChange={(e)=>setNewEvent({...newEvent, latitude: e.target.value})} placeholder="Contoh: -6.2088" hint="Koordinat Google Maps" />
-                      <FormInput label="Longitude (Opsional)" type="text" value={newEvent.longitude} onChange={(e)=>setNewEvent({...newEvent, longitude: e.target.value})} placeholder="Contoh: 106.8456" hint="Koordinat Google Maps" />
-                    </div>
+                    <FormInput label="Link Google Maps (Opsional)" icon={<I.MapPin />} type="text" value={newEvent.mapLink} onChange={(e)=>setNewEvent({...newEvent, mapLink: e.target.value})} placeholder="https://maps.app.goo.gl/..." hint="Tempel link Google Maps (klik Share di Google Maps → Salin link)" />
 
                     <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={newEvent.timestamp} onChange={(e)=>setNewEvent({...newEvent, timestamp: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div>
 
@@ -2548,11 +2542,10 @@
                   </div>
                   {activeEventDetail.city && (
                     (() => {
-                      // Gunakan koordinat jika diisi, jika kosong gunakan nama kota/provinsi
-                      const mapQuery = (activeEventDetail.latitude && activeEventDetail.longitude) 
-                        ? `${activeEventDetail.latitude},${activeEventDetail.longitude}` 
-                        : encodeURIComponent(activeEventDetail.city + ', ' + (activeEventDetail.province || 'Jawa'));
-                      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+                      // Jika admin mengisi link Google Maps, gunakan langsung. Jika tidak, fallback ke pencarian nama kota.
+                      const mapUrl = activeEventDetail.mapLink 
+                        ? activeEventDetail.mapLink 
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeEventDetail.city + ', ' + (activeEventDetail.province || 'Jawa'))}`;
                       
                       return (
                         <a 
@@ -2694,10 +2687,7 @@
                       {JAVA_LOCATIONS[editingEvent.province]?.map(c => <option key={c} value={c}>{c}</option>)}
                     </FormSelect>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormInput label="Latitude (Opsional)" type="text" value={editingEvent.latitude} onChange={(e)=>setEditingEvent({...editingEvent, latitude: e.target.value})} placeholder="Contoh: -6.2088" hint="Koordinat Google Maps" />
-                    <FormInput label="Longitude (Opsional)" type="text" value={editingEvent.longitude} onChange={(e)=>setEditingEvent({...editingEvent, longitude: e.target.value})} placeholder="Contoh: 106.8456" hint="Koordinat Google Maps" />
-                  </div>
+                  <FormInput label="Link Google Maps (Opsional)" icon={<I.MapPin />} type="text" value={editingEvent.mapLink} onChange={(e)=>setEditingEvent({...editingEvent, mapLink: e.target.value})} placeholder="https://maps.app.goo.gl/..." hint="Tempel link Google Maps (klik Share di Google Maps → Salin link)" />
 
                   <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={editingEvent.timestampLocal} onChange={(e)=>setEditingEvent({...editingEvent, timestampLocal: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div>
 
