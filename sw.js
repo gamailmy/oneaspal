@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oac-cache-v2'; // Versi cache ditingkatkan
+const CACHE_NAME = 'oac-cache-v3'; // Versi cache ditingkatkan
 const urlsToCache = [
   '/',
   '/index.html',
