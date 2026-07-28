@@ -360,6 +360,48 @@
       }
     };
 
+    // === TAMBAHAN FUNGSI HELPER UNTUK JARAK ===
+    const BASE_CAMP_COORDS = { lat: -6.235682370827111, lng: 106.80036723864858 }; // Titik Basecamp -6.235682370827111, 106.80036723864858 (Gd. Pusdatin)
+
+      const extractCoordsFromMapLink = (url) => {
+      if (!url || typeof url !== 'string') return null;
+      
+      // Bersihkan URL dari karakter encode (seperti %40 jadi @) dan spasi
+      let cleanUrl = url.trim();
+      try { cleanUrl = decodeURIComponent(cleanUrl); } catch(e) {}
+      
+      // 1. Format !3dLAT!4dLNG (Sangat umum di URL Google Maps desktop)
+      let match = cleanUrl.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      
+      // 2. Format @LAT,LNG
+      match = cleanUrl.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      
+      // 3. Format q=LAT,LNG atau query=LAT,LNG
+      match = cleanUrl.match(/[?&]q(?:uery)?=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      
+      // 4. Format center=LAT,LNG
+      match = cleanUrl.match(/center=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      
+      // 5. Format mentah LAT,LNG (dengan atau tanpa spasi)
+      match = cleanUrl.match(/(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      
+      return null; // Jika link pendek (shortlink) atau benar-benar tidak ada koordinat
+    };
+
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371; // Radius bumi dalam km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      return Math.round(R * c); // Jarak dibulatkan ke km terdekat
+    };
+
       const EventCard = ({ event, isAdmin, onDelete, onEdit, onCheckin, isCheckedIn, checkinCount, totalMembers, onViewCheckins, onViewDetails, onToggleVisibility }) => {
       const eventDate = new Date(event.timestamp);
       const day = eventDate.toLocaleDateString('id-ID', { day: '2-digit' });
@@ -368,8 +410,13 @@
       const dayName = eventDate.toLocaleDateString('id-ID', { weekday: 'long' });
       const time = eventDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       const percent = totalMembers > 0 ? Math.min(100, (checkinCount / totalMembers) * 100) : 0;
+      
       const eventInfo = getEventPoints(event.eventType);
       const isVisible = event.isVisible !== false;
+      
+      // Perhitungan Jarak
+      const destinationCoords = extractCoordsFromMapLink(event.mapLink);
+      const distanceKm = destinationCoords ? calculateDistance(BASE_CAMP_COORDS.lat, BASE_CAMP_COORDS.lng, destinationCoords.lat, destinationCoords.lng) : null;
       const now = Date.now();
       const oneDay = 24 * 60 * 60 * 1000;
       const timeUntilEvent = event.timestamp - now;
@@ -389,7 +436,12 @@
                 {event.eventType && (<span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${eventInfo.color}`}>+{eventInfo.pts} Pts</span>)}
               </div>
               <p className="text-[10px] text-slate-500 font-semibold mb-1">{eventInfo.label}</p>
-              
+              {/* Tampilan Jarak Tempuh */}
+              <div className={`flex items-center text-[10px] font-bold mb-1.5 ${distanceKm !== null ? 'text-blue-600' : 'text-slate-400'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1 flex-shrink-0"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+                <span>{distanceKm !== null ? `Estimasi Jarak: ±${distanceKm} km` : 'Estimasi Jarak: Tidak Terdeteksi (Periksa Link Maps)'}</span>
+              </div>
+              )}
               {/* Tampilan Lokasi Event */}
               {event.city && (
                 <div className="flex items-center text-[10px] text-rose-500 font-bold mb-1.5">
