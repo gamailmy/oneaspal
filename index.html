@@ -823,44 +823,60 @@
       useEffect(() => { const t = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })), 1000); return () => clearInterval(t); }, []);
       useEffect(() => { fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true').then(r=>r.json()).then(d=>d.current_weather&&setWeather(d.current_weather)).catch(e=>console.error(e)); }, []);
       
-      // Update Berita Riders 5 Jam sekali
-      const lastNewsFetchRef = useRef(0);
+      // Fetch Berita Riders
       useEffect(() => {
-        const fetchNews = () => {
+        if (!showPublicNewsModal) return;
+        if (newsItems.length > 0) return;
+
+        const fetchNews = async () => {
           setLoadingNews(true);
-          fetch('https://api.rss2json.com/v1/api.json?rss_url=https%3A//news.google.com/rss/search%3Fq%3Dtouring%2Bmotor%26hl%3Did%26gl%3DID%26ceid%3DID%3Aid')
-            .then(res => res.json())
-            .then(data => {
-              if (data.status === 'ok') {
-                setNewsItems(data.items.slice(0, 8));
-                lastNewsFetchRef.current = Date.now(); // Simpan waktu terakhir fetch
-              }
-              setLoadingNews(false);
-            })
-            .catch(err => { console.error("Error fetching news:", err); setLoadingNews(false); });
-        };
+          try {
+            // Kata kunci pencarian spesifik
+            const keywords = 'touring OR "motor terbaru" OR "sparepart motor" OR "aksesoris motor"';
+            const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(keywords)}&hl=id&gl=ID&ceid=ID:id`;
+            
+            // Gunakan CORS Proxy agar bisa membaca RSS Google News langsung
+            const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(rssUrl)}`;
+            const res = await fetch(proxyUrl);
+            const xmlText = await res.text();
+            
+            // Parsing XML menggunakan DOMParser bawaan browser
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            const items = xmlDoc.querySelectorAll("item");
+            
+            const parsedNews = [];
+            items.forEach((item, index) => {
+              if (index >= 8) return; // Batasi 8 berita
+              
+              // Ekstrak data dari XML
+              const getTitle = (str) => str.replace(/ - .*$/, ''); // Hapus nama portal di akhir judul
+              const rawTitle = item.querySelector("title")?.textContent || 'Tanpa Judul';
+              const title = getTitle(rawTitle);
+              
+              const link = item.querySelector("link")?.textContent || '#';
+              const pubDate = item.querySelector("pubDate")?.textContent || '';
+              
+              // Ambil deskripsi (berupa HTML snippet dari Google)
+              const descHtml = item.querySelector("description")?.textContent || '';
+              // Ekstrak teks biasa dari HTML
+              const tempDiv = document.createElement("div");
+              tempDiv.innerHTML = descHtml;
+              const description = tempDiv.textContent || tempDiv.innerText || '';
+              
+              parsedNews.push({ title, link, pubDate, description });
+            });
 
-        // Fungsi untuk cek apakah sudah lewat 5 jam (5 * 60 * 60 * 1000 ms)
-        const checkAndFetch = () => {
-          const fiveHours = 5 * 60 * 60 * 1000;
-          if (showPublicNewsModal && (lastNewsFetchRef.current === 0 || Date.now() - lastNewsFetchRef.current > fiveHours)) {
-            fetchNews();
+            setNewsItems(parsedNews);
+          } catch (err) { 
+            console.error("Error fetching news:", err); 
+          } finally {
+            setLoadingNews(false);
           }
         };
 
-        // Langsung cek saat modal dibuka / state berubah
-        checkAndFetch();
-
-        // Cek setiap 1 menit untuk memastikan data diperbarui jika sudah lewat 5 jam
-        const interval = setInterval(() => {
-          const fiveHours = 5 * 60 * 60 * 1000;
-          if (showPublicNewsModal && Date.now() - lastNewsFetchRef.current > fiveHours) {
-            fetchNews();
-          }
-        }, 60000); // Cek setiap 1 menit
-
-        return () => clearInterval(interval);
-      }, [showPublicNewsModal]);
+        fetchNews();
+      }, [showPublicNewsModal, newsItems.length]);
 
         useEffect(() => {
         if (!db) return;
@@ -3393,7 +3409,7 @@
                     newsItems.map((news, idx) => (
                       <a key={idx} href={news.link} target="_blank" rel="noopener noreferrer" className="block p-4 bg-white/60 hover:bg-white border border-white/40 rounded-2xl transition active:scale-95 shadow-sm">
                         <h4 className="font-bold text-sm text-slate-800 line-clamp-2">{news.title}</h4>
-                        <p className="text-[10px] text-slate-500 mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: news.description }}></p>
+                                                <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{news.description}</p>
                         <p className="text-[9px] text-amber-600 font-bold mt-2">
                           {news.pubDate ? new Date(news.pubDate).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''} • Baca Selengkapnya
                         </p>
