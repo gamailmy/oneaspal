@@ -600,6 +600,69 @@
       );
     };
 
+      const AutoBike3DViewer = ({ images }) => {
+      const [frame, setFrame] = useState(0);
+      
+      useEffect(() => {
+        if (!images || images.length === 0) return;
+        const interval = setInterval(() => {
+          setFrame(prev => (prev + 1) % images.length);
+        }, 1200); // Perputaran sangat pelan (1200ms per frame)
+        return () => clearInterval(interval);
+      }, [images]);
+
+      if (!images || images.length === 0) {
+        return <div className="text-center text-[10px] text-slate-400 italic py-4">Belum ada gambar 3D.</div>;
+      }
+
+      return (
+        <div className="relative w-full aspect-video bg-slate-900/50 rounded-2xl overflow-hidden border border-white/10">
+          {images.map((img, idx) => (
+            <img 
+              key={idx} 
+              src={img} 
+              alt={`Motor 3D ${idx+1}`} 
+              className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-700 ease-in-out ${frame === idx ? 'opacity-100' : 'opacity-0'}`} 
+              draggable="false" 
+            />
+          ))}
+        </div>
+      );
+    };
+      const RevealCard = ({ children, className }) => {
+      const ref = useRef(null);
+      const [isVisible, setIsVisible] = useState(false);
+
+      useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              setIsVisible(true);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        if (ref.current) {
+          observer.observe(ref.current);
+        }
+
+        return () => {
+          if (ref.current) {
+            observer.unobserve(ref.current);
+          }
+        };
+      }, []);
+
+      return (
+        <div 
+          ref={ref} 
+          className={`${className} transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}
+        >
+          {children}
+        </div>
+      );
+    };
     function App() {
       const [currentUser, setCurrentUser] = useState(null);
       const [authMode, setAuthMode] = useState('login'); 
@@ -647,6 +710,7 @@
       const [newBike, setNewBike] = useState({ name: '', plate: '', type: 'Matic', engine: '' });
       const [showDeleteBikeModal, setShowDeleteBikeModal] = useState(false);
       const [showAddBikeImageModal, setShowAddBikeImageModal] = useState(false);
+      const [showBike3DModal, setShowBike3DModal] = useState(false); // Tambahan untuk modal 3D
       const [new3DImages, setNew3DImages] = useState([]);
       const [uploading3D, setUploading3D] = useState(false);
       const bike3DImageInputRef = useRef(null);
@@ -2377,15 +2441,23 @@
                             <p className="text-[10px] text-slate-500 font-semibold mb-3">Motor Utama: {primaryBike?.name || '-'}</p>
                             
                             {primaryBike?.images3d && primaryBike.images3d.length > 0 ? (
-                              <Bike3DViewer images={primaryBike.images3d} />
+                              <div className="space-y-3">
+                                <Bike3DViewer images={primaryBike.images3d} />
+                                <button onClick={() => setShowBike3DModal(true)} className="w-full bg-slate-800 text-white font-bold text-xs py-2.5 rounded-xl flex items-center justify-center space-x-1 active:scale-95 transition">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                                  <span>Putar Otomatis 3D</span>
+                                </button>
+                              </div>
                             ) : (
                               <div className="text-center py-6 text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                 Belum ada foto 3D. Upload beberapa foto dari berbagai sisi motor (Depan, Kanan, Belakang, Kiri)!
                               </div>
                             )}
-                          </div></div> )}
-                    {activeTab==='members' && ( 
-                      <div className="space-y-4">
+                          </div>
+                      </div> )}
+
+                      {activeTab==='members' && ( 
+                      <div className="space-y-5">
                         <h3 className="text-lg font-black text-slate-900">Anggota Club</h3>
                         <SummaryCards />
                         
@@ -2407,7 +2479,7 @@
                           </button>
                         </div>
 
-                          {[...members].filter(m=>m.status==='approved').sort((a, b) => (b.lastActive || 0) - (a.lastActive || 0)).map(m=> { 
+                        {[...members].filter(m=>m.status==='approved').sort((a, b) => (b.lastActive || 0) - (a.lastActive || 0)).map(m=> { 
                           const memberCheckedEvents = events.filter(ev => ev.checkins && ev.checkins[m.id]); 
                           const memberJourney = m.points || 0; 
                           const memberPotentialPts = getMemberPotentialPoints(m.id); 
@@ -2415,84 +2487,105 @@
                           const nearestUpcoming = upcomingEvents.sort((a,b) => a.timestamp - b.timestamp)[0]; 
                           const isReady = nearestUpcoming && nearestUpcoming.readiness && nearestUpcoming.readiness[m.id] && Object.keys(nearestUpcoming.readiness[m.id]).length === READINESS_ITEMS.length; 
                           const status = getOnlineStatus(m.lastActive);
+                          const primaryBikeData = m.bikes && m.bikes.length > 0 ? (m.bikes.find(b => b.isPrimary) || m.bikes[0]) : null;
                           
                           return ( 
-                            <div key={m.id} className="bg-white/50 border border-white/60 rounded-2xl p-3 shadow-sm">
-                              <div className="flex items-center space-x-3">
-                                <div className="relative">
-                                  <MemberAvatar user={m} size="w-12 h-12" textSize="text-2xl" />
-                                  <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${status.color}`}></span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="font-bold text-xs text-slate-900 flex items-center truncate">
-                                      {m.name} {m.simVerified && <I.CheckCircle2 className="ml-1 w-3 h-3 text-blue-500 flex-shrink-0" />}
-                                    </h4>
-                                    <div className="flex items-center space-x-1">
-                                      
-                                      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${status.bgColor} ${status.textColor} ${status.text === 'Online' ? 'animate-heartbeat' : ''}`}>
-                                        {status.text}
-                                      </span>
-
-                                      {isReady && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">Siap</span>}
-                                      {memberCheckedEvents.length > 0 && (
-                                        <button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-full active:scale-95 transition">
-                                          ✓ ({memberCheckedEvents.length})
-                                        </button>
-                                      )}
-                                      {m.id !== currentUser.id && (
-                                        <button onClick={() => openChat(m)} className="relative p-1.5 bg-blue-100 text-blue-600 rounded-full active:scale-95 transition">
-                                          <I.MessageSquare className="w-3.5 h-3.5" />
-                                          {(unreadChats[m.id] || 0) > 0 && (
-                                            <span className="absolute -top-1 -right-1 min-w-[14px] h-3.5 px-1 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                                              {unreadChats[m.id]}
-                                            </span>
-                                          )}
-                                        </button>
-                                      )}
-                                    </div>
+                            <RevealCard key={m.id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
+                              <div className="p-4">
+                                <div className="flex items-start space-x-4">
+                                  {/* Foto Profil Diperbaiki (Tanpa Blur Kuning) */}
+                                  <div className="relative flex-shrink-0">
+                                    <MemberAvatar user={m} size="w-16 h-16" textSize="text-2xl" />
+                                    <span className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${status.color} z-10`}></span>
                                   </div>
-                                  <div className="flex items-center flex-wrap gap-1 mt-0.5">
-                                    {m.className && <span className="text-[9px] bg-slate-900 text-amber-400 font-bold px-2 py-0.5 rounded-full">{m.className}</span>}
-                                    <p className="text-[10px] text-slate-500 font-semibold truncate">{m.role} • {m.ridingStatus || 'Pengendara'}</p>
-                                  </div>
-                                  <div className="flex items-center flex-wrap gap-1 mt-1">
-                                    {memberJourney > 0 && (
-                                      <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full flex items-center"><I.Star className="w-2.5 h-2.5 mr-0.5" /> Journey: {memberJourney} Pts</span>
-                                    )}
-                                    {memberPotentialPts > 0 && (
-                                      <span className="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Potensi: +{memberPotentialPts} Pts</span>
-                                    )}
-                                  </div>
-                                  <p className="text-[9px] text-rose-500 font-bold flex items-center mt-0.5"><I.MapPin className="w-3 h-3 mr-1"/> {m.city}</p>
-                                  {m.touringRole && <p className="text-[10px] text-amber-600 font-bold mt-1 flex items-center"><I.Award className="w-3 h-3 mr-1"/> {m.touringRole}</p>}
-                                </div>
-                              </div>
-                              <div className="mt-2 pt-2 border-t border-slate-101">
-                                {m.bikes && m.bikes.length > 0 ? (
-                                  m.bikes.map(bike => (
-                                    <div key={bike.id} className="bg-slate-50 p-2 rounded-lg flex items-center space-x-2 mb-1">
-                                      <BikeIcon type={bike.type} className="w-6 h-6 text-amber-500 flex-shrink-0" />
-                                      <div className="flex-1">
-                                        <div className="flex items-center space-x-1">
-                                          <p className="font-bold text-slate-800 text-[11px]">{bike.name}</p>
-                                          {bike.isPrimary && <span className="text-[7px] bg-emerald-100 text-emerald-700 font-bold px-1 py-0.5 rounded-full">Utama</span>}
-                                        </div>
-                                        <p className="text-slate-500 text-[9px]">{bike.plate} • {bike.type} • {bike.engine}</p>
+                                  
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                                      <div className="min-w-0">
+                                        <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5 truncate">
+                                          {m.name} 
+                                          {m.simVerified && <I.CheckCircle2 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />}
+                                        </h4>
+                                        <p className="text-[10px] text-slate-500 font-semibold truncate">{m.role} • {m.ridingStatus || 'Pengendara'}</p>
+                                      </div>
+                                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full ${status.bgColor} ${status.textColor} ${status.text === 'Online' ? 'animate-pulse shadow-sm' : ''}`}>
+                                          {status.text}
+                                        </span>
+                                        {m.className && <span className="text-[8px] bg-slate-900 text-amber-400 font-bold px-2 py-0.5 rounded-full shadow-sm">{m.className}</span>}
                                       </div>
                                     </div>
-                                  ))
-                                ) : (
-                                  <div className="text-center text-[10px] text-slate-400 italic py-1">Belum ada motor terdaftar</div>
-                                )}
-                                
-                                {/* Status Login Terakhir */}
-                                <div className="flex items-center justify-end text-[9px] text-slate-400 font-semibold mt-2">
-                                  <I.Clock className="w-3 h-3 mr-1" />
-                                  {m.lastActive ? `Terakhir login: ${new Date(m.lastActive).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' })}` : 'Belum pernah login'}
+
+                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                      {memberJourney > 0 && (
+                                        <span className="text-[9px] bg-gradient-to-r from-indigo-50 to-indigo-100 text-indigo-700 font-bold px-2.5 py-1 rounded-full flex items-center border border-indigo-200/50">
+                                          <I.Star className="w-2.5 h-2.5 mr-1" /> {memberJourney} Pts
+                                        </span>
+                                      )}
+                                      {memberPotentialPts > 0 && (
+                                        <span className="text-[9px] bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 font-bold px-2.5 py-1 rounded-full border border-amber-200/50">
+                                          +{memberPotentialPts} Pts
+                                        </span>
+                                      )}
+                                      {isReady && (
+                                        <span className="text-[9px] bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full border border-emerald-200/50">
+                                          Siap Touring
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Info Motor Lengkap (Plat, CC, Jenis) */}
+                                    {primaryBikeData ? (
+                                      <div className="mt-3 bg-slate-50/80 rounded-xl p-2.5 border border-slate-100">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                          <BikeIcon type={primaryBikeData.type} className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                                          <p className="font-bold text-[11px] text-slate-800 truncate">{primaryBikeData.name}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[9px] text-slate-500 font-semibold">
+                                          <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200">{primaryBikeData.plate}</span>
+                                          <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200">{primaryBikeData.type}</span>
+                                          <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200">{primaryBikeData.engine}</span>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="mt-3 bg-slate-50/80 rounded-xl p-2.5 border border-slate-100 text-[10px] text-slate-400 italic text-center">
+                                        Belum ada motor terdaftar
+                                      </div>
+                                    )}
+
+                                    {m.touringRole && (
+                                      <div className="mt-2 inline-flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100 text-[10px] text-amber-700 font-bold">
+                                        <I.Award className="w-3 h-3" /> {m.touringRole}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100/80">
+                                  <div className="flex items-center space-x-2">
+                                    {memberCheckedEvents.length > 0 && (
+                                      <button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg active:scale-95 transition flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                        {memberCheckedEvents.length} Event
+                                      </button>
+                                    )}
+                                  </div>
+                                  
+                                  {m.id !== currentUser.id ? (
+                                    <button onClick={() => openChat(m)} className="relative flex items-center gap-1.5 bg-blue-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg active:scale-95 transition shadow-sm">
+                                      <I.MessageSquare className="w-3.5 h-3.5" /> Chat
+                                      {(unreadChats[m.id] || 0) > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse shadow-md">
+                                          {unreadChats[m.id]}
+                                        </span>
+                                      )}
+                                    </button>
+                                  ) : (
+                                    <span className="text-[9px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">Akun Saya</span>
+                                  )}
                                 </div>
                               </div>
-                            </div>
+                            </RevealCard>
                           ); 
                         })}
                       </div> 
@@ -3165,6 +3258,30 @@
                   Simpan Gambar 3D ({new3DImages.length})
                 </button>
                 <button onClick={()=>{setShowAddBikeImageModal(false); setNew3DImages([]);}} className="w-full mt-2 text-xs text-slate-500 font-bold hover:underline text-center">Batal</button>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Auto 3D Viewer (iOS Glass Style) */}
+          {showBike3DModal && primaryBike?.images3d && (
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-4 animate-fade-in">
+              <button onClick={() => setShowBike3DModal(false)} className="absolute top-6 right-6 p-2.5 bg-white/50 backdrop-blur-md rounded-full text-slate-700 border border-white/60 shadow-lg active:scale-90 transition z-10">
+                <I.X />
+              </button>
+              
+              {/* iOS Glass Card (Putih Blur) */}
+              <div className="w-full max-w-sm bg-white/50 backdrop-blur-2xl rounded-[32px] border border-white/60 shadow-[0_20px_60px_rgba(0,0,0,0.15)] p-6 flex flex-col items-center">
+                <h3 className="text-center text-slate-900 font-black text-base tracking-wide">Tampilan 3D Motor</h3>
+                <p className="text-center text-slate-600 text-[11px] mb-5 font-medium">{primaryBike?.name}</p>
+                
+                <div className="w-full rounded-2xl overflow-hidden shadow-inner border border-white/40">
+                  <AutoBike3DViewer images={primaryBike.images3d} />
+                </div>
+                
+                <div className="flex items-center justify-center space-x-1.5 mt-5 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/60">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500 animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                  <span className="text-slate-700 text-[10px] font-bold tracking-wider">Berputar Otomatis...</span>
+                </div>
               </div>
             </div>
           )}
