@@ -1655,6 +1655,10 @@
           createdAt: Date.now()
         });
         addN(`Undangan catur dikirim ke ${member.name}!`, 'success');
+        // Langsung masuk ke meja permainan untuk menunggu lawan
+        setActiveChessGameId(newMatchRef.key);
+        setShowChessModal(false);
+        setShowChessGame(true);
       };
 
       const acceptChessMatch = async (matchId) => {
@@ -4353,6 +4357,9 @@
                             </p>
                           </div>
                           <div>
+                            {match.status === 'pending' && isWhite && (
+                              <button onClick={() => openActiveChessMatch(match.id)} className="text-[10px] bg-slate-500 text-white font-bold px-3 py-1.5 rounded-full active:scale-95">Masuk Meja</button>
+                            )}
                             {match.status === 'pending' && !isWhite && (
                               <button onClick={() => acceptChessMatch(match.id)} className="text-[10px] bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-full active:scale-95">Terima & Main</button>
                             )}
