@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Game Catur 3D</title>
+  <title>Game Catur 3D Online</title>
   <style>
     body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Helvetica Neue', sans-serif; color: white; }
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 8px; font-size: 14px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); }
-    #status { font-weight: bold; color: #fbbf24; }
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 8px; font-size: 14px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; }
+    #status { font-weight: bold; color: #fbbf24; margin-bottom: 5px; }
+    #turn { font-size: 12px; color: #ccc; }
     #reset-btn { margin-top: 10px; background: #fbbf24; color: #000; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; box-sizing: border-box; }
     #reset-btn:active { transform: scale(0.95); }
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
@@ -15,7 +16,8 @@
 </head>
 <body>
   <div id="ui">
-    <div id="status">Giliran: Putih</div>
+    <div id="status">Memuat Partai...</div>
+    <div id="turn"></div>
     <button id="reset-btn">Mulai Ulang</button>
   </div>
   <div id="canvas-container"></div>
@@ -23,6 +25,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <script>
     let scene, camera, renderer, controls;
     let board = [];
@@ -30,6 +34,29 @@
     let selectedPiece = null;
     let chess = new Chess();
     let raycaster, mouse;
+
+    let matchId = null;
+    let playerId = null;
+    let myColor = null;
+    let isBoardReady = false;
+
+    // Parse URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    matchId = urlParams.get('matchId');
+    playerId = urlParams.get('playerId');
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_Lp9IMTfC0D1pSFeDbjW2ugyg22tFfTc",
+      authDomain: "oneaspalclub.firebaseapp.com",
+      databaseURL: "https://oneaspalclub-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "oneaspalclub",
+      storageBucket: "oneaspalclub.firebasestorage.app",
+      messagingSenderId: "310756119151",
+      appId: "1:310756119151:web:da5d0ccbc43dad23c5b39a"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
     init();
     animate();
@@ -53,25 +80,51 @@
       controls.maxDistance = 15;
       controls.maxPolarAngle = Math.PI / 2.2;
 
-      // Lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
       directionalLight.position.set(5, 10, 5);
       scene.add(directionalLight);
 
-      // Raycaster for clicks
       raycaster = new THREE.Raycaster();
       mouse = new THREE.Vector2();
 
       createBoard();
-      updatePieces();
+      updatePieces(); // Initial empty board
 
       window.addEventListener('resize', onWindowResize);
       window.addEventListener('click', onMouseClick);
       window.addEventListener('touchend', onTouchEnd);
 
       document.getElementById('reset-btn').addEventListener('click', resetGame);
+
+      if (matchId) {
+        listenToMatch();
+      } else {
+        document.getElementById('status').innerText = "Error: Match ID tidak ditemukan.";
+      }
+    }
+
+    function listenToMatch() {
+      db.ref('chessMatches/' + matchId).on('value', (snapshot) => {
+        const match = snapshot.val();
+        if (!match) {
+          document.getElementById('status').innerText = "Partai tidak ditemukan.";
+          return;
+        }
+        
+        if (match.whitePlayer && match.whitePlayer.id === playerId) myColor = 'w';
+        if (match.blackPlayer && match.blackPlayer.id === playerId) myColor = 'b';
+        
+        chess.reset();
+        const movesData = match.moves ? Object.keys(match.moves).map(k => match.moves[k]).sort((a,b) => a.timestamp - b.timestamp) : [];
+        movesData.forEach(m => {
+          chess.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' });
+        });
+        
+        updatePieces();
+        isBoardReady = true;
+      });
     }
 
     function createBoard() {
@@ -90,7 +143,6 @@
           board[x][z] = square;
         }
       }
-      // Base
       const baseGeo = new THREE.BoxGeometry(9, 0.5, 9);
       const baseMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
       const base = new THREE.Mesh(baseGeo, baseMat);
@@ -103,38 +155,38 @@
       const material = new THREE.MeshLambertMaterial({ color: color === 'w' ? 0xffffff : 0x111111 });
       
       switch(type) {
-        case 'p': // Pawn
+        case 'p': 
           group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), material));
           const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), material);
           pHead.position.y = 0.35;
           group.add(pHead);
           break;
-        case 'r': // Rook
+        case 'r': 
           group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16), material));
           const rTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), material);
           rTop.position.y = 0.35;
           group.add(rTop);
           break;
-        case 'n': // Knight
+        case 'n': 
           group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), material));
           const nHead = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.5), material);
           nHead.position.y = 0.4;
           nHead.rotation.x = -0.3;
           group.add(nHead);
           break;
-        case 'b': // Bishop
+        case 'b': 
           group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.5, 16), material));
           const bTop = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 16), material);
           bTop.position.y = 0.45;
           group.add(bTop);
           break;
-        case 'q': // Queen
+        case 'q': 
           group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.6, 16), material));
           const qTop = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), material);
           qTop.position.y = 0.45;
           group.add(qTop);
           break;
-        case 'k': // King
+        case 'k': 
           group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.7, 16), material));
           const kCross1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), material);
           kCross1.position.y = 0.55;
@@ -150,16 +202,13 @@
     }
 
     function updatePieces() {
-      // Clear existing pieces
       pieces.forEach(p => scene.remove(p));
       pieces = [];
-
       const boardData = chess.board();
       for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
           const piece = boardData[r][c];
           if (piece) {
-            // Chess.js uses (rank, file) where rank 0 is 8, file 0 is a
             const x = c;
             const z = 7 - r;
             const piece3D = createPiece(piece.type, piece.color, x, z);
@@ -172,10 +221,9 @@
     }
 
     function resetGame() {
-      chess.reset();
-      selectedPiece = null;
-      clearHighlights();
-      updatePieces();
+      if (matchId) {
+        db.ref('chessMatches/' + matchId + '/moves').remove();
+      }
     }
 
     function clearHighlights() {
@@ -211,9 +259,9 @@
     }
 
     function handleInteraction() {
-      raycaster.setFromCamera(mouse, camera);
+      if (!isBoardReady || !myColor) return;
       
-      // First, check if we clicked on a piece
+      raycaster.setFromCamera(mouse, camera);
       const pieceIntersects = raycaster.intersectObjects(pieces, true);
       const squareIntersects = raycaster.intersectObjects(scene.children.filter(c => c.userData.isSquare !== undefined));
 
@@ -224,13 +272,11 @@
         const pieceData = pieceObj.userData;
         
         if (selectedPiece) {
-          // Try to move
           const from = String.fromCharCode(97 + selectedPiece.x) + (selectedPiece.z + 1);
           const to = String.fromCharCode(97 + pieceData.x) + (pieceData.z + 1);
           tryMove(from, to);
         } else {
-          // Select piece if it's their turn
-          if ((chess.turn() === 'w' && pieceData.color === 'w') || (chess.turn() === 'b' && pieceData.color === 'b')) {
+          if (chess.turn() === myColor && pieceData.color === myColor) {
             selectedPiece = pieceData;
             clearHighlights();
             const from = String.fromCharCode(97 + pieceData.x) + (pieceData.z + 1);
@@ -249,13 +295,24 @@
     }
 
     function tryMove(from, to) {
+      if (chess.turn() !== myColor) {
+        selectedPiece = null;
+        clearHighlights();
+        return;
+      }
+
       const move = chess.move({ from, to, promotion: 'q' });
       if (move) {
         selectedPiece = null;
         clearHighlights();
-        updatePieces();
+        db.ref('chessMatches/' + matchId + '/moves').push({
+          from: from,
+          to: to,
+          promotion: 'q',
+          player: playerId,
+          timestamp: Date.now()
+        });
       } else {
-        // Invalid move, deselect
         selectedPiece = null;
         clearHighlights();
       }
@@ -269,6 +326,9 @@
         statusText = "Skak! Giliran: " + (chess.turn() === 'w' ? 'Putih' : 'Hitam');
       }
       document.getElementById('status').innerText = statusText;
+      
+      let turnText = myColor ? (chess.turn() === myColor ? "Anda (Bermain)" : "Lawan (Menunggu)") : "Menunggu Data...";
+      document.getElementById('turn').innerText = turnText;
     }
 
     function onWindowResize() {
