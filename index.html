@@ -629,9 +629,9 @@
         </div>
       );
     };
-      const RevealCard = ({ children, className }) => {
-      const ref = useRef(null);
-      const [isVisible, setIsVisible] = useState(false);
+    const RevealCard = ({ children, className, onClick }) => {
+    const ref = useRef(null);
+    const [isVisible, setIsVisible] = useState(false);
 
       useEffect(() => {
         const observer = new IntersectionObserver((entries) => {
@@ -657,7 +657,8 @@
       return (
         <div 
           ref={ref} 
-          className={`${className} transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}
+          onClick={onClick}
+          className={`${className} transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'} ${onClick ? 'cursor-pointer' : ''}`}
         >
           {children}
         </div>
@@ -710,7 +711,9 @@
       const [newBike, setNewBike] = useState({ name: '', plate: '', type: 'Matic', engine: '' });
       const [showDeleteBikeModal, setShowDeleteBikeModal] = useState(false);
       const [showAddBikeImageModal, setShowAddBikeImageModal] = useState(false);
-      const [showBike3DModal, setShowBike3DModal] = useState(false); // Tambahan untuk modal 3D
+      const [showBike3DModal, setShowBike3DModal] = useState(false);
+      const [showMemberBike3DModal, setShowMemberBike3DModal] = useState(false); // Tambahan untuk modal 3D anggota
+      const [memberBike3DData, setMemberBike3DData] = useState(null);
       const [new3DImages, setNew3DImages] = useState([]);
       const [uploading3D, setUploading3D] = useState(false);
       const bike3DImageInputRef = useRef(null);
@@ -1608,6 +1611,11 @@
         setUnreadChats(prev => ({ ...prev, [recipient.id]: 0 }));
         localStorage.setItem('oac_last_read_' + chatId, Date.now());
       };
+      const openMemberBike3DModal = (member) => {
+        const bike = member.bikes && member.bikes.length > 0 ? (member.bikes.find(b => b.isPrimary) || member.bikes[0]) : null;
+        setMemberBike3DData({ memberName: member.name, bike });
+        setShowMemberBike3DModal(true);
+      };
       const closeChat = () => { setShowChatModal(false); setActiveChatId(null); setActiveChatUser(null); setChatMessages([]); };
       const sendMessage = async (e) => {
         e.preventDefault();
@@ -2490,7 +2498,7 @@
                           const primaryBikeData = m.bikes && m.bikes.length > 0 ? (m.bikes.find(b => b.isPrimary) || m.bikes[0]) : null;
                           
                           return ( 
-                            <RevealCard key={m.id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
+                            <RevealCard key={m.id} onClick={() => openMemberBike3DModal(m)} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
                               <div className="p-4">
                                 <div className="flex items-start space-x-4">
                                   {/* Foto Profil Diperbaiki (Tanpa Blur Kuning) */}
@@ -2564,7 +2572,7 @@
                                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100/80">
                                   <div className="flex items-center space-x-2">
                                     {memberCheckedEvents.length > 0 && (
-                                      <button onClick={() => openMemberEventsModal(m)} className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg active:scale-95 transition flex items-center gap-1">
+                                      <button onClick={(e) => { e.stopPropagation(); openMemberEventsModal(m); }} className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg active:scale-95 transition flex items-center gap-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                         {memberCheckedEvents.length} Event
                                       </button>
@@ -2572,7 +2580,7 @@
                                   </div>
                                   
                                   {m.id !== currentUser.id ? (
-                                    <button onClick={() => openChat(m)} className="relative flex items-center gap-1.5 bg-blue-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg active:scale-95 transition shadow-sm">
+                                    <button onClick={(e) => { e.stopPropagation(); openChat(m); }} className="relative flex items-center gap-1.5 bg-blue-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg active:scale-95 transition shadow-sm">
                                       <I.MessageSquare className="w-3.5 h-3.5" /> Chat
                                       {(unreadChats[m.id] || 0) > 0 && (
                                         <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse shadow-md">
@@ -3282,6 +3290,33 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500 animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                   <span className="text-slate-700 text-[10px] font-bold tracking-wider">Berputar Otomatis...</span>
                 </div>
+              </div>
+            </div>
+          )}
+
+                    {/* Modal 3D Motor Anggota (iOS Glass Style) */}
+          {showMemberBike3DModal && memberBike3DData && (
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShowMemberBike3DModal(false)}>
+              <button onClick={() => setShowMemberBike3DModal(false)} className="absolute top-6 right-6 p-2.5 bg-white/50 backdrop-blur-md rounded-full text-slate-700 border border-white/60 shadow-lg active:scale-90 transition z-10">
+                <I.X />
+              </button>
+              
+              {/* iOS Glass Card */}
+              <div className="w-full max-w-sm bg-white/50 backdrop-blur-2xl rounded-[32px] border border-white/60 shadow-[0_20px_60px_rgba(0,0,0,0.15)] p-6 flex flex-col items-center" onClick={e => e.stopPropagation()}>
+                <h3 className="text-center text-slate-900 font-black text-base tracking-wide">Tampilan 3D Motor</h3>
+                <p className="text-center text-slate-600 text-[11px] mb-5 font-medium">{memberBike3DData.memberName} - {memberBike3DData.bike?.name || 'Tidak Ada Motor'}</p>
+                
+                {memberBike3DData.bike?.images3d && memberBike3DData.bike.images3d.length > 0 ? (
+                  <div className="w-full rounded-2xl overflow-hidden shadow-inner border border-white/40">
+                    <Bike3DViewer images={memberBike3DData.bike.images3d} />
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-slate-500 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200 w-full">
+                    Anggota ini belum mengunggah foto 3D motor.
+                  </div>
+                )}
+                
+                <p className="text-center text-slate-500 text-[10px] mt-5">Geser pada gambar untuk memutar motor</p>
               </div>
             </div>
           )}
