@@ -200,6 +200,7 @@
       noiseSource.start();
     }
 
+    // --- Fungsi Pembuat Tekstur Kayu Prosedural ---
     function createWoodTexture(baseColor, veinColor) {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
@@ -229,6 +230,50 @@
       return texture;
     }
 
+    // --- Fungsi Pembuat Tekstur Marmer Prosedural ---
+    function createMarbleTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Dasar putih bersih agar kontras dengan background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 256, 256);
+      
+      // Urat marmer abu-abu gelap
+      for (let i = 0; i < 15; i++) {
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * 256, Math.random() * 256);
+        // Garis bersambung berkelok-kelok
+        for (let j = 0; j < 5; j++) {
+          ctx.bezierCurveTo(
+            Math.random() * 256, Math.random() * 256,
+            Math.random() * 256, Math.random() * 256,
+            Math.random() * 256, Math.random() * 256
+          );
+        }
+        ctx.strokeStyle = '#8a94a6';
+        ctx.globalAlpha = Math.random() * 0.4 + 0.2;
+        ctx.lineWidth = Math.random() * 1.5 + 0.5;
+        ctx.stroke();
+      }
+      
+      // Tambahkan bintik halus agar terlihat seperti tekstur batu
+      for (let i = 0; i < 100; i++) {
+        ctx.beginPath();
+        ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 1, 0, Math.PI * 2);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.globalAlpha = Math.random() * 0.3;
+        ctx.fill();
+      }
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      return texture;
+    }
+
     function init() {
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xeef2f6);
@@ -248,7 +293,6 @@
       controls.maxDistance = 15;
       controls.maxPolarAngle = Math.PI / 2.2;
 
-      // Pencahayaan merata tanpa silau (menggunakan ambient dan directional saja)
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
       scene.add(ambientLight);
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -370,10 +414,8 @@
     }
 
     function createBoard() {
-      // Warna maple (kotak terang) dibuat lebih cerah/kontras dibanding walnut (kotak gelap)
       const lightWoodTex = createWoodTexture('#f0d8a0', '#a67c3f');
       const darkWoodTex = createWoodTexture('#4a2e15', '#1a0d05');
-      
       const squareSize = 1;
       const geometry = new THREE.BoxGeometry(squareSize, 0.2, squareSize);
       for (let x = 0; x < 8; x++) {
@@ -383,8 +425,6 @@
           const tex = isWhite ? lightWoodTex.clone() : darkWoodTex.clone();
           tex.needsUpdate = true; 
           tex.offset.set(Math.random(), Math.random());
-          
-          // Shininess diturunkan agar tidak ada efek silau/glare
           const material = new THREE.MeshPhongMaterial({ map: tex, shininess: 5, specular: 0x111111 });
           const square = new THREE.Mesh(geometry, material);
           square.position.set(x - 3.5, 0, z - 3.5);
@@ -412,9 +452,17 @@
       const group = new THREE.Group();
       let material;
       if (color === 'w') {
-        // Bidak putih juga dikurangi kilaunya agar elegan dan tidak silau
-        material = new THREE.MeshPhongMaterial({ color: 0xfffdf5, shininess: 30, specular: 0x444444, emissive: 0x111111 });
+        // Material Marmer Putih Elegan
+        const marbleTex = createMarbleTexture();
+        material = new THREE.MeshPhongMaterial({ 
+          map: marbleTex,           // Tekstur urat marmer
+          bumpMap: marbleTex,       // Efek timbul pada urat
+          bumpScale: 0.05,
+          shininess: 40,           // Sedikit mengkilap seperti batu alam
+          specular: 0x888888 
+        });
       } else {
+        // Material Kayu Gelap (Walnut)
         const tex = createWoodTexture('#1a0d05', '#0a0502');
         material = new THREE.MeshPhongMaterial({ map: tex, shininess: 20, specular: 0x222222 });
       }
