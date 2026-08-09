@@ -6,11 +6,27 @@
   <title>Game Catur 3D Online</title>
   <style>
     body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Helvetica Neue', sans-serif; color: white; }
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 12px 15px; border-radius: 10px; font-size: 13px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 200px; }
-    #status { font-weight: bold; color: #fbbf24; margin-bottom: 4px; }
-    #turn { font-size: 11px; color: #ccc; margin-bottom: 8px; }
-    #reset-btn { background: #fbbf24; color: #000; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; box-sizing: border-box; }
+    
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 12px 15px; border-radius: 10px; font-size: 13px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 240px; max-height: 90vh; display: flex; flex-direction: column; }
+    
+    #status { font-weight: bold; color: #fbbf24; margin-bottom: 8px; font-size: 14px; text-align: center; }
+    
+    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 12px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; }
+    .player-row.active { background-color: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.6); }
+    .player-row.waiting { background-color: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); }
+    
+    .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; display: inline-block; }
+    .dot.active { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .dot.waiting { background: #ef4444; }
+    
+    #history-container { margin-top: 10px; max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; flex-grow: 1; }
+    #history-container h4 { margin: 0 0 5px 0; font-size: 11px; color: #ccc; text-transform: uppercase; letter-spacing: 0.5px; }
+    #move-history { list-style: none; padding: 0; margin: 0; }
+    #move-history li { font-size: 11px; color: #eee; margin-bottom: 4px; padding: 4px 6px; border-radius: 3px; background: rgba(255,255,255,0.05); }
+    
+    #reset-btn { background: #fbbf24; color: #000; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; box-sizing: border-box; margin-top: 10px; }
     #reset-btn:active { transform: scale(0.95); }
+    
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; text-align: center; }
   </style>
@@ -18,9 +34,24 @@
 <body>
   <div id="ui">
     <div id="status">Memuat Partai...</div>
-    <div id="turn"></div>
+    
+    <div class="player-row waiting" id="white-player">
+      <span style="display:flex; align-items:center;"><span class="dot waiting"></span> Putih: <strong style="margin-left:4px;" id="white-name">...</strong></span>
+      <span id="white-status">Menunggu</span>
+    </div>
+    <div class="player-row waiting" id="black-player">
+      <span style="display:flex; align-items:center;"><span class="dot waiting"></span> Hitam: <strong style="margin-left:4px;" id="black-name">...</strong></span>
+      <span id="black-status">Menunggu</span>
+    </div>
+    
+    <div id="history-container">
+      <h4>Riwayat Langkah</h4>
+      <ul id="move-history"></ul>
+    </div>
+    
     <button id="reset-btn">Mulai Ulang</button>
   </div>
+  
   <div id="loading">Mempersiapkan papan...</div>
   <div id="canvas-container"></div>
 
@@ -42,6 +73,8 @@
     let myColor = null;
     let isBoardReady = false;
     let matchStatus = 'pending';
+    
+    const pieceNames = { p: 'Pion', r: 'Benteng', n: 'Kuda', b: 'Gajah', q: 'Ratu', k: 'Raja' };
 
     const urlParams = new URLSearchParams(window.location.search);
     matchId = urlParams.get('matchId');
@@ -81,11 +114,15 @@
       controls.maxDistance = 15;
       controls.maxPolarAngle = Math.PI / 2.2;
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
       directionalLight.position.set(5, 10, 5);
       scene.add(directionalLight);
+      // Tambahkan cahaya samping agar bidak tidak terlalu gelap
+      const sideLight = new THREE.DirectionalLight(0xffffff, 0.3);
+      sideLight.position.set(-5, 5, -5);
+      scene.add(sideLight);
 
       raycaster = new THREE.Raycaster();
       mouse = new THREE.Vector2();
@@ -117,9 +154,11 @@
         if (match.whitePlayer && match.whitePlayer.id === playerId) myColor = 'w';
         if (match.blackPlayer && match.blackPlayer.id === playerId) myColor = 'b';
         
+        document.getElementById('white-name').innerText = match.whitePlayer?.name || 'Pemain Putih';
+        document.getElementById('black-name').innerText = match.blackPlayer?.name || 'Pemain Hitam';
+        
         matchStatus = match.status || 'pending';
         
-        // Reset dan replay semua gerakan
         chess.reset();
         const movesData = match.moves ? Object.keys(match.moves).map(k => match.moves[k]).sort((a,b) => a.timestamp - b.timestamp) : [];
         movesData.forEach(m => {
@@ -127,9 +166,28 @@
         });
         
         updatePieces();
+        updateHistory();
         isBoardReady = true;
         document.getElementById('loading').style.display = 'none';
       });
+    }
+
+    function createTextSprite(text) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 128;
+      canvas.height = 128;
+      ctx.fillStyle = '#999999';
+      ctx.font = 'bold 80px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 64, 64);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(0.6, 0.6, 0.6);
+      return sprite;
     }
 
     function createBoard() {
@@ -148,79 +206,246 @@
           board[x][z] = square;
         }
       }
+      
+      // Base papan
       const baseGeo = new THREE.BoxGeometry(9, 0.5, 9);
       const baseMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
       const base = new THREE.Mesh(baseGeo, baseMat);
       base.position.y = -0.3;
       scene.add(base);
+      
+      // Penomoran Pinggir Papan
+      const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      for (let i = 0; i < 8; i++) {
+        const fileSpriteBottom = createTextSprite(files[i]);
+        fileSpriteBottom.position.set(i - 3.5, 0.15, 4.2);
+        scene.add(fileSpriteBottom);
+        
+        const fileSpriteTop = createTextSprite(files[i]);
+        fileSpriteTop.position.set(i - 3.5, 0.15, -4.2);
+        scene.add(fileSpriteTop);
+        
+        const rankSpriteLeft = createTextSprite((i + 1).toString());
+        rankSpriteLeft.position.set(-4.2, 0.15, 3.5 - i);
+        scene.add(rankSpriteLeft);
+        
+        const rankSpriteRight = createTextSprite((i + 1).toString());
+        rankSpriteRight.position.set(4.2, 0.15, 3.5 - i);
+        scene.add(rankSpriteRight);
+      }
     }
 
     function createPiece(type, color, x, z) {
       const group = new THREE.Group();
-      const material = new THREE.MeshLambertMaterial({ color: color === 'w' ? 0xffffff : 0x111111 });
-      let mesh;
+      // Material mesh phong agar terlihat mengkilap seperti plastik/keramik
+      const material = new THREE.MeshPhongMaterial({ 
+        color: color === 'w' ? 0xf0f0f0 : 0x1a1a1a, 
+        shininess: 40, 
+        specular: 0x333333 
+      });
       
+      const createLathe = (points) => {
+        const geometry = new THREE.LatheGeometry(points, 24);
+        geometry.computeVertexNormals();
+        return new THREE.Mesh(geometry, material);
+      };
+
+      let mesh;
+
       switch(type) {
-        case 'p': 
-          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), material);
-          mesh.position.y = 0.2;
-          group.add(mesh);
-          const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), material);
-          pHead.position.y = 0.55;
-          group.add(pHead);
+        case 'p': { // Pion
+          const points = [
+            new THREE.Vector2(0.0, 0.0),
+            new THREE.Vector2(0.28, 0.0),
+            new THREE.Vector2(0.28, 0.04),
+            new THREE.Vector2(0.22, 0.1),
+            new THREE.Vector2(0.14, 0.15),
+            new THREE.Vector2(0.14, 0.35),
+            new THREE.Vector2(0.2, 0.4),
+            new THREE.Vector2(0.14, 0.45),
+            new THREE.Vector2(0.14, 0.5),
+            new THREE.Vector2(0.24, 0.55),
+            new THREE.Vector2(0.14, 0.6),
+            new THREE.Vector2(0.2, 0.7),
+            new THREE.Vector2(0.15, 0.78),
+            new THREE.Vector2(0.0, 0.8)
+          ];
+          mesh = createLathe(points);
           break;
-        case 'r': 
-          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16), material);
-          mesh.position.y = 0.25;
-          group.add(mesh);
-          const rTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), material);
-          rTop.position.y = 0.6;
-          group.add(rTop);
+        }
+        case 'r': { // Benteng
+          const points = [
+            new THREE.Vector2(0.0, 0.0),
+            new THREE.Vector2(0.32, 0.0),
+            new THREE.Vector2(0.32, 0.05),
+            new THREE.Vector2(0.26, 0.1),
+            new THREE.Vector2(0.2, 0.15),
+            new THREE.Vector2(0.18, 0.55),
+            new THREE.Vector2(0.24, 0.6),
+            new THREE.Vector2(0.28, 0.65),
+            new THREE.Vector2(0.28, 0.75),
+            new THREE.Vector2(0.24, 0.8),
+            new THREE.Vector2(0.24, 0.85),
+            new THREE.Vector2(0.0, 0.85)
+          ];
+          mesh = createLathe(points);
+          // Tambahkan crenelations (putihan atas benteng)
+          for(let i=0; i<4; i++) {
+            const cren = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.12), material);
+            const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+            cren.position.set(Math.cos(angle) * 0.18, 0.85, Math.sin(angle) * 0.18);
+            group.add(cren);
+          }
           break;
-        case 'n': 
-          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), material);
-          mesh.position.y = 0.2;
-          group.add(mesh);
-          const nHead = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.5), material);
-          nHead.position.y = 0.55;
-          nHead.rotation.x = -0.3;
-          group.add(nHead);
+        }
+        case 'b': { // Gajah
+          const points = [
+            new THREE.Vector2(0.0, 0.0),
+            new THREE.Vector2(0.3, 0.0),
+            new THREE.Vector2(0.3, 0.05),
+            new THREE.Vector2(0.24, 0.1),
+            new THREE.Vector2(0.18, 0.15),
+            new THREE.Vector2(0.16, 0.5),
+            new THREE.Vector2(0.22, 0.55),
+            new THREE.Vector2(0.16, 0.6),
+            new THREE.Vector2(0.18, 0.65),
+            new THREE.Vector2(0.24, 0.7),
+            new THREE.Vector2(0.2, 0.75),
+            new THREE.Vector2(0.18, 0.8),
+            new THREE.Vector2(0.12, 0.9),
+            new THREE.Vector2(0.08, 0.95),
+            new THREE.Vector2(0.0, 0.95)
+          ];
+          mesh = createLathe(points);
+          // Slit (celah) di topi gajah
+          const slit = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.15, 0.3), material);
+          slit.position.set(0, 0.85, 0);
+          slit.rotation.y = Math.PI / 4;
+          group.add(slit);
+          const top = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), material);
+          top.position.y = 1.0;
+          group.add(top);
           break;
-        case 'b': 
-          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.5, 16), material);
-          mesh.position.y = 0.25;
-          group.add(mesh);
-          const bTop = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 16), material);
-          bTop.position.y = 0.65;
-          group.add(bTop);
+        }
+        case 'q': { // Ratu
+          const points = [
+            new THREE.Vector2(0.0, 0.0),
+            new THREE.Vector2(0.35, 0.0),
+            new THREE.Vector2(0.35, 0.05),
+            new THREE.Vector2(0.28, 0.1),
+            new THREE.Vector2(0.2, 0.15),
+            new THREE.Vector2(0.18, 0.6),
+            new THREE.Vector2(0.24, 0.65),
+            new THREE.Vector2(0.18, 0.7),
+            new THREE.Vector2(0.2, 0.75),
+            new THREE.Vector2(0.3, 0.8),
+            new THREE.Vector2(0.32, 0.85),
+            new THREE.Vector2(0.28, 0.9),
+            new THREE.Vector2(0.28, 0.95),
+            new THREE.Vector2(0.0, 1.0)
+          ];
+          mesh = createLathe(points);
+          // Mahkota Ratu (bola-bola kecil)
+          for(let i=0; i<8; i++) {
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), material);
+            const angle = (i / 8) * Math.PI * 2;
+            ball.position.set(Math.cos(angle) * 0.28, 0.95, Math.sin(angle) * 0.28);
+            group.add(ball);
+          }
           break;
-        case 'q': 
-          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.6, 16), material);
-          mesh.position.y = 0.3;
-          group.add(mesh);
-          const qTop = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), material);
-          qTop.position.y = 0.7;
-          group.add(qTop);
+        }
+        case 'k': { // Raja
+          const points = [
+            new THREE.Vector2(0.0, 0.0),
+            new THREE.Vector2(0.35, 0.0),
+            new THREE.Vector2(0.35, 0.05),
+            new THREE.Vector2(0.28, 0.1),
+            new THREE.Vector2(0.22, 0.15),
+            new THREE.Vector2(0.2, 0.7),
+            new THREE.Vector2(0.26, 0.75),
+            new THREE.Vector2(0.2, 0.8),
+            new THREE.Vector2(0.22, 0.85),
+            new THREE.Vector2(0.32, 0.9),
+            new THREE.Vector2(0.34, 0.95),
+            new THREE.Vector2(0.3, 1.0),
+            new THREE.Vector2(0.0, 1.0)
+          ];
+          mesh = createLathe(points);
+          // Salib di atas Raja
+          const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.25, 0.08), material);
+          crossV.position.y = 1.12;
+          group.add(crossV);
+          const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.08), material);
+          crossH.position.y = 1.15;
+          group.add(crossH);
           break;
-        case 'k': 
-          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.7, 16), material);
-          mesh.position.y = 0.35;
-          group.add(mesh);
-          const kCross1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), material);
-          kCross1.position.y = 0.8;
-          const kCross2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.3), material);
-          kCross2.position.y = 0.8;
-          group.add(kCross1, kCross2);
+        }
+        case 'n': { // Kuda
+          // Base Kuda
+          const basePoints = [
+            new THREE.Vector2(0.0, 0.0),
+            new THREE.Vector2(0.3, 0.0),
+            new THREE.Vector2(0.3, 0.05),
+            new THREE.Vector2(0.24, 0.1),
+            new THREE.Vector2(0.2, 0.15),
+            new THREE.Vector2(0.18, 0.2),
+            new THREE.Vector2(0.0, 0.2)
+          ];
+          const baseMesh = createLathe(basePoints);
+          group.add(baseMesh);
+          
+          // Konstruksi Kepala Kuda
+          const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.4, 16), material);
+          neck.position.set(0, 0.4, 0.05);
+          neck.rotation.x = -0.2;
+          group.add(neck);
+          
+          const head = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.25, 0.4), material);
+          head.position.set(0, 0.65, 0.1);
+          head.rotation.x = -0.3;
+          group.add(head);
+          
+          const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.15, 0.2), material);
+          muzzle.position.set(0, 0.62, 0.3);
+          muzzle.rotation.x = -0.6;
+          group.add(muzzle);
+          
+          const mane = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.15), material);
+          mane.position.set(0, 0.55, -0.1);
+          mane.rotation.x = 0.3;
+          group.add(mane);
+          
+          // Telinga
+          const ear1 = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 8), material);
+          ear1.position.set(0.08, 0.8, 0.05);
+          group.add(ear1);
+          const ear2 = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 8), material);
+          ear2.position.set(-0.08, 0.8, 0.05);
+          group.add(ear2);
+          
+          // Mata
+          const eyeMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
+          const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), eyeMat);
+          eye1.position.set(0.1, 0.72, 0.2);
+          group.add(eye1);
+          const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), eyeMat);
+          eye2.position.set(-0.1, 0.72, 0.2);
+          group.add(eye2);
+          
           break;
+        }
       }
+      
+      if (mesh) group.add(mesh);
+      
+      // Scale sedikit agar pas dengan papan
+      group.scale.set(0.8, 0.8, 0.8);
       
       group.position.set(x - 3.5, 0.1, z - 3.5);
       const pieceData = { type, color, x, z, isPiece: true };
       group.userData = pieceData;
       group.traverse(child => {
-        if (child.isMesh) {
-          child.userData = pieceData;
-        }
+        if (child.isMesh) child.userData = pieceData;
       });
       return group;
     }
@@ -245,9 +470,7 @@
     }
 
     function resetGame() {
-      if (matchId) {
-        db.ref('chessMatches/' + matchId + '/moves').remove();
-      }
+      if (matchId) db.ref('chessMatches/' + matchId + '/moves').remove();
     }
 
     function clearHighlights() {
@@ -268,9 +491,7 @@
     }
 
     function onPointerDown(event) {
-      if (!isBoardReady || !myColor) return;
-      if (matchStatus !== 'active') return; // Pastikan game sudah aktif
-      if (chess.turn() !== myColor) return;
+      if (!isBoardReady || !myColor || matchStatus !== 'active' || chess.turn() !== myColor) return;
 
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -283,7 +504,6 @@
 
       if (pieceIntersects.length > 0) {
         const pieceData = pieceIntersects[0].object.userData;
-        
         if (selectedPiece) {
           const from = String.fromCharCode(97 + selectedPiece.x) + (selectedPiece.z + 1);
           const to = String.fromCharCode(97 + pieceData.x) + (pieceData.z + 1);
@@ -293,8 +513,7 @@
             selectedPiece = pieceData;
             clearHighlights();
             const from = String.fromCharCode(97 + pieceData.x) + (pieceData.z + 1);
-            const moves = chess.moves({ square: from, verbose: true });
-            highlightMoves(moves);
+            highlightMoves(chess.moves({ square: from, verbose: true }));
           }
         }
       } else if (squareIntersects.length > 0) {
@@ -313,39 +532,90 @@
         selectedPiece = null;
         clearHighlights();
         db.ref('chessMatches/' + matchId + '/moves').push({
-          from: from,
-          to: to,
-          promotion: 'q',
-          player: playerId,
-          timestamp: Date.now()
+          from: from, to: to, promotion: 'q', player: playerId, timestamp: Date.now()
         });
         updatePieces();
+        updateHistory();
       } else {
         selectedPiece = null;
         clearHighlights();
       }
     }
 
-    function updateStatus() {
-      let statusText = "Giliran: " + (chess.turn() === 'w' ? 'Putih' : 'Hitam');
-      if (chess.in_checkmate()) {
-        statusText = "Skakmat! Pemenang: " + (chess.turn() === 'w' ? 'Hitam' : 'Putih');
-      } else if (chess.in_check()) {
-        statusText = "Skak! Giliran: " + (chess.turn() === 'w' ? 'Putih' : 'Hitam');
-      }
-      document.getElementById('status').innerText = statusText;
+    function updateHistory() {
+      const historyList = document.getElementById('move-history');
+      historyList.innerHTML = '';
+      const history = chess.history({ verbose: true });
       
-      let turnText = "";
+      history.forEach((h, index) => {
+        const li = document.createElement('li');
+        const color = h.color === 'w' ? 'Putih' : 'Hitam';
+        const piece = pieceNames[h.piece] || 'Bidak';
+        let text = `${index + 1}. ${color} - ${piece}: ${h.from} ➔ ${h.to}`;
+        
+        if (h.captured) text += ` (Makan ${pieceNames[h.captured]})`;
+        if (h.flags.includes('e')) text += ' (En Passant)';
+        if (h.flags.includes('k') || h.flags.includes('q')) text += ' (Castling)';
+        if (h.flags.includes('c')) text += ' (Skak!)';
+        
+        li.innerText = text;
+        historyList.appendChild(li);
+      });
+      
+      historyList.scrollTop = historyList.scrollHeight;
+    }
+
+    function updateStatus() {
+      let statusText = "";
+      const turn = chess.turn();
+      
+      const whiteRow = document.getElementById('white-player');
+      const blackRow = document.getElementById('black-player');
+      const whiteDot = whiteRow.querySelector('.dot');
+      const blackDot = blackRow.querySelector('.dot');
+      const whiteStatus = document.getElementById('white-status');
+      const blackStatus = document.getElementById('black-status');
+      
+      whiteRow.classList.remove('active', 'waiting');
+      blackRow.classList.remove('active', 'waiting');
+      whiteDot.classList.remove('active', 'waiting');
+      blackDot.classList.remove('active', 'waiting');
+      
       if (matchStatus === 'pending') {
-        turnText = "Menunggu Lawan Menerima Undangan...";
+        statusText = "Menunggu Undangan Diterima...";
+        whiteStatus.innerText = "Menunggu";
+        blackStatus.innerText = "Menunggu";
+        whiteRow.classList.add('waiting');
+        blackRow.classList.add('waiting');
+        whiteDot.classList.add('waiting');
+        blackDot.classList.add('waiting');
       } else if (matchStatus === 'active') {
-        if (chess.turn() === myColor) {
-          turnText = "Giliran Anda!";
+        if (turn === 'w') {
+          whiteRow.classList.add('active');
+          blackRow.classList.add('waiting');
+          whiteDot.classList.add('active');
+          blackDot.classList.add('waiting');
+          whiteStatus.innerText = "Giliran";
+          blackStatus.innerText = "Menunggu";
         } else {
-          turnText = "Menunggu Gerakan Lawan...";
+          whiteRow.classList.add('waiting');
+          blackRow.classList.add('active');
+          whiteDot.classList.add('waiting');
+          blackDot.classList.add('active');
+          whiteStatus.innerText = "Menunggu";
+          blackStatus.innerText = "Giliran";
+        }
+        
+        if (chess.in_checkmate()) {
+          statusText = "Skakmat! Pemenang: " + (turn === 'w' ? 'Hitam' : 'Putih');
+        } else if (chess.in_check()) {
+          statusText = "Skak! Giliran: " + (turn === 'w' ? 'Putih' : 'Hitam');
+        } else {
+          statusText = "Sedang Bermain";
         }
       }
-      document.getElementById('turn').innerText = turnText;
+      
+      document.getElementById('status').innerText = statusText;
     }
 
     function onWindowResize() {
