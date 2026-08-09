@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Game Catur 3D Online</title>
+  <title>One Aspal Chess Game</title>
   <style>
     body { margin: 0; overflow: hidden; background: #0f0f0f; font-family: 'Impact', 'Arial Black', sans-serif; color: white; }
     
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(20, 20, 20, 0.8); padding: 8px 12px; border-radius: 8px; font-size: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 180px; transition: all 0.3s ease; font-family: 'Helvetica Neue', sans-serif; }
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(20, 20, 20, 0.8); padding: 8px 12px; border-radius: 8px; font-size: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 200px; transition: all 0.3s ease; font-family: 'Helvetica Neue', sans-serif; }
     
     #status { font-weight: bold; color: #fbbf24; margin-bottom: 6px; font-size: 12px; text-align: center; }
     
@@ -15,9 +15,12 @@
     .player-row.active { background-color: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.6); }
     .player-row.waiting { background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
     
+    .player-info { display: flex; align-items: center; }
     .dot { width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; display: inline-block; }
     .dot.active { background: #22c55e; box-shadow: 0 0 4px #22c55e; }
     .dot.waiting { background: #ef4444; }
+    
+    .time-info { font-size: 10px; color: #ccc; margin-top: 2px; text-align: right; }
     
     #controls { display: flex; gap: 4px; margin-top: 6px; }
     #controls button { flex: 1; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
@@ -30,6 +33,12 @@
     
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; text-align: center; font-family: 'Helvetica Neue', sans-serif; }
+
+    /* === LOGO POJOK KANAN ATAS === */
+    #logo-overlay { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; align-items: center; gap: 8px; background: rgba(20, 20, 20, 0.6); padding: 6px 12px; border-radius: 30px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); }
+    #logo-overlay img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+    #logo-overlay span { color: #fff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    /* ================================ */
 
     /* === ANIMASI PEMBUKA (MORTAL KOMBAT STYLE) === */
     #intro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 70%); }
@@ -55,16 +64,39 @@
   </style>
 </head>
 <body>
+  <!-- Logo Pojok Kanan Atas -->
+  <div id="logo-overlay">
+    <img src="/192.png" alt="Logo" onerror="this.src='https://i.postimg.cc/wMTWFGcY/1-m.jpg'">
+    <span>One Aspal Chess Game</span>
+  </div>
+
   <div id="ui">
     <div id="status">Memuat Partai...</div>
     
     <div class="player-row waiting" id="white-player">
-      <span style="display:flex; align-items:center;"><span class="dot waiting"></span> <span id="white-name">...</span></span>
-      <span id="white-status">Menunggu</span>
+      <div class="player-info">
+        <span class="dot waiting"></span> 
+        <span id="white-name">...</span>
+      </div>
+      <div class="time-info">
+        <span id="white-status">Menunggu</span><br>
+        Langkah: <span id="white-turn-time">00:00</span>
+      </div>
     </div>
+    
     <div class="player-row waiting" id="black-player">
-      <span style="display:flex; align-items:center;"><span class="dot waiting"></span> <span id="black-name">...</span></span>
-      <span id="black-status">Menunggu</span>
+      <div class="player-info">
+        <span class="dot waiting"></span> 
+        <span id="black-name">...</span>
+      </div>
+      <div class="time-info">
+        <span id="black-status">Menunggu</span><br>
+        Langkah: <span id="black-turn-time">00:00</span>
+      </div>
+    </div>
+    
+    <div style="text-align: center; margin: 6px 0; font-size: 11px; color: #fbbf24;">
+      Durasi: <span id="total-time">00:00</span>
     </div>
     
     <div id="controls">
@@ -111,6 +143,14 @@
     let matchStatus = 'pending';
     let prevMatchStatus = 'pending';
     
+    // Variabel Waktu
+    let gameStartTime = null;
+    let turnStartTime = null;
+    let timeInterval = null;
+
+    // Audio Context untuk efek suara
+    let audioCtx = null;
+    
     const pieceNames = { p: 'Pion', r: 'Benteng', n: 'Kuda', b: 'Gajah', q: 'Ratu', k: 'Raja' };
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -131,6 +171,38 @@
 
     init();
     animate();
+
+    // --- Fungsi Efek Suara Ketukan Kayu ---
+    function playWoodClack() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const bufferSize = audioCtx.sampleRate * 0.1;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+      }
+      
+      const noiseSource = audioCtx.createBufferSource();
+      noiseSource.buffer = buffer;
+      
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 800;
+      filter.Q.value = 1;
+      
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0.5;
+      
+      noiseSource.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      noiseSource.start();
+    }
 
     function createWoodTexture(baseColor, veinColor) {
       const canvas = document.createElement('canvas');
@@ -223,17 +295,56 @@
       return name.split(' ')[0];
     }
 
+    // --- Logika Waktu Permainan ---
+    function startTimers() {
+      gameStartTime = Date.now();
+      turnStartTime = Date.now();
+      if (timeInterval) clearInterval(timeInterval);
+      timeInterval = setInterval(updateTimeDisplay, 1000);
+    }
+
+    function resetTurnTimer() {
+      turnStartTime = Date.now();
+    }
+
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function updateTimeDisplay() {
+      if (!gameStartTime) return;
+      
+      const now = Date.now();
+      const totalDuration = now - gameStartTime;
+      document.getElementById('total-time').innerText = formatTime(totalDuration);
+      
+      const turnDuration = now - turnStartTime;
+      const turn = chess.turn();
+      
+      if (turn === 'w') {
+        document.getElementById('white-turn-time').innerText = formatTime(turnDuration);
+        document.getElementById('black-turn-time').innerText = "00:00";
+      } else {
+        document.getElementById('black-turn-time').innerText = formatTime(turnDuration);
+        document.getElementById('white-turn-time').innerText = "00:00";
+      }
+    }
+
     function triggerIntroAnimation(p1Name, p2Name) {
       const overlay = document.getElementById('intro-overlay');
       document.getElementById('intro-p1').innerText = getFirstName(p1Name);
       document.getElementById('intro-p2').innerText = getFirstName(p2Name);
       
       overlay.classList.remove('active');
-      void overlay.offsetWidth; // Trigger reflow to restart animation
+      void overlay.offsetWidth;
       overlay.classList.add('active');
 
       setTimeout(() => {
         overlay.classList.remove('active');
+        startTimers();
       }, 3000);
     }
 
@@ -256,7 +367,6 @@
         
         matchStatus = match.status || 'pending';
         
-        // Trigger animasi pembuka saat status berubah dari pending ke active
         if (prevMatchStatus === 'pending' && matchStatus === 'active') {
           triggerIntroAnimation(match.whitePlayer?.name, match.blackPlayer?.name);
         }
@@ -266,6 +376,10 @@
         movesData.forEach(m => {
           chess.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' });
         });
+        
+        if (movesData.length > 0 && matchStatus === 'active') {
+          resetTurnTimer();
+        }
         
         updatePieces();
         updateHistory();
@@ -345,11 +459,23 @@
 
     function createPiece(type, color, x, z) {
       const group = new THREE.Group();
-      const tex = createWoodTexture(
-        color === 'w' ? '#f0e6d2' : '#1a0d05', 
-        color === 'w' ? '#a38b5c' : '#0a0502'
-      );
-      const material = new THREE.MeshPhongMaterial({ map: tex, shininess: 50, specular: 0x111111 });
+      
+      let material;
+      if (color === 'w') {
+        material = new THREE.MeshPhongMaterial({ 
+          color: 0xfffdf5, 
+          shininess: 90, 
+          specular: 0xaaaaaa, 
+          emissive: 0x080808 
+        });
+      } else {
+        const tex = createWoodTexture('#1a0d05', '#0a0502');
+        material = new THREE.MeshPhongMaterial({ 
+          map: tex, 
+          shininess: 60, 
+          specular: 0x333333 
+        });
+      }
       
       const createLathe = (points) => {
         const geometry = new THREE.LatheGeometry(points, 24);
@@ -534,6 +660,12 @@
 
     function resetGame() {
       if (matchId) db.ref('chessMatches/' + matchId + '/moves').remove();
+      if (timeInterval) clearInterval(timeInterval);
+      gameStartTime = null;
+      turnStartTime = null;
+      document.getElementById('total-time').innerText = "00:00";
+      document.getElementById('white-turn-time').innerText = "00:00";
+      document.getElementById('black-turn-time').innerText = "00:00";
     }
 
     function clearHighlights() {
@@ -591,6 +723,8 @@
     function tryMove(from, to) {
       const move = chess.move({ from, to, promotion: 'q' });
       if (move) {
+        playWoodClack();
+        
         selectedPiece = null;
         clearHighlights();
         db.ref('chessMatches/' + matchId + '/moves').push({
@@ -598,6 +732,7 @@
         });
         updatePieces();
         updateHistory();
+        resetTurnTimer();
       } else {
         selectedPiece = null;
         clearHighlights();
@@ -670,6 +805,7 @@
         
         if (chess.in_checkmate()) {
           statusText = "Skakmat! Pemenang: " + (turn === 'w' ? 'Hitam' : 'Putih');
+          if (timeInterval) clearInterval(timeInterval);
         } else if (chess.in_check()) {
           statusText = "Skak! Giliran: " + (turn === 'w' ? 'Putih' : 'Hitam');
         } else {
