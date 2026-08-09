@@ -680,8 +680,9 @@
       const [showChessGame, setShowChessGame] = useState(false);
       const [chessMatches, setChessMatches] = useState([]);
       const [activeChessGameId, setActiveChessGameId] = useState(null);
-      const [pendingChessInvites, setPendingChessInvites] = useState(0); // Tambahan untuk badge
-      const prevChessMatchesRef = useRef([]); // Tambahan untuk cek undangan baru
+      const [pendingChessInvites, setPendingChessInvites] = useState(0);
+      const [chessTimers, setChessTimers] = useState({}); // Tambahan untuk timer undangan
+      const prevChessMatchesRef = useRef([]); 
       const [newsItems, setNewsItems] = useState([]);
       const [loadingNews, setLoadingNews] = useState(false);
       const [toast, setToast] = useState({ show: false, message: '', type: 'success' }); 
@@ -977,15 +978,33 @@
         chessRef.on('value', (snapshot) => {
           const data = snapshot.val();
           const myMatches = [];
+          const timers = {};
+          const now = Date.now();
+          const expireDuration = 5 * 60 * 1000; // 5 menit dalam milidetik
+
           if (data) {
             Object.keys(data).forEach(key => {
               const match = data[key];
               if (match.whitePlayer?.id === currentUser.id || match.blackPlayer?.id === currentUser.id) {
-                myMatches.push({ id: key, ...match });
+                
+                // Cek jika undangan sudah kedaluwarsa (pending lebih dari 5 menit)
+                if (match.status === 'pending' && match.createdAt && (now - match.createdAt > expireDuration)) {
+                  // Hapus dari Firebase jika kedaluwarsa
+                  db.ref('chessMatches/' + key).remove();
+                } else {
+                  myMatches.push({ id: key, ...match });
+                  
+                  // Hitung sisa waktu untuk undangan pending
+                  if (match.status === 'pending' && match.createdAt) {
+                    const timeLeft = Math.max(0, expireDuration - (now - match.createdAt));
+                    timers[key] = Math.ceil(timeLeft / 1000); // simpan dalam detik
+                  }
+                }
               }
             });
           }
           setChessMatches(myMatches.sort((a,b) => (b.createdAt||0) - (a.createdAt||0)));
+          setChessTimers(timers);
         });
 
         return () => chessRef.off();
@@ -1020,20 +1039,32 @@
         // 2. Cek jika ada undangan baru yang masuk (notifikasi untuk diundang)
         const newPendingMatch = pending.find(m => !prevMatches.some(pm => pm.id === m.id));
         if (newPendingMatch) {
-          addN(`${newPendingMatch.whitePlayer.name} mengundang Anda bermain Catur 3D!`, 'info');
+          addN(`${newPendingMatch.whitePlayer.name} mengundang Anda bermain Catur 3D! (Berlaku 5 Menit)`, 'info');
         }
 
         prevChessMatchesRef.current = chessMatches;
       }, [chessMatches, currentUser]);
-
-      useEffect(() => { 
-        const t = setInterval(() => { 
-          const now = new Date(); 
-          setCurrentTime(now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })); 
-          setCurrentDate(now.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'long', year: 'numeric' })); 
-        }, 1000); 
-        return () => clearInterval(t); 
+      
+      // useEffect untuk update timer setiap detik
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setChessTimers(prev => {
+            const newTimers = {};
+            let changed = false;
+            Object.keys(prev).forEach(key => {
+              if (prev[key] > 1) {
+                newTimers[key] = prev[key] - 1;
+                changed = true;
+              } else {
+                changed = true; // Jika timer habis, biarkan data Firebase yang menghapus matchnya
+              }
+            });
+            return changed ? newTimers : prev;
+          });
+        }, 1000);
+        return () => clearInterval(interval);
       }, []);
+
       useEffect(() => { fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true').then(r=>r.json()).then(d=>d.current_weather&&setWeather(d.current_weather)).catch(e=>console.error(e)); }, []);
       
       // Fetch Berita Riders dari Multiple Sources
@@ -4390,12 +4421,14 @@
                   </div>
                 </div>
 
-                <h4 className="text-sm font-bold text-slate-800 mb-2">Daftar Partai</h4>
+              <h4 className="text-sm font-bold text-slate-800 mb-2">Daftar Partai</h4>
                 <div className="space-y-3">
                   {chessMatches.length > 0 ? (
                     chessMatches.map(match => {
                       const isWhite = match.whitePlayer.id === currentUser.id;
                       const opponent = isWhite ? match.blackPlayer : match.whitePlayer;
+                      const timer = chessTimers[match.id];
+                      
                       return (
                         <div key={match.id} className="bg-white/70 border border-slate-200 rounded-2xl p-3 flex items-center justify-between">
                           <div>
@@ -4403,6 +4436,11 @@
                             <p className="text-[10px] text-slate-500">
                               Status: {match.status === 'pending' ? (isWhite ? 'Menunggu Persetujuan' : 'Mengundang Anda') : match.status === 'active' ? 'Sedang Bermain' : 'Selesai'}
                             </p>
+                            {match.status === 'pending' && timer !== undefined && (
+                              <p className="text-[10px] font-bold text-rose-500 mt-1 animate-pulse">
+                                Berakhir dalam: {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
+                              </p>
+                            )}
                           </div>
                           <div>
                             {match.status === 'pending' && isWhite && (
