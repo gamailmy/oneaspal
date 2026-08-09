@@ -7,25 +7,27 @@
   <style>
     body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Helvetica Neue', sans-serif; color: white; }
     
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 12px 15px; border-radius: 10px; font-size: 13px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 240px; max-height: 90vh; display: flex; flex-direction: column; }
+    /* Panel UI Minimalis */
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; font-size: 12px; backdrop-filter: blur(5px); z-index: 10; min-width: 160px; transition: all 0.3s ease; }
     
-    #status { font-weight: bold; color: #fbbf24; margin-bottom: 8px; font-size: 14px; text-align: center; }
+    #status { font-weight: bold; color: #fbbf24; margin-bottom: 6px; font-size: 12px; text-align: center; }
     
-    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 12px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; }
+    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-radius: 4px; margin-bottom: 2px; font-size: 11px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; }
     .player-row.active { background-color: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.6); }
-    .player-row.waiting { background-color: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); }
+    .player-row.waiting { background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
     
-    .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; display: inline-block; }
-    .dot.active { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; display: inline-block; }
+    .dot.active { background: #22c55e; box-shadow: 0 0 4px #22c55e; }
     .dot.waiting { background: #ef4444; }
     
-    #history-container { margin-top: 10px; max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; flex-grow: 1; }
-    #history-container h4 { margin: 0 0 5px 0; font-size: 11px; color: #ccc; text-transform: uppercase; letter-spacing: 0.5px; }
-    #move-history { list-style: none; padding: 0; margin: 0; }
-    #move-history li { font-size: 11px; color: #eee; margin-bottom: 4px; padding: 4px 6px; border-radius: 3px; background: rgba(255,255,255,0.05); }
+    #controls { display: flex; gap: 4px; margin-top: 6px; }
+    #controls button { flex: 1; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
+    #controls button:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
     
-    #reset-btn { background: #fbbf24; color: #000; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; box-sizing: border-box; margin-top: 10px; }
-    #reset-btn:active { transform: scale(0.95); }
+    #history-container { margin-top: 6px; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; display: none; }
+    #history-container.visible { display: block; }
+    #move-history { list-style: none; padding: 0; margin: 0; }
+    #move-history li { font-size: 10px; color: #eee; margin-bottom: 3px; padding: 3px 4px; border-radius: 3px; background: rgba(255,255,255,0.05); }
     
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; text-align: center; }
@@ -36,20 +38,22 @@
     <div id="status">Memuat Partai...</div>
     
     <div class="player-row waiting" id="white-player">
-      <span style="display:flex; align-items:center;"><span class="dot waiting"></span> Putih: <strong style="margin-left:4px;" id="white-name">...</strong></span>
+      <span style="display:flex; align-items:center;"><span class="dot waiting"></span> <span id="white-name">...</span></span>
       <span id="white-status">Menunggu</span>
     </div>
     <div class="player-row waiting" id="black-player">
-      <span style="display:flex; align-items:center;"><span class="dot waiting"></span> Hitam: <strong style="margin-left:4px;" id="black-name">...</strong></span>
+      <span style="display:flex; align-items:center;"><span class="dot waiting"></span> <span id="black-name">...</span></span>
       <span id="black-status">Menunggu</span>
     </div>
     
-    <div id="history-container">
-      <h4>Riwayat Langkah</h4>
-      <ul id="move-history"></ul>
+    <div id="controls">
+      <button id="toggle-history-btn">Langkah</button>
+      <button id="reset-btn">Ulang</button>
     </div>
     
-    <button id="reset-btn">Mulai Ulang</button>
+    <div id="history-container">
+      <ul id="move-history"></ul>
+    </div>
   </div>
   
   <div id="loading">Mempersiapkan papan...</div>
@@ -119,7 +123,6 @@
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
       directionalLight.position.set(5, 10, 5);
       scene.add(directionalLight);
-      // Tambahkan cahaya samping agar bidak tidak terlalu gelap
       const sideLight = new THREE.DirectionalLight(0xffffff, 0.3);
       sideLight.position.set(-5, 5, -5);
       scene.add(sideLight);
@@ -133,6 +136,9 @@
       renderer.domElement.addEventListener('pointerdown', onPointerDown);
 
       document.getElementById('reset-btn').addEventListener('click', resetGame);
+      document.getElementById('toggle-history-btn').addEventListener('click', () => {
+        document.getElementById('history-container').classList.toggle('visible');
+      });
 
       if (matchId) {
         listenToMatch();
@@ -140,6 +146,11 @@
         document.getElementById('status').innerText = "Error: Match ID tidak ditemukan.";
         document.getElementById('loading').style.display = 'none';
       }
+    }
+
+    function getFirstName(name) {
+      if (!name) return 'Pemain';
+      return name.split(' ')[0];
     }
 
     function listenToMatch() {
@@ -154,8 +165,8 @@
         if (match.whitePlayer && match.whitePlayer.id === playerId) myColor = 'w';
         if (match.blackPlayer && match.blackPlayer.id === playerId) myColor = 'b';
         
-        document.getElementById('white-name').innerText = match.whitePlayer?.name || 'Pemain Putih';
-        document.getElementById('black-name').innerText = match.blackPlayer?.name || 'Pemain Hitam';
+        document.getElementById('white-name').innerText = getFirstName(match.whitePlayer?.name) + ' (Putih)';
+        document.getElementById('black-name').innerText = getFirstName(match.blackPlayer?.name) + ' (Hitam)';
         
         matchStatus = match.status || 'pending';
         
@@ -207,14 +218,12 @@
         }
       }
       
-      // Base papan
       const baseGeo = new THREE.BoxGeometry(9, 0.5, 9);
       const baseMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
       const base = new THREE.Mesh(baseGeo, baseMat);
       base.position.y = -0.3;
       scene.add(base);
       
-      // Penomoran Pinggir Papan
       const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
       for (let i = 0; i < 8; i++) {
         const fileSpriteBottom = createTextSprite(files[i]);
@@ -237,7 +246,6 @@
 
     function createPiece(type, color, x, z) {
       const group = new THREE.Group();
-      // Material mesh phong agar terlihat mengkilap seperti plastik/keramik
       const material = new THREE.MeshPhongMaterial({ 
         color: color === 'w' ? 0xf0f0f0 : 0x1a1a1a, 
         shininess: 40, 
@@ -255,41 +263,27 @@
       switch(type) {
         case 'p': { // Pion
           const points = [
-            new THREE.Vector2(0.0, 0.0),
-            new THREE.Vector2(0.28, 0.0),
-            new THREE.Vector2(0.28, 0.04),
-            new THREE.Vector2(0.22, 0.1),
-            new THREE.Vector2(0.14, 0.15),
-            new THREE.Vector2(0.14, 0.35),
-            new THREE.Vector2(0.2, 0.4),
-            new THREE.Vector2(0.14, 0.45),
-            new THREE.Vector2(0.14, 0.5),
-            new THREE.Vector2(0.24, 0.55),
-            new THREE.Vector2(0.14, 0.6),
-            new THREE.Vector2(0.2, 0.7),
-            new THREE.Vector2(0.15, 0.78),
-            new THREE.Vector2(0.0, 0.8)
+            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.28, 0.0),
+            new THREE.Vector2(0.28, 0.04), new THREE.Vector2(0.22, 0.1),
+            new THREE.Vector2(0.14, 0.15), new THREE.Vector2(0.14, 0.35),
+            new THREE.Vector2(0.2, 0.4), new THREE.Vector2(0.14, 0.45),
+            new THREE.Vector2(0.14, 0.5), new THREE.Vector2(0.24, 0.55),
+            new THREE.Vector2(0.14, 0.6), new THREE.Vector2(0.2, 0.7),
+            new THREE.Vector2(0.15, 0.78), new THREE.Vector2(0.0, 0.8)
           ];
           mesh = createLathe(points);
           break;
         }
         case 'r': { // Benteng
           const points = [
-            new THREE.Vector2(0.0, 0.0),
-            new THREE.Vector2(0.32, 0.0),
-            new THREE.Vector2(0.32, 0.05),
-            new THREE.Vector2(0.26, 0.1),
-            new THREE.Vector2(0.2, 0.15),
-            new THREE.Vector2(0.18, 0.55),
-            new THREE.Vector2(0.24, 0.6),
-            new THREE.Vector2(0.28, 0.65),
-            new THREE.Vector2(0.28, 0.75),
-            new THREE.Vector2(0.24, 0.8),
-            new THREE.Vector2(0.24, 0.85),
-            new THREE.Vector2(0.0, 0.85)
+            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.32, 0.0),
+            new THREE.Vector2(0.32, 0.05), new THREE.Vector2(0.26, 0.1),
+            new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.55),
+            new THREE.Vector2(0.24, 0.6), new THREE.Vector2(0.28, 0.65),
+            new THREE.Vector2(0.28, 0.75), new THREE.Vector2(0.24, 0.8),
+            new THREE.Vector2(0.24, 0.85), new THREE.Vector2(0.0, 0.85)
           ];
           mesh = createLathe(points);
-          // Tambahkan crenelations (putihan atas benteng)
           for(let i=0; i<4; i++) {
             const cren = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.12), material);
             const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
@@ -300,24 +294,16 @@
         }
         case 'b': { // Gajah
           const points = [
-            new THREE.Vector2(0.0, 0.0),
-            new THREE.Vector2(0.3, 0.0),
-            new THREE.Vector2(0.3, 0.05),
-            new THREE.Vector2(0.24, 0.1),
-            new THREE.Vector2(0.18, 0.15),
-            new THREE.Vector2(0.16, 0.5),
-            new THREE.Vector2(0.22, 0.55),
-            new THREE.Vector2(0.16, 0.6),
-            new THREE.Vector2(0.18, 0.65),
-            new THREE.Vector2(0.24, 0.7),
-            new THREE.Vector2(0.2, 0.75),
-            new THREE.Vector2(0.18, 0.8),
-            new THREE.Vector2(0.12, 0.9),
-            new THREE.Vector2(0.08, 0.95),
+            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.3, 0.0),
+            new THREE.Vector2(0.3, 0.05), new THREE.Vector2(0.24, 0.1),
+            new THREE.Vector2(0.18, 0.15), new THREE.Vector2(0.16, 0.5),
+            new THREE.Vector2(0.22, 0.55), new THREE.Vector2(0.16, 0.6),
+            new THREE.Vector2(0.18, 0.65), new THREE.Vector2(0.24, 0.7),
+            new THREE.Vector2(0.2, 0.75), new THREE.Vector2(0.18, 0.8),
+            new THREE.Vector2(0.12, 0.9), new THREE.Vector2(0.08, 0.95),
             new THREE.Vector2(0.0, 0.95)
           ];
           mesh = createLathe(points);
-          // Slit (celah) di topi gajah
           const slit = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.15, 0.3), material);
           slit.position.set(0, 0.85, 0);
           slit.rotation.y = Math.PI / 4;
@@ -329,23 +315,15 @@
         }
         case 'q': { // Ratu
           const points = [
-            new THREE.Vector2(0.0, 0.0),
-            new THREE.Vector2(0.35, 0.0),
-            new THREE.Vector2(0.35, 0.05),
-            new THREE.Vector2(0.28, 0.1),
-            new THREE.Vector2(0.2, 0.15),
-            new THREE.Vector2(0.18, 0.6),
-            new THREE.Vector2(0.24, 0.65),
-            new THREE.Vector2(0.18, 0.7),
-            new THREE.Vector2(0.2, 0.75),
-            new THREE.Vector2(0.3, 0.8),
-            new THREE.Vector2(0.32, 0.85),
-            new THREE.Vector2(0.28, 0.9),
-            new THREE.Vector2(0.28, 0.95),
-            new THREE.Vector2(0.0, 1.0)
+            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.35, 0.0),
+            new THREE.Vector2(0.35, 0.05), new THREE.Vector2(0.28, 0.1),
+            new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.6),
+            new THREE.Vector2(0.24, 0.65), new THREE.Vector2(0.18, 0.7),
+            new THREE.Vector2(0.2, 0.75), new THREE.Vector2(0.3, 0.8),
+            new THREE.Vector2(0.32, 0.85), new THREE.Vector2(0.28, 0.9),
+            new THREE.Vector2(0.28, 0.95), new THREE.Vector2(0.0, 1.0)
           ];
           mesh = createLathe(points);
-          // Mahkota Ratu (bola-bola kecil)
           for(let i=0; i<8; i++) {
             const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), material);
             const angle = (i / 8) * Math.PI * 2;
@@ -356,22 +334,15 @@
         }
         case 'k': { // Raja
           const points = [
-            new THREE.Vector2(0.0, 0.0),
-            new THREE.Vector2(0.35, 0.0),
-            new THREE.Vector2(0.35, 0.05),
-            new THREE.Vector2(0.28, 0.1),
-            new THREE.Vector2(0.22, 0.15),
-            new THREE.Vector2(0.2, 0.7),
-            new THREE.Vector2(0.26, 0.75),
-            new THREE.Vector2(0.2, 0.8),
-            new THREE.Vector2(0.22, 0.85),
-            new THREE.Vector2(0.32, 0.9),
-            new THREE.Vector2(0.34, 0.95),
-            new THREE.Vector2(0.3, 1.0),
+            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.35, 0.0),
+            new THREE.Vector2(0.35, 0.05), new THREE.Vector2(0.28, 0.1),
+            new THREE.Vector2(0.22, 0.15), new THREE.Vector2(0.2, 0.7),
+            new THREE.Vector2(0.26, 0.75), new THREE.Vector2(0.2, 0.8),
+            new THREE.Vector2(0.22, 0.85), new THREE.Vector2(0.32, 0.9),
+            new THREE.Vector2(0.34, 0.95), new THREE.Vector2(0.3, 1.0),
             new THREE.Vector2(0.0, 1.0)
           ];
           mesh = createLathe(points);
-          // Salib di atas Raja
           const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.25, 0.08), material);
           crossV.position.y = 1.12;
           group.add(crossV);
@@ -381,20 +352,15 @@
           break;
         }
         case 'n': { // Kuda
-          // Base Kuda
           const basePoints = [
-            new THREE.Vector2(0.0, 0.0),
-            new THREE.Vector2(0.3, 0.0),
-            new THREE.Vector2(0.3, 0.05),
-            new THREE.Vector2(0.24, 0.1),
-            new THREE.Vector2(0.2, 0.15),
-            new THREE.Vector2(0.18, 0.2),
+            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.3, 0.0),
+            new THREE.Vector2(0.3, 0.05), new THREE.Vector2(0.24, 0.1),
+            new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.2),
             new THREE.Vector2(0.0, 0.2)
           ];
           const baseMesh = createLathe(basePoints);
           group.add(baseMesh);
           
-          // Konstruksi Kepala Kuda
           const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.4, 16), material);
           neck.position.set(0, 0.4, 0.05);
           neck.rotation.x = -0.2;
@@ -415,7 +381,6 @@
           mane.rotation.x = 0.3;
           group.add(mane);
           
-          // Telinga
           const ear1 = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 8), material);
           ear1.position.set(0.08, 0.8, 0.05);
           group.add(ear1);
@@ -423,7 +388,6 @@
           ear2.position.set(-0.08, 0.8, 0.05);
           group.add(ear2);
           
-          // Mata
           const eyeMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
           const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), eyeMat);
           eye1.position.set(0.1, 0.72, 0.2);
@@ -437,8 +401,6 @@
       }
       
       if (mesh) group.add(mesh);
-      
-      // Scale sedikit agar pas dengan papan
       group.scale.set(0.8, 0.8, 0.8);
       
       group.position.set(x - 3.5, 0.1, z - 3.5);
