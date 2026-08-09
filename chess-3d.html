@@ -5,14 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Game Catur 3D Online</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Helvetica Neue', sans-serif; color: white; }
+    body { margin: 0; overflow: hidden; background: #0f0f0f; font-family: 'Impact', 'Arial Black', sans-serif; color: white; }
     
-    /* Panel UI Minimalis */
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; font-size: 12px; backdrop-filter: blur(5px); z-index: 10; min-width: 160px; transition: all 0.3s ease; }
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(20, 20, 20, 0.8); padding: 8px 12px; border-radius: 8px; font-size: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 180px; transition: all 0.3s ease; font-family: 'Helvetica Neue', sans-serif; }
     
     #status { font-weight: bold; color: #fbbf24; margin-bottom: 6px; font-size: 12px; text-align: center; }
     
-    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-radius: 4px; margin-bottom: 2px; font-size: 11px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; }
+    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-radius: 4px; margin-bottom: 2px; font-size: 11px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; font-family: 'Helvetica Neue', sans-serif; }
     .player-row.active { background-color: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.6); }
     .player-row.waiting { background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
     
@@ -27,10 +26,32 @@
     #history-container { margin-top: 6px; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; display: none; }
     #history-container.visible { display: block; }
     #move-history { list-style: none; padding: 0; margin: 0; }
-    #move-history li { font-size: 10px; color: #eee; margin-bottom: 3px; padding: 3px 4px; border-radius: 3px; background: rgba(255,255,255,0.05); }
+    #move-history li { font-size: 10px; color: #eee; margin-bottom: 3px; padding: 3px 4px; border-radius: 3px; background: rgba(255,255,255,0.05); font-family: 'Helvetica Neue', sans-serif; }
     
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
-    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; text-align: center; }
+    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; text-align: center; font-family: 'Helvetica Neue', sans-serif; }
+
+    /* === ANIMASI PEMBUKA (MORTAL KOMBAT STYLE) === */
+    #intro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 70%); }
+    #intro-overlay.active { animation: introBgFade 3s ease-out forwards; }
+    
+    #intro-title { font-size: 48px; color: #fbbf24; text-shadow: 0 0 20px #f59e0b, 0 0 10px #d97706; transform: scale(0); letter-spacing: 4px; }
+    #intro-overlay.active #intro-title { animation: introZoom 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
+
+    .intro-players { display: flex; gap: 40px; margin-top: 20px; font-size: 36px; text-transform: uppercase; }
+    #intro-p1 { color: #fff; text-shadow: 0 0 15px #3b82f6; transform: translateX(-500px); }
+    #intro-vs { color: #ef4444; text-shadow: 0 0 15px #dc2626; align-self: center; font-size: 24px; transform: scale(0); }
+    #intro-p2 { color: #fff; text-shadow: 0 0 15px #ef4444; transform: translateX(500px); }
+    
+    #intro-overlay.active #intro-p1 { animation: slideInLeft 0.4s 0.5s ease-out forwards; }
+    #intro-overlay.active #intro-vs { animation: introZoom 0.3s 0.9s ease-out forwards; }
+    #intro-overlay.active #intro-p2 { animation: slideInRight 0.4s 0.5s ease-out forwards; }
+
+    @keyframes introZoom { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    @keyframes slideInLeft { 0% { transform: translateX(-500px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+    @keyframes slideInRight { 0% { transform: translateX(500px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+    @keyframes introBgFade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+    /* ============================================== */
   </style>
 </head>
 <body>
@@ -56,7 +77,18 @@
     </div>
   </div>
   
-  <div id="loading">Mempersiapkan papan...</div>
+  <div id="loading">Mempersiapkan papan kayu...</div>
+  
+  <!-- Overlay Animasi Pembuka -->
+  <div id="intro-overlay">
+    <div id="intro-title">MATCH 1</div>
+    <div class="intro-players">
+      <span id="intro-p1">Pemain 1</span>
+      <span id="intro-vs">VS</span>
+      <span id="intro-p2">Pemain 2</span>
+    </div>
+  </div>
+  
   <div id="canvas-container"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -77,6 +109,7 @@
     let myColor = null;
     let isBoardReady = false;
     let matchStatus = 'pending';
+    let prevMatchStatus = 'pending';
     
     const pieceNames = { p: 'Pion', r: 'Benteng', n: 'Kuda', b: 'Gajah', q: 'Ratu', k: 'Raja' };
 
@@ -99,9 +132,46 @@
     init();
     animate();
 
+    function createWoodTexture(baseColor, veinColor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      ctx.fillStyle = baseColor;
+      ctx.fillRect(0, 0, 256, 256);
+      
+      for (let i = 0; i < 80; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, Math.random() * 256);
+        ctx.bezierCurveTo(
+          Math.random() * 100, Math.random() * 256,
+          150 + Math.random() * 100, Math.random() * 256,
+          256, Math.random() * 256
+        );
+        ctx.strokeStyle = veinColor;
+        ctx.globalAlpha = Math.random() * 0.3 + 0.1;
+        ctx.lineWidth = Math.random() * 3 + 1;
+        ctx.stroke();
+      }
+      
+      for (let i = 0; i < 60; i++) {
+        ctx.beginPath();
+        ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 2, 0, Math.PI * 2);
+        ctx.fillStyle = veinColor;
+        ctx.globalAlpha = Math.random() * 0.2;
+        ctx.fill();
+      }
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      return texture;
+    }
+
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x1a1a1a);
+      scene.background = new THREE.Color(0x0f0f0f);
       
       camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, 8, 8);
@@ -120,10 +190,10 @@
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
       directionalLight.position.set(5, 10, 5);
       scene.add(directionalLight);
-      const sideLight = new THREE.DirectionalLight(0xffffff, 0.3);
+      const sideLight = new THREE.DirectionalLight(0xffffff, 0.4);
       sideLight.position.set(-5, 5, -5);
       scene.add(sideLight);
 
@@ -153,6 +223,20 @@
       return name.split(' ')[0];
     }
 
+    function triggerIntroAnimation(p1Name, p2Name) {
+      const overlay = document.getElementById('intro-overlay');
+      document.getElementById('intro-p1').innerText = getFirstName(p1Name);
+      document.getElementById('intro-p2').innerText = getFirstName(p2Name);
+      
+      overlay.classList.remove('active');
+      void overlay.offsetWidth; // Trigger reflow to restart animation
+      overlay.classList.add('active');
+
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, 3000);
+    }
+
     function listenToMatch() {
       db.ref('chessMatches/' + matchId).on('value', (snapshot) => {
         const match = snapshot.val();
@@ -162,6 +246,8 @@
           return;
         }
         
+        prevMatchStatus = matchStatus;
+        
         if (match.whitePlayer && match.whitePlayer.id === playerId) myColor = 'w';
         if (match.blackPlayer && match.blackPlayer.id === playerId) myColor = 'b';
         
@@ -169,6 +255,11 @@
         document.getElementById('black-name').innerText = getFirstName(match.blackPlayer?.name) + ' (Hitam)';
         
         matchStatus = match.status || 'pending';
+        
+        // Trigger animasi pembuka saat status berubah dari pending ke active
+        if (prevMatchStatus === 'pending' && matchStatus === 'active') {
+          triggerIntroAnimation(match.whitePlayer?.name, match.blackPlayer?.name);
+        }
         
         chess.reset();
         const movesData = match.moves ? Object.keys(match.moves).map(k => match.moves[k]).sort((a,b) => a.timestamp - b.timestamp) : [];
@@ -183,12 +274,12 @@
       });
     }
 
-    function createTextSprite(text) {
+    function createTextSprite(text, color = '#cccccc') {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = 128;
       canvas.height = 128;
-      ctx.fillStyle = '#999999';
+      ctx.fillStyle = color;
       ctx.font = 'bold 80px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -202,6 +293,9 @@
     }
 
     function createBoard() {
+      const lightWoodTex = createWoodTexture('#dcb35c', '#8b5a2b');
+      const darkWoodTex = createWoodTexture('#5c3a1e', '#2a1a0a');
+      
       const squareSize = 1;
       const geometry = new THREE.BoxGeometry(squareSize, 0.2, squareSize);
       
@@ -209,36 +303,41 @@
         board[x] = [];
         for (let z = 0; z < 8; z++) {
           const isWhite = (x + z) % 2 === 0;
-          const material = new THREE.MeshLambertMaterial({ color: isWhite ? 0xe0e0e0 : 0x4a4a4a });
+          const tex = isWhite ? lightWoodTex.clone() : darkWoodTex.clone();
+          tex.needsUpdate = true;
+          tex.offset.set(Math.random(), Math.random());
+          
+          const material = new THREE.MeshPhongMaterial({ map: tex, shininess: 10 });
           const square = new THREE.Mesh(geometry, material);
           square.position.set(x - 3.5, 0, z - 3.5);
-          square.userData = { x, z, isWhite, isSquare: true };
+          square.userData = { x, z, isWhite, isSquare: true, baseColor: isWhite ? 0xe0e0e0 : 0x4a4a4a };
           scene.add(square);
           board[x][z] = square;
         }
       }
       
+      const baseWoodTex = createWoodTexture('#2a1a0a', '#1a0d05');
       const baseGeo = new THREE.BoxGeometry(9, 0.5, 9);
-      const baseMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+      const baseMat = new THREE.MeshPhongMaterial({ map: baseWoodTex, shininess: 20 });
       const base = new THREE.Mesh(baseGeo, baseMat);
       base.position.y = -0.3;
       scene.add(base);
       
       const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
       for (let i = 0; i < 8; i++) {
-        const fileSpriteBottom = createTextSprite(files[i]);
+        const fileSpriteBottom = createTextSprite(files[i], '#e0d3b0');
         fileSpriteBottom.position.set(i - 3.5, 0.15, 4.2);
         scene.add(fileSpriteBottom);
         
-        const fileSpriteTop = createTextSprite(files[i]);
+        const fileSpriteTop = createTextSprite(files[i], '#e0d3b0');
         fileSpriteTop.position.set(i - 3.5, 0.15, -4.2);
         scene.add(fileSpriteTop);
         
-        const rankSpriteLeft = createTextSprite((i + 1).toString());
+        const rankSpriteLeft = createTextSprite((i + 1).toString(), '#e0d3b0');
         rankSpriteLeft.position.set(-4.2, 0.15, 3.5 - i);
         scene.add(rankSpriteLeft);
         
-        const rankSpriteRight = createTextSprite((i + 1).toString());
+        const rankSpriteRight = createTextSprite((i + 1).toString(), '#e0d3b0');
         rankSpriteRight.position.set(4.2, 0.15, 3.5 - i);
         scene.add(rankSpriteRight);
       }
@@ -246,22 +345,24 @@
 
     function createPiece(type, color, x, z) {
       const group = new THREE.Group();
-      const material = new THREE.MeshPhongMaterial({ 
-        color: color === 'w' ? 0xf0f0f0 : 0x1a1a1a, 
-        shininess: 40, 
-        specular: 0x333333 
-      });
+      const tex = createWoodTexture(
+        color === 'w' ? '#f0e6d2' : '#1a0d05', 
+        color === 'w' ? '#a38b5c' : '#0a0502'
+      );
+      const material = new THREE.MeshPhongMaterial({ map: tex, shininess: 50, specular: 0x111111 });
       
       const createLathe = (points) => {
         const geometry = new THREE.LatheGeometry(points, 24);
         geometry.computeVertexNormals();
+        const uvs = geometry.attributes.position.array.map((_, i) => (i % 3 === 0) ? 0.5 : 0.5);
+        geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
         return new THREE.Mesh(geometry, material);
       };
 
       let mesh;
 
       switch(type) {
-        case 'p': { // Pion
+        case 'p': { 
           const points = [
             new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.28, 0.0),
             new THREE.Vector2(0.28, 0.04), new THREE.Vector2(0.22, 0.1),
@@ -274,7 +375,7 @@
           mesh = createLathe(points);
           break;
         }
-        case 'r': { // Benteng
+        case 'r': { 
           const points = [
             new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.32, 0.0),
             new THREE.Vector2(0.32, 0.05), new THREE.Vector2(0.26, 0.1),
@@ -292,7 +393,7 @@
           }
           break;
         }
-        case 'b': { // Gajah
+        case 'b': { 
           const points = [
             new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.3, 0.0),
             new THREE.Vector2(0.3, 0.05), new THREE.Vector2(0.24, 0.1),
@@ -313,7 +414,7 @@
           group.add(top);
           break;
         }
-        case 'q': { // Ratu
+        case 'q': { 
           const points = [
             new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.35, 0.0),
             new THREE.Vector2(0.35, 0.05), new THREE.Vector2(0.28, 0.1),
@@ -332,7 +433,7 @@
           }
           break;
         }
-        case 'k': { // Raja
+        case 'k': { 
           const points = [
             new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.35, 0.0),
             new THREE.Vector2(0.35, 0.05), new THREE.Vector2(0.28, 0.1),
@@ -351,7 +452,7 @@
           group.add(crossH);
           break;
         }
-        case 'n': { // Kuda
+        case 'n': { 
           const basePoints = [
             new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.3, 0.0),
             new THREE.Vector2(0.3, 0.05), new THREE.Vector2(0.24, 0.1),
@@ -438,8 +539,7 @@
     function clearHighlights() {
       for (let x = 0; x < 8; x++) {
         for (let z = 0; z < 8; z++) {
-          const isWhite = (x + z) % 2 === 0;
-          board[x][z].material.color.setHex(isWhite ? 0xe0e0e0 : 0x4a4a4a);
+          board[x][z].material.emissive.setHex(0x000000);
         }
       }
     }
@@ -448,7 +548,7 @@
       moves.forEach(move => {
         const x = move.to.charCodeAt(0) - 'a'.charCodeAt(0);
         const z = parseInt(move.to.charAt(1)) - 1;
-        board[x][z].material.color.setHex(0xfbbf24);
+        board[x][z].material.emissive.setHex(0x664400);
       });
     }
 
