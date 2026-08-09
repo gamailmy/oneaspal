@@ -7,7 +7,8 @@
   <style>
     body { margin: 0; overflow: hidden; background: #0f0f0f; font-family: 'Impact', 'Arial Black', sans-serif; color: white; }
     
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(20, 20, 20, 0.8); padding: 8px 12px; border-radius: 8px; font-size: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 200px; transition: all 0.3s ease; font-family: 'Helvetica Neue', sans-serif; }
+    /* Panel Info Pemain (Kiri Atas) */
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(20, 20, 20, 0.8); padding: 8px 12px; border-radius: 8px; font-size: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 180px; transition: all 0.3s ease; font-family: 'Helvetica Neue', sans-serif; }
     
     #status { font-weight: bold; color: #fbbf24; margin-bottom: 6px; font-size: 12px; text-align: center; }
     
@@ -22,10 +23,6 @@
     
     .time-info { font-size: 10px; color: #ccc; margin-top: 2px; text-align: right; }
     
-    #controls { display: flex; gap: 4px; margin-top: 6px; }
-    #controls button { flex: 1; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
-    #controls button:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
-    
     #history-container { margin-top: 6px; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; display: none; }
     #history-container.visible { display: block; }
     #move-history { list-style: none; padding: 0; margin: 0; }
@@ -34,11 +31,17 @@
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; text-align: center; font-family: 'Helvetica Neue', sans-serif; }
 
-    /* === LOGO POJOK KANAN ATAS === */
-    #logo-overlay { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; align-items: center; gap: 8px; background: rgba(20, 20, 20, 0.6); padding: 6px 12px; border-radius: 30px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); }
-    #logo-overlay img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
-    #logo-overlay span { color: #fff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-    /* ================================ */
+    /* === LOGO KECIL POJOK KANAN ATAS === */
+    #logo-overlay { position: absolute; top: 8px; right: 8px; z-index: 10; display: flex; align-items: center; gap: 5px; background: rgba(20, 20, 20, 0.6); padding: 4px 8px; border-radius: 20px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); }
+    #logo-overlay img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+    #logo-overlay span { color: #fff; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    /* ================================== */
+
+    /* === TOMBOL FLOATING POJOK KANAN BAWAH === */
+    #floating-controls { position: absolute; bottom: 20px; right: 20px; z-index: 10; display: flex; flex-direction: column; gap: 8px; }
+    #floating-controls button { background: rgba(20, 20, 20, 0.8); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; backdrop-filter: blur(5px); min-width: 70px; text-align: center; }
+    #floating-controls button:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
+    /* ========================================== */
 
     /* === ANIMASI PEMBUKA (MORTAL KOMBAT STYLE) === */
     #intro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 70%); }
@@ -64,12 +67,13 @@
   </style>
 </head>
 <body>
-  <!-- Logo Pojok Kanan Atas -->
+  <!-- Logo Kecil Pojok Kanan Atas -->
   <div id="logo-overlay">
-    <img src="/192.png" alt="Logo" onerror="this.src='https://i.postimg.cc/wMTWFGcY/1-m.jpg'">
-    <span>One Aspal Chess Game</span>
+    <img src="/1.png" alt="Logo" onerror="this.src='https://i.postimg.cc/wMTWFGcY/1-m.jpg'">
+    <span>One Aspal Chess</span>
   </div>
 
+  <!-- Panel Info Pemain -->
   <div id="ui">
     <div id="status">Memuat Partai...</div>
     
@@ -99,14 +103,15 @@
       Durasi: <span id="total-time">00:00</span>
     </div>
     
-    <div id="controls">
-      <button id="toggle-history-btn">Langkah</button>
-      <button id="reset-btn">Ulang</button>
-    </div>
-    
     <div id="history-container">
       <ul id="move-history"></ul>
     </div>
+  </div>
+  
+  <!-- Tombol Terpisah Pojok Kanan Bawah -->
+  <div id="floating-controls">
+    <button id="toggle-history-btn">Langkah</button>
+    <button id="reset-btn">Ulang</button>
   </div>
   
   <div id="loading">Mempersiapkan papan kayu...</div>
@@ -143,12 +148,10 @@
     let matchStatus = 'pending';
     let prevMatchStatus = 'pending';
     
-    // Variabel Waktu
     let gameStartTime = null;
     let turnStartTime = null;
     let timeInterval = null;
 
-    // Audio Context untuk efek suara
     let audioCtx = null;
     
     const pieceNames = { p: 'Pion', r: 'Benteng', n: 'Kuda', b: 'Gajah', q: 'Ratu', k: 'Raja' };
@@ -172,35 +175,25 @@
     init();
     animate();
 
-    // --- Fungsi Efek Suara Ketukan Kayu ---
     function playWoodClack() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const bufferSize = audioCtx.sampleRate * 0.1;
       const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
       const data = buffer.getChannelData(0);
-      
       for (let i = 0; i < bufferSize; i++) {
         data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
       }
-      
       const noiseSource = audioCtx.createBufferSource();
       noiseSource.buffer = buffer;
-      
       const filter = audioCtx.createBiquadFilter();
       filter.type = "bandpass";
       filter.frequency.value = 800;
       filter.Q.value = 1;
-      
       const gainNode = audioCtx.createGain();
       gainNode.gain.value = 0.5;
-      
       noiseSource.connect(filter);
       filter.connect(gainNode);
       gainNode.connect(audioCtx.destination);
-      
       noiseSource.start();
     }
 
@@ -209,24 +202,17 @@
       canvas.width = 256;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
-      
       ctx.fillStyle = baseColor;
       ctx.fillRect(0, 0, 256, 256);
-      
       for (let i = 0; i < 80; i++) {
         ctx.beginPath();
         ctx.moveTo(0, Math.random() * 256);
-        ctx.bezierCurveTo(
-          Math.random() * 100, Math.random() * 256,
-          150 + Math.random() * 100, Math.random() * 256,
-          256, Math.random() * 256
-        );
+        ctx.bezierCurveTo(Math.random() * 100, Math.random() * 256, 150 + Math.random() * 100, Math.random() * 256, 256, Math.random() * 256);
         ctx.strokeStyle = veinColor;
         ctx.globalAlpha = Math.random() * 0.3 + 0.1;
         ctx.lineWidth = Math.random() * 3 + 1;
         ctx.stroke();
       }
-      
       for (let i = 0; i < 60; i++) {
         ctx.beginPath();
         ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 2, 0, Math.PI * 2);
@@ -234,7 +220,6 @@
         ctx.globalAlpha = Math.random() * 0.2;
         ctx.fill();
       }
-      
       const texture = new THREE.CanvasTexture(canvas);
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
@@ -295,7 +280,6 @@
       return name.split(' ')[0];
     }
 
-    // --- Logika Waktu Permainan ---
     function startTimers() {
       gameStartTime = Date.now();
       turnStartTime = Date.now();
@@ -303,9 +287,7 @@
       timeInterval = setInterval(updateTimeDisplay, 1000);
     }
 
-    function resetTurnTimer() {
-      turnStartTime = Date.now();
-    }
+    function resetTurnTimer() { turnStartTime = Date.now(); }
 
     function formatTime(ms) {
       const totalSeconds = Math.floor(ms / 1000);
@@ -316,15 +298,10 @@
 
     function updateTimeDisplay() {
       if (!gameStartTime) return;
-      
       const now = Date.now();
-      const totalDuration = now - gameStartTime;
-      document.getElementById('total-time').innerText = formatTime(totalDuration);
-      
+      document.getElementById('total-time').innerText = formatTime(now - gameStartTime);
       const turnDuration = now - turnStartTime;
-      const turn = chess.turn();
-      
-      if (turn === 'w') {
+      if (chess.turn() === 'w') {
         document.getElementById('white-turn-time').innerText = formatTime(turnDuration);
         document.getElementById('black-turn-time').innerText = "00:00";
       } else {
@@ -337,11 +314,9 @@
       const overlay = document.getElementById('intro-overlay');
       document.getElementById('intro-p1').innerText = getFirstName(p1Name);
       document.getElementById('intro-p2').innerText = getFirstName(p2Name);
-      
       overlay.classList.remove('active');
       void overlay.offsetWidth;
       overlay.classList.add('active');
-
       setTimeout(() => {
         overlay.classList.remove('active');
         startTimers();
@@ -356,31 +331,19 @@
           document.getElementById('loading').style.display = 'none';
           return;
         }
-        
         prevMatchStatus = matchStatus;
-        
         if (match.whitePlayer && match.whitePlayer.id === playerId) myColor = 'w';
         if (match.blackPlayer && match.blackPlayer.id === playerId) myColor = 'b';
-        
-        document.getElementById('white-name').innerText = getFirstName(match.whitePlayer?.name) + ' (Putih)';
-        document.getElementById('black-name').innerText = getFirstName(match.blackPlayer?.name) + ' (Hitam)';
-        
+        document.getElementById('white-name').innerText = getFirstName(match.whitePlayer?.name) + ' (P)';
+        document.getElementById('black-name').innerText = getFirstName(match.blackPlayer?.name) + ' (H)';
         matchStatus = match.status || 'pending';
-        
         if (prevMatchStatus === 'pending' && matchStatus === 'active') {
           triggerIntroAnimation(match.whitePlayer?.name, match.blackPlayer?.name);
         }
-        
         chess.reset();
         const movesData = match.moves ? Object.keys(match.moves).map(k => match.moves[k]).sort((a,b) => a.timestamp - b.timestamp) : [];
-        movesData.forEach(m => {
-          chess.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' });
-        });
-        
-        if (movesData.length > 0 && matchStatus === 'active') {
-          resetTurnTimer();
-        }
-        
+        movesData.forEach(m => chess.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' }));
+        if (movesData.length > 0 && matchStatus === 'active') resetTurnTimer();
         updatePieces();
         updateHistory();
         isBoardReady = true;
@@ -391,14 +354,10 @@
     function createTextSprite(text, color = '#cccccc') {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      canvas.width = 128;
-      canvas.height = 128;
-      ctx.fillStyle = color;
-      ctx.font = 'bold 80px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      canvas.width = 128; canvas.height = 128;
+      ctx.fillStyle = color; ctx.font = 'bold 80px Arial';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(text, 64, 64);
-      
       const texture = new THREE.CanvasTexture(canvas);
       const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
       const sprite = new THREE.Sprite(material);
@@ -409,74 +368,45 @@
     function createBoard() {
       const lightWoodTex = createWoodTexture('#dcb35c', '#8b5a2b');
       const darkWoodTex = createWoodTexture('#5c3a1e', '#2a1a0a');
-      
       const squareSize = 1;
       const geometry = new THREE.BoxGeometry(squareSize, 0.2, squareSize);
-      
       for (let x = 0; x < 8; x++) {
         board[x] = [];
         for (let z = 0; z < 8; z++) {
           const isWhite = (x + z) % 2 === 0;
           const tex = isWhite ? lightWoodTex.clone() : darkWoodTex.clone();
-          tex.needsUpdate = true;
-          tex.offset.set(Math.random(), Math.random());
-          
+          tex.needsUpdate = true; tex.offset.set(Math.random(), Math.random());
           const material = new THREE.MeshPhongMaterial({ map: tex, shininess: 10 });
           const square = new THREE.Mesh(geometry, material);
           square.position.set(x - 3.5, 0, z - 3.5);
-          square.userData = { x, z, isWhite, isSquare: true, baseColor: isWhite ? 0xe0e0e0 : 0x4a4a4a };
+          square.userData = { x, z, isWhite, isSquare: true };
           scene.add(square);
           board[x][z] = square;
         }
       }
-      
       const baseWoodTex = createWoodTexture('#2a1a0a', '#1a0d05');
       const baseGeo = new THREE.BoxGeometry(9, 0.5, 9);
       const baseMat = new THREE.MeshPhongMaterial({ map: baseWoodTex, shininess: 20 });
       const base = new THREE.Mesh(baseGeo, baseMat);
-      base.position.y = -0.3;
-      scene.add(base);
-      
+      base.position.y = -0.3; scene.add(base);
       const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
       for (let i = 0; i < 8; i++) {
-        const fileSpriteBottom = createTextSprite(files[i], '#e0d3b0');
-        fileSpriteBottom.position.set(i - 3.5, 0.15, 4.2);
-        scene.add(fileSpriteBottom);
-        
-        const fileSpriteTop = createTextSprite(files[i], '#e0d3b0');
-        fileSpriteTop.position.set(i - 3.5, 0.15, -4.2);
-        scene.add(fileSpriteTop);
-        
-        const rankSpriteLeft = createTextSprite((i + 1).toString(), '#e0d3b0');
-        rankSpriteLeft.position.set(-4.2, 0.15, 3.5 - i);
-        scene.add(rankSpriteLeft);
-        
-        const rankSpriteRight = createTextSprite((i + 1).toString(), '#e0d3b0');
-        rankSpriteRight.position.set(4.2, 0.15, 3.5 - i);
-        scene.add(rankSpriteRight);
+        const fB = createTextSprite(files[i], '#e0d3b0'); fB.position.set(i - 3.5, 0.15, 4.2); scene.add(fB);
+        const fT = createTextSprite(files[i], '#e0d3b0'); fT.position.set(i - 3.5, 0.15, -4.2); scene.add(fT);
+        const rL = createTextSprite((i + 1).toString(), '#e0d3b0'); rL.position.set(-4.2, 0.15, 3.5 - i); scene.add(rL);
+        const rR = createTextSprite((i + 1).toString(), '#e0d3b0'); rR.position.set(4.2, 0.15, 3.5 - i); scene.add(rR);
       }
     }
 
     function createPiece(type, color, x, z) {
       const group = new THREE.Group();
-      
       let material;
       if (color === 'w') {
-        material = new THREE.MeshPhongMaterial({ 
-          color: 0xfffdf5, 
-          shininess: 90, 
-          specular: 0xaaaaaa, 
-          emissive: 0x080808 
-        });
+        material = new THREE.MeshPhongMaterial({ color: 0xfffdf5, shininess: 90, specular: 0xaaaaaa, emissive: 0x080808 });
       } else {
         const tex = createWoodTexture('#1a0d05', '#0a0502');
-        material = new THREE.MeshPhongMaterial({ 
-          map: tex, 
-          shininess: 60, 
-          specular: 0x333333 
-        });
+        material = new THREE.MeshPhongMaterial({ map: tex, shininess: 60, specular: 0x333333 });
       }
-      
       const createLathe = (points) => {
         const geometry = new THREE.LatheGeometry(points, 24);
         geometry.computeVertexNormals();
@@ -484,32 +414,14 @@
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
         return new THREE.Mesh(geometry, material);
       };
-
       let mesh;
-
       switch(type) {
         case 'p': { 
-          const points = [
-            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.28, 0.0),
-            new THREE.Vector2(0.28, 0.04), new THREE.Vector2(0.22, 0.1),
-            new THREE.Vector2(0.14, 0.15), new THREE.Vector2(0.14, 0.35),
-            new THREE.Vector2(0.2, 0.4), new THREE.Vector2(0.14, 0.45),
-            new THREE.Vector2(0.14, 0.5), new THREE.Vector2(0.24, 0.55),
-            new THREE.Vector2(0.14, 0.6), new THREE.Vector2(0.2, 0.7),
-            new THREE.Vector2(0.15, 0.78), new THREE.Vector2(0.0, 0.8)
-          ];
-          mesh = createLathe(points);
-          break;
+          const points = [new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.28, 0.0), new THREE.Vector2(0.28, 0.04), new THREE.Vector2(0.22, 0.1), new THREE.Vector2(0.14, 0.15), new THREE.Vector2(0.14, 0.35), new THREE.Vector2(0.2, 0.4), new THREE.Vector2(0.14, 0.45), new THREE.Vector2(0.14, 0.5), new THREE.Vector2(0.24, 0.55), new THREE.Vector2(0.14, 0.6), new THREE.Vector2(0.2, 0.7), new THREE.Vector2(0.15, 0.78), new THREE.Vector2(0.0, 0.8)];
+          mesh = createLathe(points); break;
         }
         case 'r': { 
-          const points = [
-            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.32, 0.0),
-            new THREE.Vector2(0.32, 0.05), new THREE.Vector2(0.26, 0.1),
-            new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.55),
-            new THREE.Vector2(0.24, 0.6), new THREE.Vector2(0.28, 0.65),
-            new THREE.Vector2(0.28, 0.75), new THREE.Vector2(0.24, 0.8),
-            new THREE.Vector2(0.24, 0.85), new THREE.Vector2(0.0, 0.85)
-          ];
+          const points = [new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.32, 0.0), new THREE.Vector2(0.32, 0.05), new THREE.Vector2(0.26, 0.1), new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.55), new THREE.Vector2(0.24, 0.6), new THREE.Vector2(0.28, 0.65), new THREE.Vector2(0.28, 0.75), new THREE.Vector2(0.24, 0.8), new THREE.Vector2(0.24, 0.85), new THREE.Vector2(0.0, 0.85)];
           mesh = createLathe(points);
           for(let i=0; i<4; i++) {
             const cren = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.12), material);
@@ -520,36 +432,16 @@
           break;
         }
         case 'b': { 
-          const points = [
-            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.3, 0.0),
-            new THREE.Vector2(0.3, 0.05), new THREE.Vector2(0.24, 0.1),
-            new THREE.Vector2(0.18, 0.15), new THREE.Vector2(0.16, 0.5),
-            new THREE.Vector2(0.22, 0.55), new THREE.Vector2(0.16, 0.6),
-            new THREE.Vector2(0.18, 0.65), new THREE.Vector2(0.24, 0.7),
-            new THREE.Vector2(0.2, 0.75), new THREE.Vector2(0.18, 0.8),
-            new THREE.Vector2(0.12, 0.9), new THREE.Vector2(0.08, 0.95),
-            new THREE.Vector2(0.0, 0.95)
-          ];
+          const points = [new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.3, 0.0), new THREE.Vector2(0.3, 0.05), new THREE.Vector2(0.24, 0.1), new THREE.Vector2(0.18, 0.15), new THREE.Vector2(0.16, 0.5), new THREE.Vector2(0.22, 0.55), new THREE.Vector2(0.16, 0.6), new THREE.Vector2(0.18, 0.65), new THREE.Vector2(0.24, 0.7), new THREE.Vector2(0.2, 0.75), new THREE.Vector2(0.18, 0.8), new THREE.Vector2(0.12, 0.9), new THREE.Vector2(0.08, 0.95), new THREE.Vector2(0.0, 0.95)];
           mesh = createLathe(points);
           const slit = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.15, 0.3), material);
-          slit.position.set(0, 0.85, 0);
-          slit.rotation.y = Math.PI / 4;
-          group.add(slit);
+          slit.position.set(0, 0.85, 0); slit.rotation.y = Math.PI / 4; group.add(slit);
           const top = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), material);
-          top.position.y = 1.0;
-          group.add(top);
+          top.position.y = 1.0; group.add(top);
           break;
         }
         case 'q': { 
-          const points = [
-            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.35, 0.0),
-            new THREE.Vector2(0.35, 0.05), new THREE.Vector2(0.28, 0.1),
-            new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.6),
-            new THREE.Vector2(0.24, 0.65), new THREE.Vector2(0.18, 0.7),
-            new THREE.Vector2(0.2, 0.75), new THREE.Vector2(0.3, 0.8),
-            new THREE.Vector2(0.32, 0.85), new THREE.Vector2(0.28, 0.9),
-            new THREE.Vector2(0.28, 0.95), new THREE.Vector2(0.0, 1.0)
-          ];
+          const points = [new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.35, 0.0), new THREE.Vector2(0.35, 0.05), new THREE.Vector2(0.28, 0.1), new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.6), new THREE.Vector2(0.24, 0.65), new THREE.Vector2(0.18, 0.7), new THREE.Vector2(0.2, 0.75), new THREE.Vector2(0.3, 0.8), new THREE.Vector2(0.32, 0.85), new THREE.Vector2(0.28, 0.9), new THREE.Vector2(0.28, 0.95), new THREE.Vector2(0.0, 1.0)];
           mesh = createLathe(points);
           for(let i=0; i<8; i++) {
             const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), material);
@@ -560,82 +452,43 @@
           break;
         }
         case 'k': { 
-          const points = [
-            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.35, 0.0),
-            new THREE.Vector2(0.35, 0.05), new THREE.Vector2(0.28, 0.1),
-            new THREE.Vector2(0.22, 0.15), new THREE.Vector2(0.2, 0.7),
-            new THREE.Vector2(0.26, 0.75), new THREE.Vector2(0.2, 0.8),
-            new THREE.Vector2(0.22, 0.85), new THREE.Vector2(0.32, 0.9),
-            new THREE.Vector2(0.34, 0.95), new THREE.Vector2(0.3, 1.0),
-            new THREE.Vector2(0.0, 1.0)
-          ];
+          const points = [new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.35, 0.0), new THREE.Vector2(0.35, 0.05), new THREE.Vector2(0.28, 0.1), new THREE.Vector2(0.22, 0.15), new THREE.Vector2(0.2, 0.7), new THREE.Vector2(0.26, 0.75), new THREE.Vector2(0.2, 0.8), new THREE.Vector2(0.22, 0.85), new THREE.Vector2(0.32, 0.9), new THREE.Vector2(0.34, 0.95), new THREE.Vector2(0.3, 1.0), new THREE.Vector2(0.0, 1.0)];
           mesh = createLathe(points);
           const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.25, 0.08), material);
-          crossV.position.y = 1.12;
-          group.add(crossV);
+          crossV.position.y = 1.12; group.add(crossV);
           const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.08), material);
-          crossH.position.y = 1.15;
-          group.add(crossH);
+          crossH.position.y = 1.15; group.add(crossH);
           break;
         }
         case 'n': { 
-          const basePoints = [
-            new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.3, 0.0),
-            new THREE.Vector2(0.3, 0.05), new THREE.Vector2(0.24, 0.1),
-            new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.2),
-            new THREE.Vector2(0.0, 0.2)
-          ];
-          const baseMesh = createLathe(basePoints);
-          group.add(baseMesh);
-          
+          const basePoints = [new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.3, 0.0), new THREE.Vector2(0.3, 0.05), new THREE.Vector2(0.24, 0.1), new THREE.Vector2(0.2, 0.15), new THREE.Vector2(0.18, 0.2), new THREE.Vector2(0.0, 0.2)];
+          const baseMesh = createLathe(basePoints); group.add(baseMesh);
           const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.4, 16), material);
-          neck.position.set(0, 0.4, 0.05);
-          neck.rotation.x = -0.2;
-          group.add(neck);
-          
+          neck.position.set(0, 0.4, 0.05); neck.rotation.x = -0.2; group.add(neck);
           const head = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.25, 0.4), material);
-          head.position.set(0, 0.65, 0.1);
-          head.rotation.x = -0.3;
-          group.add(head);
-          
+          head.position.set(0, 0.65, 0.1); head.rotation.x = -0.3; group.add(head);
           const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.15, 0.2), material);
-          muzzle.position.set(0, 0.62, 0.3);
-          muzzle.rotation.x = -0.6;
-          group.add(muzzle);
-          
+          muzzle.position.set(0, 0.62, 0.3); muzzle.rotation.x = -0.6; group.add(muzzle);
           const mane = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.15), material);
-          mane.position.set(0, 0.55, -0.1);
-          mane.rotation.x = 0.3;
-          group.add(mane);
-          
+          mane.position.set(0, 0.55, -0.1); mane.rotation.x = 0.3; group.add(mane);
           const ear1 = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 8), material);
-          ear1.position.set(0.08, 0.8, 0.05);
-          group.add(ear1);
+          ear1.position.set(0.08, 0.8, 0.05); group.add(ear1);
           const ear2 = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 8), material);
-          ear2.position.set(-0.08, 0.8, 0.05);
-          group.add(ear2);
-          
+          ear2.position.set(-0.08, 0.8, 0.05); group.add(ear2);
           const eyeMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
           const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), eyeMat);
-          eye1.position.set(0.1, 0.72, 0.2);
-          group.add(eye1);
+          eye1.position.set(0.1, 0.72, 0.2); group.add(eye1);
           const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), eyeMat);
-          eye2.position.set(-0.1, 0.72, 0.2);
-          group.add(eye2);
-          
+          eye2.position.set(-0.1, 0.72, 0.2); group.add(eye2);
           break;
         }
       }
-      
       if (mesh) group.add(mesh);
       group.scale.set(0.8, 0.8, 0.8);
-      
       group.position.set(x - 3.5, 0.1, z - 3.5);
       const pieceData = { type, color, x, z, isPiece: true };
       group.userData = pieceData;
-      group.traverse(child => {
-        if (child.isMesh) child.userData = pieceData;
-      });
+      group.traverse(child => { if (child.isMesh) child.userData = pieceData; });
       return group;
     }
 
@@ -647,11 +500,9 @@
         for (let c = 0; c < 8; c++) {
           const piece = boardData[r][c];
           if (piece) {
-            const x = c;
-            const z = 7 - r;
+            const x = c; const z = 7 - r;
             const piece3D = createPiece(piece.type, piece.color, x, z);
-            pieces.push(piece3D);
-            scene.add(piece3D);
+            pieces.push(piece3D); scene.add(piece3D);
           }
         }
       }
@@ -661,8 +512,7 @@
     function resetGame() {
       if (matchId) db.ref('chessMatches/' + matchId + '/moves').remove();
       if (timeInterval) clearInterval(timeInterval);
-      gameStartTime = null;
-      turnStartTime = null;
+      gameStartTime = null; turnStartTime = null;
       document.getElementById('total-time').innerText = "00:00";
       document.getElementById('white-turn-time').innerText = "00:00";
       document.getElementById('black-turn-time').innerText = "00:00";
@@ -686,16 +536,12 @@
 
     function onPointerDown(event) {
       if (!isBoardReady || !myColor || matchStatus !== 'active' || chess.turn() !== myColor) return;
-
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
       raycaster.setFromCamera(mouse, camera);
-      
       const pieceIntersects = raycaster.intersectObjects(pieces, true);
       const squareIntersects = raycaster.intersectObjects(scene.children.filter(c => c.userData.isSquare !== undefined));
-
       if (pieceIntersects.length > 0) {
         const pieceData = pieceIntersects[0].object.userData;
         if (selectedPiece) {
@@ -724,7 +570,6 @@
       const move = chess.move({ from, to, promotion: 'q' });
       if (move) {
         playWoodClack();
-        
         selectedPiece = null;
         clearHighlights();
         db.ref('chessMatches/' + matchId + '/moves').push({
@@ -743,66 +588,49 @@
       const historyList = document.getElementById('move-history');
       historyList.innerHTML = '';
       const history = chess.history({ verbose: true });
-      
       history.forEach((h, index) => {
         const li = document.createElement('li');
         const color = h.color === 'w' ? 'Putih' : 'Hitam';
         const piece = pieceNames[h.piece] || 'Bidak';
         let text = `${index + 1}. ${color} - ${piece}: ${h.from} ➔ ${h.to}`;
-        
         if (h.captured) text += ` (Makan ${pieceNames[h.captured]})`;
         if (h.flags.includes('e')) text += ' (En Passant)';
         if (h.flags.includes('k') || h.flags.includes('q')) text += ' (Castling)';
         if (h.flags.includes('c')) text += ' (Skak!)';
-        
         li.innerText = text;
         historyList.appendChild(li);
       });
-      
       historyList.scrollTop = historyList.scrollHeight;
     }
 
     function updateStatus() {
       let statusText = "";
       const turn = chess.turn();
-      
       const whiteRow = document.getElementById('white-player');
       const blackRow = document.getElementById('black-player');
       const whiteDot = whiteRow.querySelector('.dot');
       const blackDot = blackRow.querySelector('.dot');
       const whiteStatus = document.getElementById('white-status');
       const blackStatus = document.getElementById('black-status');
-      
       whiteRow.classList.remove('active', 'waiting');
       blackRow.classList.remove('active', 'waiting');
       whiteDot.classList.remove('active', 'waiting');
       blackDot.classList.remove('active', 'waiting');
-      
       if (matchStatus === 'pending') {
         statusText = "Menunggu Undangan Diterima...";
-        whiteStatus.innerText = "Menunggu";
-        blackStatus.innerText = "Menunggu";
-        whiteRow.classList.add('waiting');
-        blackRow.classList.add('waiting');
-        whiteDot.classList.add('waiting');
-        blackDot.classList.add('waiting');
+        whiteStatus.innerText = "Menunggu"; blackStatus.innerText = "Menunggu";
+        whiteRow.classList.add('waiting'); blackRow.classList.add('waiting');
+        whiteDot.classList.add('waiting'); blackDot.classList.add('waiting');
       } else if (matchStatus === 'active') {
         if (turn === 'w') {
-          whiteRow.classList.add('active');
-          blackRow.classList.add('waiting');
-          whiteDot.classList.add('active');
-          blackDot.classList.add('waiting');
-          whiteStatus.innerText = "Giliran";
-          blackStatus.innerText = "Menunggu";
+          whiteRow.classList.add('active'); blackRow.classList.add('waiting');
+          whiteDot.classList.add('active'); blackDot.classList.add('waiting');
+          whiteStatus.innerText = "Giliran"; blackStatus.innerText = "Menunggu";
         } else {
-          whiteRow.classList.add('waiting');
-          blackRow.classList.add('active');
-          whiteDot.classList.add('waiting');
-          blackDot.classList.add('active');
-          whiteStatus.innerText = "Menunggu";
-          blackStatus.innerText = "Giliran";
+          whiteRow.classList.add('waiting'); blackRow.classList.add('active');
+          whiteDot.classList.add('waiting'); blackDot.classList.add('active');
+          whiteStatus.innerText = "Menunggu"; blackStatus.innerText = "Giliran";
         }
-        
         if (chess.in_checkmate()) {
           statusText = "Skakmat! Pemenang: " + (turn === 'w' ? 'Hitam' : 'Putih');
           if (timeInterval) clearInterval(timeInterval);
@@ -812,7 +640,6 @@
           statusText = "Sedang Bermain";
         }
       }
-      
       document.getElementById('status').innerText = statusText;
     }
 
