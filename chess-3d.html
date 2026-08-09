@@ -5,61 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>One Aspal Chess Game</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #0f0f0f; font-family: 'Impact', 'Arial Black', sans-serif; color: white; }
+    body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); font-family: 'Helvetica Neue', sans-serif; color: #1e293b; }
     
-    /* Panel Info Pemain (Kiri Atas) */
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(20, 20, 20, 0.8); padding: 8px 12px; border-radius: 8px; font-size: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 180px; transition: all 0.3s ease; font-family: 'Helvetica Neue', sans-serif; }
+    /* === Panel Info Pemain (Kiri Atas) - iOS Glass === */
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(255, 255, 255, 0.25); padding: 12px 14px; border-radius: 16px; font-size: 12px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); z-index: 10; min-width: 200px; transition: all 0.3s ease; color: #1e293b; }
     
-    #status { font-weight: bold; color: #fbbf24; margin-bottom: 6px; font-size: 12px; text-align: center; }
+    #status { font-weight: 800; color: #d97706; margin-bottom: 8px; font-size: 13px; text-align: center; letter-spacing: 0.5px; }
     
-    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-radius: 4px; margin-bottom: 2px; font-size: 11px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; font-family: 'Helvetica Neue', sans-serif; }
-    .player-row.active { background-color: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.6); }
-    .player-row.waiting { background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 8px; margin-bottom: 4px; font-size: 11px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; }
+    .player-row.active { background-color: rgba(34, 197, 94, 0.25); border-color: rgba(22, 163, 74, 0.8); color: #14532d; }
+    .player-row.waiting { background-color: rgba(148, 163, 184, 0.2); border-color: rgba(100, 116, 139, 0.4); color: #475569; }
     
     .player-info { display: flex; align-items: center; }
-    .dot { width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; display: inline-block; }
-    .dot.active { background: #22c55e; box-shadow: 0 0 4px #22c55e; }
-    .dot.waiting { background: #ef4444; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; display: inline-block; }
+    .dot.active { background: #16a34a; box-shadow: 0 0 6px #22c55e; }
+    .dot.waiting { background: #94a3b8; }
     
-    .time-info { font-size: 10px; color: #ccc; margin-top: 2px; text-align: right; }
+    .time-info { font-size: 10px; color: #475569; margin-top: 2px; text-align: right; font-weight: 600; }
     
-    #history-container { margin-top: 6px; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; display: none; }
+    #history-container { margin-top: 8px; max-height: 120px; overflow-y: auto; background: rgba(255, 255, 255, 0.2); padding: 8px; border-radius: 8px; display: none; border: 1px solid rgba(255,255,255,0.4); }
     #history-container.visible { display: block; }
+    #history-container::-webkit-scrollbar { width: 4px; }
+    #history-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
     #move-history { list-style: none; padding: 0; margin: 0; }
-    #move-history li { font-size: 10px; color: #eee; margin-bottom: 3px; padding: 3px 4px; border-radius: 3px; background: rgba(255,255,255,0.05); font-family: 'Helvetica Neue', sans-serif; }
+    #move-history li { font-size: 10px; color: #1e293b; margin-bottom: 4px; padding: 4px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.4); font-weight: 500; }
     
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
-    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; text-align: center; font-family: 'Helvetica Neue', sans-serif; }
+    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #475569; text-align: center; font-weight: 600; }
 
-    /* === LOGO KECIL POJOK KANAN ATAS === */
-    #logo-overlay { position: absolute; top: 8px; right: 8px; z-index: 10; display: flex; align-items: center; gap: 5px; background: rgba(20, 20, 20, 0.6); padding: 4px 8px; border-radius: 20px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); }
-    #logo-overlay img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
-    #logo-overlay span { color: #fff; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-    /* ================================== */
+    /* === LOGO KECIL POJOK KANAN ATAS - iOS Glass === */
+    #logo-overlay { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.25); padding: 6px 12px; border-radius: 20px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 4px 15px rgba(31, 38, 135, 0.1); }
+    #logo-overlay img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #logo-overlay span { color: #1e293b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    /* ============================================== */
 
-    /* === TOMBOL FLOATING POJOK KANAN BAWAH === */
-    #floating-controls { position: absolute; bottom: 20px; right: 20px; z-index: 10; display: flex; flex-direction: column; gap: 8px; }
-    #floating-controls button { background: rgba(20, 20, 20, 0.8); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; backdrop-filter: blur(5px); min-width: 70px; text-align: center; }
-    #floating-controls button:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
-    /* ========================================== */
+    /* === TOMBOL FLOATING POJOK KANAN BAWAH - iOS Glass === */
+    #floating-controls { position: absolute; bottom: 20px; right: 20px; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
+    #floating-controls button { background: rgba(255, 255, 255, 0.25); color: #1e293b; border: 1px solid rgba(255, 255, 255, 0.6); padding: 10px 15px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 12px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 4px 15px rgba(31, 38, 135, 0.1); min-width: 80px; text-align: center; transition: all 0.2s ease; }
+    #floating-controls button:hover { background: rgba(255, 255, 255, 0.4); transform: translateY(-2px); }
+    #floating-controls button:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.5); }
+    /* ===================================================== */
 
     /* === ANIMASI PEMBUKA (MORTAL KOMBAT STYLE) === */
-    #intro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 70%); }
+    #intro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%); }
     #intro-overlay.active { animation: introBgFade 3s ease-out forwards; }
     
-    #intro-title { font-size: 48px; color: #fbbf24; text-shadow: 0 0 20px #f59e0b, 0 0 10px #d97706; transform: scale(0); letter-spacing: 4px; }
+    #intro-title { font-size: 52px; color: #d97706; text-shadow: 0 4px 12px rgba(217, 119, 6, 0.3); transform: scale(0); letter-spacing: 4px; font-weight: 900; }
     #intro-overlay.active #intro-title { animation: introZoom 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
 
-    .intro-players { display: flex; gap: 40px; margin-top: 20px; font-size: 36px; text-transform: uppercase; }
-    #intro-p1 { color: #fff; text-shadow: 0 0 15px #3b82f6; transform: translateX(-500px); }
-    #intro-vs { color: #ef4444; text-shadow: 0 0 15px #dc2626; align-self: center; font-size: 24px; transform: scale(0); }
-    #intro-p2 { color: #fff; text-shadow: 0 0 15px #ef4444; transform: translateX(500px); }
+    .intro-players { display: flex; gap: 40px; margin-top: 20px; font-size: 36px; text-transform: uppercase; font-weight: 800; }
+    #intro-p1 { color: #1e293b; text-shadow: 0 2px 10px rgba(30, 41, 59, 0.2); transform: translateX(-500px); }
+    #intro-vs { color: #ef4444; text-shadow: 0 2px 10px rgba(239, 68, 68, 0.3); align-self: center; font-size: 24px; transform: scale(0); }
+    #intro-p2 { color: #1e293b; text-shadow: 0 2px 10px rgba(30, 41, 59, 0.2); transform: translateX(500px); }
     
     #intro-overlay.active #intro-p1 { animation: slideInLeft 0.4s 0.5s ease-out forwards; }
     #intro-overlay.active #intro-vs { animation: introZoom 0.3s 0.9s ease-out forwards; }
     #intro-overlay.active #intro-p2 { animation: slideInRight 0.4s 0.5s ease-out forwards; }
 
-    @keyframes introZoom { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    @keyframes introZoom { 0% { transform: scale(0); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
     @keyframes slideInLeft { 0% { transform: translateX(-500px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
     @keyframes slideInRight { 0% { transform: translateX(500px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
     @keyframes introBgFade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
@@ -99,7 +102,7 @@
       </div>
     </div>
     
-    <div style="text-align: center; margin: 6px 0; font-size: 11px; color: #fbbf24;">
+    <div style="text-align: center; margin: 8px 0; font-size: 11px; color: #d97706; font-weight: 800; letter-spacing: 1px;">
       Durasi: <span id="total-time">00:00</span>
     </div>
     
@@ -228,13 +231,13 @@
 
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0f0f0f);
+      scene.background = new THREE.Color(0xeef2f6);
       
       camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, 8, 8);
       camera.lookAt(0, 0, 0);
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.getElementById('canvas-container').appendChild(renderer.domElement);
 
@@ -245,12 +248,13 @@
       controls.maxDistance = 15;
       controls.maxPolarAngle = Math.PI / 2.2;
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      // Pencahayaan merata tanpa silau (menggunakan ambient dan directional saja)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
       scene.add(ambientLight);
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
       directionalLight.position.set(5, 10, 5);
       scene.add(directionalLight);
-      const sideLight = new THREE.DirectionalLight(0xffffff, 0.4);
+      const sideLight = new THREE.DirectionalLight(0xe2e8f0, 0.5);
       sideLight.position.set(-5, 5, -5);
       scene.add(sideLight);
 
@@ -351,23 +355,25 @@
       });
     }
 
-    function createTextSprite(text, color = '#cccccc') {
+    function createTextSprite(text, color = '#1e293b') {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      canvas.width = 128; canvas.height = 128;
-      ctx.fillStyle = color; ctx.font = 'bold 80px Arial';
+      canvas.width = 256; canvas.height = 256;
+      ctx.fillStyle = color; ctx.font = 'bold 160px Arial';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(text, 64, 64);
+      ctx.fillText(text, 128, 128);
       const texture = new THREE.CanvasTexture(canvas);
       const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
       const sprite = new THREE.Sprite(material);
-      sprite.scale.set(0.6, 0.6, 0.6);
+      sprite.scale.set(0.5, 0.5, 0.5);
       return sprite;
     }
 
     function createBoard() {
-      const lightWoodTex = createWoodTexture('#dcb35c', '#8b5a2b');
-      const darkWoodTex = createWoodTexture('#5c3a1e', '#2a1a0a');
+      // Warna maple (kotak terang) dibuat lebih cerah/kontras dibanding walnut (kotak gelap)
+      const lightWoodTex = createWoodTexture('#f0d8a0', '#a67c3f');
+      const darkWoodTex = createWoodTexture('#4a2e15', '#1a0d05');
+      
       const squareSize = 1;
       const geometry = new THREE.BoxGeometry(squareSize, 0.2, squareSize);
       for (let x = 0; x < 8; x++) {
@@ -375,8 +381,11 @@
         for (let z = 0; z < 8; z++) {
           const isWhite = (x + z) % 2 === 0;
           const tex = isWhite ? lightWoodTex.clone() : darkWoodTex.clone();
-          tex.needsUpdate = true; tex.offset.set(Math.random(), Math.random());
-          const material = new THREE.MeshPhongMaterial({ map: tex, shininess: 10 });
+          tex.needsUpdate = true; 
+          tex.offset.set(Math.random(), Math.random());
+          
+          // Shininess diturunkan agar tidak ada efek silau/glare
+          const material = new THREE.MeshPhongMaterial({ map: tex, shininess: 5, specular: 0x111111 });
           const square = new THREE.Mesh(geometry, material);
           square.position.set(x - 3.5, 0, z - 3.5);
           square.userData = { x, z, isWhite, isSquare: true };
@@ -386,15 +395,16 @@
       }
       const baseWoodTex = createWoodTexture('#2a1a0a', '#1a0d05');
       const baseGeo = new THREE.BoxGeometry(9, 0.5, 9);
-      const baseMat = new THREE.MeshPhongMaterial({ map: baseWoodTex, shininess: 20 });
+      const baseMat = new THREE.MeshPhongMaterial({ map: baseWoodTex, shininess: 5, specular: 0x111111 });
       const base = new THREE.Mesh(baseGeo, baseMat);
-      base.position.y = -0.3; scene.add(base);
+      base.position.y = -0.3; 
+      scene.add(base);
       const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
       for (let i = 0; i < 8; i++) {
-        const fB = createTextSprite(files[i], '#e0d3b0'); fB.position.set(i - 3.5, 0.15, 4.2); scene.add(fB);
-        const fT = createTextSprite(files[i], '#e0d3b0'); fT.position.set(i - 3.5, 0.15, -4.2); scene.add(fT);
-        const rL = createTextSprite((i + 1).toString(), '#e0d3b0'); rL.position.set(-4.2, 0.15, 3.5 - i); scene.add(rL);
-        const rR = createTextSprite((i + 1).toString(), '#e0d3b0'); rR.position.set(4.2, 0.15, 3.5 - i); scene.add(rR);
+        const fB = createTextSprite(files[i]); fB.position.set(i - 3.5, 0.15, 4.2); scene.add(fB);
+        const fT = createTextSprite(files[i]); fT.position.set(i - 3.5, 0.15, -4.2); scene.add(fT);
+        const rL = createTextSprite((i + 1).toString()); rL.position.set(-4.2, 0.15, 3.5 - i); scene.add(rL);
+        const rR = createTextSprite((i + 1).toString()); rR.position.set(4.2, 0.15, 3.5 - i); scene.add(rR);
       }
     }
 
@@ -402,10 +412,11 @@
       const group = new THREE.Group();
       let material;
       if (color === 'w') {
-        material = new THREE.MeshPhongMaterial({ color: 0xfffdf5, shininess: 90, specular: 0xaaaaaa, emissive: 0x080808 });
+        // Bidak putih juga dikurangi kilaunya agar elegan dan tidak silau
+        material = new THREE.MeshPhongMaterial({ color: 0xfffdf5, shininess: 30, specular: 0x444444, emissive: 0x111111 });
       } else {
         const tex = createWoodTexture('#1a0d05', '#0a0502');
-        material = new THREE.MeshPhongMaterial({ map: tex, shininess: 60, specular: 0x333333 });
+        material = new THREE.MeshPhongMaterial({ map: tex, shininess: 20, specular: 0x222222 });
       }
       const createLathe = (points) => {
         const geometry = new THREE.LatheGeometry(points, 24);
