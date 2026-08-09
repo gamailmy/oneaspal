@@ -6,12 +6,13 @@
   <title>Game Catur 3D Online</title>
   <style>
     body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Helvetica Neue', sans-serif; color: white; }
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 8px; font-size: 14px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; }
-    #status { font-weight: bold; color: #fbbf24; margin-bottom: 5px; }
-    #turn { font-size: 12px; color: #ccc; }
-    #reset-btn { margin-top: 10px; background: #fbbf24; color: #000; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; box-sizing: border-box; }
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 12px 15px; border-radius: 10px; font-size: 13px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 180px; }
+    #status { font-weight: bold; color: #fbbf24; margin-bottom: 4px; }
+    #turn { font-size: 11px; color: #ccc; margin-bottom: 8px; }
+    #reset-btn { background: #fbbf24; color: #000; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; box-sizing: border-box; }
     #reset-btn:active { transform: scale(0.95); }
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
+    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; }
   </style>
 </head>
 <body>
@@ -20,6 +21,7 @@
     <div id="turn"></div>
     <button id="reset-btn">Mulai Ulang</button>
   </div>
+  <div id="loading">Mempersiapkan papan...</div>
   <div id="canvas-container"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -34,18 +36,17 @@
     let selectedPiece = null;
     let chess = new Chess();
     let raycaster, mouse;
+    let isMyTurn = false;
 
     let matchId = null;
     let playerId = null;
     let myColor = null;
     let isBoardReady = false;
 
-    // Parse URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     matchId = urlParams.get('matchId');
     playerId = urlParams.get('playerId');
 
-    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC_Lp9IMTfC0D1pSFeDbjW2ugyg22tFfTc",
       authDomain: "oneaspalclub.firebaseapp.com",
@@ -80,7 +81,7 @@
       controls.maxDistance = 15;
       controls.maxPolarAngle = Math.PI / 2.2;
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
       scene.add(ambientLight);
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
       directionalLight.position.set(5, 10, 5);
@@ -90,11 +91,11 @@
       mouse = new THREE.Vector2();
 
       createBoard();
-      updatePieces(); // Initial empty board
 
       window.addEventListener('resize', onWindowResize);
-      window.addEventListener('click', onMouseClick);
-      window.addEventListener('touchend', onTouchEnd);
+      
+      // Gunakan pointerdown agar tidak conflict dengan OrbitControls
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
 
       document.getElementById('reset-btn').addEventListener('click', resetGame);
 
@@ -102,6 +103,7 @@
         listenToMatch();
       } else {
         document.getElementById('status').innerText = "Error: Match ID tidak ditemukan.";
+        document.getElementById('loading').style.display = 'none';
       }
     }
 
@@ -110,12 +112,14 @@
         const match = snapshot.val();
         if (!match) {
           document.getElementById('status').innerText = "Partai tidak ditemukan.";
+          document.getElementById('loading').style.display = 'none';
           return;
         }
         
         if (match.whitePlayer && match.whitePlayer.id === playerId) myColor = 'w';
         if (match.blackPlayer && match.blackPlayer.id === playerId) myColor = 'b';
         
+        // Reset dan replay semua gerakan
         chess.reset();
         const movesData = match.moves ? Object.keys(match.moves).map(k => match.moves[k]).sort((a,b) => a.timestamp - b.timestamp) : [];
         movesData.forEach(m => {
@@ -124,6 +128,7 @@
         
         updatePieces();
         isBoardReady = true;
+        document.getElementById('loading').style.display = 'none';
       });
     }
 
@@ -138,7 +143,7 @@
           const material = new THREE.MeshLambertMaterial({ color: isWhite ? 0xe0e0e0 : 0x4a4a4a });
           const square = new THREE.Mesh(geometry, material);
           square.position.set(x - 3.5, 0, z - 3.5);
-          square.userData = { x, z, isWhite };
+          square.userData = { x, z, isWhite, isSquare: true };
           scene.add(square);
           board[x][z] = square;
         }
@@ -153,51 +158,71 @@
     function createPiece(type, color, x, z) {
       const group = new THREE.Group();
       const material = new THREE.MeshLambertMaterial({ color: color === 'w' ? 0xffffff : 0x111111 });
+      let mesh;
       
       switch(type) {
         case 'p': 
-          group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), material));
+          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), material);
+          mesh.position.y = 0.2;
+          group.add(mesh);
           const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), material);
-          pHead.position.y = 0.35;
+          pHead.position.y = 0.55;
           group.add(pHead);
           break;
         case 'r': 
-          group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16), material));
+          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16), material);
+          mesh.position.y = 0.25;
+          group.add(mesh);
           const rTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), material);
-          rTop.position.y = 0.35;
+          rTop.position.y = 0.6;
           group.add(rTop);
           break;
         case 'n': 
-          group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), material));
+          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), material);
+          mesh.position.y = 0.2;
+          group.add(mesh);
           const nHead = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.5), material);
-          nHead.position.y = 0.4;
+          nHead.position.y = 0.55;
           nHead.rotation.x = -0.3;
           group.add(nHead);
           break;
         case 'b': 
-          group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.5, 16), material));
+          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.5, 16), material);
+          mesh.position.y = 0.25;
+          group.add(mesh);
           const bTop = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 16), material);
-          bTop.position.y = 0.45;
+          bTop.position.y = 0.65;
           group.add(bTop);
           break;
         case 'q': 
-          group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.6, 16), material));
+          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.6, 16), material);
+          mesh.position.y = 0.3;
+          group.add(mesh);
           const qTop = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), material);
-          qTop.position.y = 0.45;
+          qTop.position.y = 0.7;
           group.add(qTop);
           break;
         case 'k': 
-          group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.7, 16), material));
+          mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.7, 16), material);
+          mesh.position.y = 0.35;
+          group.add(mesh);
           const kCross1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), material);
-          kCross1.position.y = 0.55;
+          kCross1.position.y = 0.8;
           const kCross2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.3), material);
-          kCross2.position.y = 0.55;
+          kCross2.position.y = 0.8;
           group.add(kCross1, kCross2);
           break;
       }
       
-      group.position.set(x - 3.5, 0.15, z - 3.5);
-      group.userData = { type, color, x, z };
+      group.position.set(x - 3.5, 0.1, z - 3.5);
+      // Set userData pada group dan semua child meshes
+      const pieceData = { type, color, x, z, isPiece: true };
+      group.userData = pieceData;
+      group.traverse(child => {
+        if (child.isMesh) {
+          child.userData = pieceData;
+        }
+      });
       return group;
     }
 
@@ -243,40 +268,32 @@
       });
     }
 
-    function onMouseClick(event) {
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      handleInteraction();
-    }
-
-    function onTouchEnd(event) {
-      if (event.changedTouches.length > 0) {
-        const touch = event.changedTouches[0];
-        mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-        handleInteraction();
-      }
-    }
-
-    function handleInteraction() {
+    function onPointerDown(event) {
       if (!isBoardReady || !myColor) return;
-      
+      if (chess.turn() !== myColor) return;
+
+      // Hitung koordinat mouse
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
       raycaster.setFromCamera(mouse, camera);
+      
+      // Cari bidak yang diklik
       const pieceIntersects = raycaster.intersectObjects(pieces, true);
       const squareIntersects = raycaster.intersectObjects(scene.children.filter(c => c.userData.isSquare !== undefined));
 
       if (pieceIntersects.length > 0) {
-        let pieceObj = pieceIntersects[0].object;
-        while(pieceObj.parent && !pieceObj.userData.type) pieceObj = pieceObj.parent;
-        
-        const pieceData = pieceObj.userData;
+        const pieceData = pieceIntersects[0].object.userData;
         
         if (selectedPiece) {
+          // Jika sudah ada yang dipilih, coba pindahkan
           const from = String.fromCharCode(97 + selectedPiece.x) + (selectedPiece.z + 1);
           const to = String.fromCharCode(97 + pieceData.x) + (pieceData.z + 1);
           tryMove(from, to);
         } else {
-          if (chess.turn() === myColor && pieceData.color === myColor) {
+          // Pilih bidak jika itu warna kita
+          if (pieceData.color === myColor) {
             selectedPiece = pieceData;
             clearHighlights();
             const from = String.fromCharCode(97 + pieceData.x) + (pieceData.z + 1);
@@ -295,16 +312,11 @@
     }
 
     function tryMove(from, to) {
-      if (chess.turn() !== myColor) {
-        selectedPiece = null;
-        clearHighlights();
-        return;
-      }
-
       const move = chess.move({ from, to, promotion: 'q' });
       if (move) {
         selectedPiece = null;
         clearHighlights();
+        // Kirim gerakan ke Firebase
         db.ref('chessMatches/' + matchId + '/moves').push({
           from: from,
           to: to,
@@ -312,6 +324,8 @@
           player: playerId,
           timestamp: Date.now()
         });
+        // Update papan lokal
+        updatePieces();
       } else {
         selectedPiece = null;
         clearHighlights();
@@ -327,7 +341,11 @@
       }
       document.getElementById('status').innerText = statusText;
       
-      let turnText = myColor ? (chess.turn() === myColor ? "Anda (Bermain)" : "Lawan (Menunggu)") : "Menunggu Data...";
+      let turnText = "Menunggu Lawan...";
+      if (myColor) {
+        isMyTurn = chess.turn() === myColor;
+        turnText = isMyTurn ? "Giliran Anda!" : "Menunggu Lawan...";
+      }
       document.getElementById('turn').innerText = turnText;
     }
 
