@@ -72,7 +72,7 @@
 <body>
   <!-- Logo Kecil Pojok Kanan Atas -->
   <div id="logo-overlay">
-    <img src="/1.png" alt="Logo" onerror="this.src='https://i-postimg.cc/wMTWFGcY/1-m.jpg'">
+    <img src="/1.png" alt="Logo" onerror="this.src='https://i.postimg.cc/wMTWFGcY/1-m.jpg'">
     <span>One Aspal Chess</span>
   </div>
 
@@ -229,43 +229,40 @@
       return texture;
     }
 
-    // --- Fungsi Pembuat Tekstur Marmer Putih Silver Prosedural ---
+    // --- Fungsi Pembuat Tekstur Marmer Putih Silver yang Seragam ---
     function createMarbleTexture() {
       const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
+      canvas.width = 512; // Resolusi lebih besar agar urat halus
+      canvas.height = 512;
       const ctx = canvas.getContext('2d');
       
-      // Dasar putih bersih sangat terang
+      // 1. Dasar putih bersih sangat seragam
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 256, 256);
+      ctx.fillRect(0, 0, 512, 512);
       
-      // Urat marmer abu-abu keperakan (silver) yang lebih gelap dan tegas
-      for (let i = 0; i < 20; i++) {
+      // 2. Buat gradien sangat lembut agar tidak terlihat belang/kotor
+      const grad = ctx.createLinearGradient(0, 0, 512, 512);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.5, 'rgba(240, 245, 255, 1)'); // Sedikit biru sangat pucat
+      grad.addColorStop(1, 'rgba(255, 255, 255, 1)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // 3. Urat marmer silver yang elegan dan tipis
+      for (let i = 0; i < 10; i++) {
         ctx.beginPath();
-        ctx.moveTo(Math.random() * 256, Math.random() * 256);
-        // Garis bersambung berkelok-kelok
-        for (let j = 0; j < 5; j++) {
+        ctx.moveTo(Math.random() * 512, Math.random() * 512);
+        for (let j = 0; j < 6; j++) {
           ctx.bezierCurveTo(
-            Math.random() * 256, Math.random() * 256,
-            Math.random() * 256, Math.random() * 256,
-            Math.random() * 256, Math.random() * 256
+            Math.random() * 512, Math.random() * 512,
+            Math.random() * 512, Math.random() * 512,
+            Math.random() * 512, Math.random() * 512
           );
         }
-        // Warna silver (abu-abu gelap kebiruan)
-        ctx.strokeStyle = '#4b5563'; 
-        ctx.globalAlpha = Math.random() * 0.5 + 0.3; // Opasitas lebih tinggi agar urat jelas
-        ctx.lineWidth = Math.random() * 2 + 1; // Urat lebih tebal
+        ctx.strokeStyle = '#9ca3af'; // Silver/abu-abu terang
+        ctx.globalAlpha = 0.15; // Opasitas rendah agar urat halus & elegan
+        ctx.lineWidth = Math.random() * 1.5 + 0.5;
         ctx.stroke();
-      }
-      
-      // Tambahkan bintik halus keperakan
-      for (let i = 0; i < 150; i++) {
-        ctx.beginPath();
-        ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#9ca3af';
-        ctx.globalAlpha = Math.random() * 0.4;
-        ctx.fill();
       }
       
       const texture = new THREE.CanvasTexture(canvas);
@@ -293,14 +290,14 @@
       controls.maxDistance = 15;
       controls.maxPolarAngle = Math.PI / 2.2;
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-      scene.add(ambientLight);
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(5, 10, 5);
-      scene.add(directionalLight);
-      const sideLight = new THREE.DirectionalLight(0xe2e8f0, 0.5);
-      sideLight.position.set(-5, 5, -5);
-      scene.add(sideLight);
+      // Pencahayaan Hemisphere agar cahaya merata, tidak ada bayangan tajam
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+      hemiLight.position.set(0, 20, 0);
+      scene.add(hemiLight);
+      
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(5, 10, 5);
+      scene.add(dirLight);
 
       raycaster = new THREE.Raycaster();
       mouse = new THREE.Vector2();
@@ -452,27 +449,27 @@
       const group = new THREE.Group();
       let material;
       if (color === 'w') {
-        // Material Marmer Putih Silver Elegan
+        // Material MeshStandardMaterial untuk hasil PBR yang seragam dan realistis
         const marbleTex = createMarbleTexture();
-        material = new THREE.MeshPhongMaterial({ 
-          map: marbleTex,           // Tekstur urat marmer silver
-          bumpMap: marbleTex,       // Efek timbul pada urat
-          bumpScale: 0.08,          // Skala bump lebih tinggi agar urat terasa
-          shininess: 60,           // Lebih mengkilap seperti batu marmer yang dipernis
-          specular: 0xcccccc,      // Kilau silver terang
-          metalness: 0.2            // Sedikit efek logam silver
+        material = new THREE.MeshStandardMaterial({ 
+          map: marbleTex,           // Tekstur dasar
+          roughness: 0.3,          // Sedikit kasar agar tidak silau berlebihan
+          metalness: 0.1           // Sentuhan metalik silver halus
         });
       } else {
         const tex = createWoodTexture('#1a0d05', '#0a0502');
-        material = new THREE.MeshPhongMaterial({ map: tex, shininess: 20, specular: 0x222222 });
+        material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.0 });
       }
+      
       const createLathe = (points) => {
         const geometry = new THREE.LatheGeometry(points, 24);
         geometry.computeVertexNormals();
+        // Set UV mapping manual agar tekstur terpetakan rata ke seluruh permukaan bidak
         const uvs = geometry.attributes.position.array.map((_, i) => (i % 3 === 0) ? 0.5 : 0.5);
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
         return new THREE.Mesh(geometry, material);
       };
+      
       let mesh;
       switch(type) {
         case 'p': { 
@@ -534,7 +531,7 @@
           ear1.position.set(0.08, 0.8, 0.05); group.add(ear1);
           const ear2 = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 8), material);
           ear2.position.set(-0.08, 0.8, 0.05); group.add(ear2);
-          const eyeMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
+          const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.5, metalness: 0.0 });
           const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), eyeMat);
           eye1.position.set(0.1, 0.72, 0.2); group.add(eye1);
           const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), eyeMat);
