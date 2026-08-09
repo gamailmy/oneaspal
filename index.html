@@ -969,22 +969,47 @@
         };
       }, []);
       
+      // useEffect khusus untuk memantau partai catur milik user yang sedang login
       useEffect(() => {
         if (!currentUser) return;
+        
+        const chessRef = db.ref('chessMatches');
+        chessRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          const myMatches = [];
+          if (data) {
+            Object.keys(data).forEach(key => {
+              const match = data[key];
+              if (match.whitePlayer?.id === currentUser.id || match.blackPlayer?.id === currentUser.id) {
+                myMatches.push({ id: key, ...match });
+              }
+            });
+          }
+          setChessMatches(myMatches.sort((a,b) => (b.createdAt||0) - (a.createdAt||0)));
+        });
+
+        return () => chessRef.off();
+      }, [currentUser]);
+
+      // useEffect untuk mendeteksi undangan baru dan accepted status
+      useEffect(() => {
+        if (!currentUser || chessMatches.length === 0) {
+          setPendingChessInvites(0);
+          return;
+        }
+        
         const pending = chessMatches.filter(m => m.status === 'pending' && m.blackPlayer?.id === currentUser.id);
         setPendingChessInvites(pending.length);
 
         const prevMatches = prevChessMatchesRef.current || [];
         
-        // Cek jika ada match yang statusnya berubah dari pending menjadi active (lawan menerima undangan)
+        // 1. Cek jika lawan menerima undangan (notifikasi untuk pengundang)
         chessMatches.forEach(match => {
           if (match.status === 'active') {
             const prevMatch = prevMatches.find(m => m.id === match.id);
             if (prevMatch && prevMatch.status === 'pending') {
-              // Jika saya pengundang (putih) dan lawan (hitam) baru saja menerima
               if (match.whitePlayer?.id === currentUser.id) {
                 addN(`${match.blackPlayer?.name} telah menerima undangan catur Anda!`, 'success');
-                // Otomatis membuka meja catur untuk pengundang
                 setActiveChessGameId(match.id);
                 setShowChessGame(true);
               }
@@ -992,7 +1017,7 @@
           }
         });
 
-        // Cek jika ada undangan baru yang masuk
+        // 2. Cek jika ada undangan baru yang masuk (notifikasi untuk diundang)
         const newPendingMatch = pending.find(m => !prevMatches.some(pm => pm.id === m.id));
         if (newPendingMatch) {
           addN(`${newPendingMatch.whitePlayer.name} mengundang Anda bermain Catur 3D!`, 'info');
@@ -1188,22 +1213,6 @@
           const data = snapshot.val();
           const txArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a,b) => b.timestamp - a.timestamp) : [];
           setCashTransactions(txArray);
-        });
-
-        // Listener untuk Chess Matches
-        const chessRef = db.ref('chessMatches');
-        chessRef.on('value', (snapshot) => {
-          const data = snapshot.val();
-          const myMatches = [];
-          if (data) {
-            Object.keys(data).forEach(key => {
-              const match = data[key];
-              if (match.whitePlayer?.id === currentUser?.id || match.blackPlayer?.id === currentUser?.id) {
-                myMatches.push({ id: key, ...match });
-              }
-            });
-          }
-          setChessMatches(myMatches.sort((a,b) => (b.createdAt||0) - (a.createdAt||0)));
         });
 
         const storedSession = localStorage.getItem('oac_session');
