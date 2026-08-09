@@ -970,18 +970,34 @@
       }, []);
       
       useEffect(() => {
-        if (!currentUser || chessMatches.length === 0) {
-          setPendingChessInvites(0);
-          return;
-        }
+        if (!currentUser) return;
         const pending = chessMatches.filter(m => m.status === 'pending' && m.blackPlayer?.id === currentUser.id);
         setPendingChessInvites(pending.length);
 
         const prevMatches = prevChessMatchesRef.current || [];
+        
+        // Cek jika ada match yang statusnya berubah dari pending menjadi active (lawan menerima undangan)
+        chessMatches.forEach(match => {
+          if (match.status === 'active') {
+            const prevMatch = prevMatches.find(m => m.id === match.id);
+            if (prevMatch && prevMatch.status === 'pending') {
+              // Jika saya pengundang (putih) dan lawan (hitam) baru saja menerima
+              if (match.whitePlayer?.id === currentUser.id) {
+                addN(`${match.blackPlayer?.name} telah menerima undangan catur Anda!`, 'success');
+                // Otomatis membuka meja catur untuk pengundang
+                setActiveChessGameId(match.id);
+                setShowChessGame(true);
+              }
+            }
+          }
+        });
+
+        // Cek jika ada undangan baru yang masuk
         const newPendingMatch = pending.find(m => !prevMatches.some(pm => pm.id === m.id));
         if (newPendingMatch) {
           addN(`${newPendingMatch.whitePlayer.name} mengundang Anda bermain Catur 3D!`, 'info');
         }
+
         prevChessMatchesRef.current = chessMatches;
       }, [chessMatches, currentUser]);
 
