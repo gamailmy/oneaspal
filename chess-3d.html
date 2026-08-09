@@ -5,58 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>One Aspal Chess Game</title>
   <style>
-    body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); font-family: 'Helvetica Neue', sans-serif; color: #1e293b; }
+    body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); font-family: 'Helvetica Neue', sans-serif; color: #f1f5f9; }
     
-    /* === Panel Info Pemain (Kiri Atas) - iOS Glass === */
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(255, 255, 255, 0.25); padding: 12px 14px; border-radius: 16px; font-size: 12px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); z-index: 10; min-width: 200px; transition: all 0.3s ease; color: #1e293b; }
+    /* === Panel Info Pemain (Kiri Atas) - iOS Black Glass === */
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(15, 23, 42, 0.4); padding: 12px 14px; border-radius: 16px; font-size: 12px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); z-index: 10; min-width: 200px; transition: all 0.3s ease; color: #f1f5f9; }
     
-    #status { font-weight: 800; color: #d97706; margin-bottom: 8px; font-size: 13px; text-align: center; letter-spacing: 0.5px; }
+    #status { font-weight: 800; color: #fbbf24; margin-bottom: 8px; font-size: 13px; text-align: center; letter-spacing: 0.5px; }
     
-    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 8px; margin-bottom: 4px; font-size: 11px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; }
-    .player-row.active { background-color: rgba(34, 197, 94, 0.25); border-color: rgba(22, 163, 74, 0.8); color: #14532d; }
-    .player-row.waiting { background-color: rgba(148, 163, 184, 0.2); border-color: rgba(100, 116, 139, 0.4); color: #475569; }
+    .player-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 8px; margin-bottom: 4px; font-size: 11px; transition: background-color 0.3s, border-color 0.3s; border: 1px solid transparent; color: #e2e8f0; }
+    .player-row.active { background-color: rgba(34, 197, 94, 0.25); border-color: rgba(22, 163, 74, 0.8); color: #bbf7d0; }
+    .player-row.waiting { background-color: rgba(100, 116, 139, 0.2); border-color: rgba(100, 116, 139, 0.5); color: #94a3b8; }
     
     .player-info { display: flex; align-items: center; }
     .dot { width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; display: inline-block; }
-    .dot.active { background: #16a34a; box-shadow: 0 0 6px #22c55e; }
-    .dot.waiting { background: #94a3b8; }
+    .dot.active { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .dot.waiting { background: #64748b; }
     
-    .time-info { font-size: 10px; color: #475569; margin-top: 2px; text-align: right; font-weight: 600; }
+    .time-info { font-size: 10px; color: #94a3b8; margin-top: 2px; text-align: right; font-weight: 600; }
     
-    #history-container { margin-top: 8px; max-height: 120px; overflow-y: auto; background: rgba(255, 255, 255, 0.2); padding: 8px; border-radius: 8px; display: none; border: 1px solid rgba(255,255,255,0.4); }
+    #history-container { margin-top: 8px; max-height: 120px; overflow-y: auto; background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 8px; display: none; border: 1px solid rgba(255,255,255,0.1); }
     #history-container.visible { display: block; }
     #history-container::-webkit-scrollbar { width: 4px; }
-    #history-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
+    #history-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
     #move-history { list-style: none; padding: 0; margin: 0; }
-    #move-history li { font-size: 10px; color: #1e293b; margin-bottom: 4px; padding: 4px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.4); font-weight: 500; }
+    #move-history li { font-size: 10px; color: #cbd5e1; margin-bottom: 4px; padding: 4px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.05); font-weight: 500; }
     
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
-    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #475569; text-align: center; font-weight: 600; }
+    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #94a3b8; text-align: center; font-weight: 600; }
 
-    /* === LOGO KECIL POJOK KANAN ATAS - iOS Glass === */
-    #logo-overlay { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.25); padding: 6px 12px; border-radius: 20px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 4px 15px rgba(31, 38, 135, 0.1); }
-    #logo-overlay img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    #logo-overlay span { color: #1e293b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    /* === LOGO KECIL POJOK KANAN ATAS - iOS Black Glass === */
+    #logo-overlay { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.4); padding: 6px 12px; border-radius: 20px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+    #logo-overlay img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    #logo-overlay span { color: #f1f5f9; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
     /* ============================================== */
 
-    /* === TOMBOL FLOATING POJOK KANAN BAWAH - iOS Glass === */
+    /* === TOMBOL FLOATING POJOK KANAN BAWAH - iOS Black Glass === */
     #floating-controls { position: absolute; bottom: 20px; right: 20px; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
-    #floating-controls button { background: rgba(255, 255, 255, 0.25); color: #1e293b; border: 1px solid rgba(255, 255, 255, 0.6); padding: 10px 15px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 12px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 4px 15px rgba(31, 38, 135, 0.1); min-width: 80px; text-align: center; transition: all 0.2s ease; }
-    #floating-controls button:hover { background: rgba(255, 255, 255, 0.4); transform: translateY(-2px); }
-    #floating-controls button:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.5); }
+    #floating-controls button { background: rgba(15, 23, 42, 0.4); color: #f1f5f9; border: 1px solid rgba(255, 255, 255, 0.15); padding: 10px 15px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 12px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); min-width: 80px; text-align: center; transition: all 0.2s ease; }
+    #floating-controls button:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+    #floating-controls button:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.15); }
     /* ===================================================== */
 
     /* === ANIMASI PEMBUKA (MORTAL KOMBAT STYLE) === */
-    #intro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%); }
+    #intro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(15,23,42,0.9) 0%, rgba(15,23,42,0) 70%); }
     #intro-overlay.active { animation: introBgFade 3s ease-out forwards; }
     
-    #intro-title { font-size: 52px; color: #d97706; text-shadow: 0 4px 12px rgba(217, 119, 6, 0.3); transform: scale(0); letter-spacing: 4px; font-weight: 900; }
+    #intro-title { font-size: 52px; color: #fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.4); transform: scale(0); letter-spacing: 4px; font-weight: 900; }
     #intro-overlay.active #intro-title { animation: introZoom 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
 
     .intro-players { display: flex; gap: 40px; margin-top: 20px; font-size: 36px; text-transform: uppercase; font-weight: 800; }
-    #intro-p1 { color: #1e293b; text-shadow: 0 2px 10px rgba(30, 41, 59, 0.2); transform: translateX(-500px); }
-    #intro-vs { color: #ef4444; text-shadow: 0 2px 10px rgba(239, 68, 68, 0.3); align-self: center; font-size: 24px; transform: scale(0); }
-    #intro-p2 { color: #1e293b; text-shadow: 0 2px 10px rgba(30, 41, 59, 0.2); transform: translateX(500px); }
+    #intro-p1 { color: #f8fafc; text-shadow: 0 0 15px rgba(255, 255, 255, 0.3); transform: translateX(-500px); }
+    #intro-vs { color: #ef4444; text-shadow: 0 0 15px rgba(239, 68, 68, 0.5); align-self: center; font-size: 24px; transform: scale(0); }
+    #intro-p2 { color: #f8fafc; text-shadow: 0 0 15px rgba(255, 255, 255, 0.3); transform: translateX(500px); }
     
     #intro-overlay.active #intro-p1 { animation: slideInLeft 0.4s 0.5s ease-out forwards; }
     #intro-overlay.active #intro-vs { animation: introZoom 0.3s 0.9s ease-out forwards; }
@@ -102,7 +102,7 @@
       </div>
     </div>
     
-    <div style="text-align: center; margin: 8px 0; font-size: 11px; color: #d97706; font-weight: 800; letter-spacing: 1px;">
+    <div style="text-align: center; margin: 8px 0; font-size: 11px; color: #fbbf24; font-weight: 800; letter-spacing: 1px;">
       Durasi: <span id="total-time">00:00</span>
     </div>
     
@@ -200,7 +200,6 @@
       noiseSource.start();
     }
 
-    // --- Fungsi Pembuat Tekstur Kayu Prosedural ---
     function createWoodTexture(baseColor, veinColor) {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
@@ -230,36 +229,24 @@
       return texture;
     }
 
-    // --- Fungsi Pembuat Tekstur Marmer Prosedural ---
     function createMarbleTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
-      
-      // Dasar putih bersih agar kontras dengan background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, 256, 256);
-      
-      // Urat marmer abu-abu gelap
       for (let i = 0; i < 15; i++) {
         ctx.beginPath();
         ctx.moveTo(Math.random() * 256, Math.random() * 256);
-        // Garis bersambung berkelok-kelok
         for (let j = 0; j < 5; j++) {
-          ctx.bezierCurveTo(
-            Math.random() * 256, Math.random() * 256,
-            Math.random() * 256, Math.random() * 256,
-            Math.random() * 256, Math.random() * 256
-          );
+          ctx.bezierCurveTo(Math.random() * 256, Math.random() * 256, Math.random() * 256, Math.random() * 256, Math.random() * 256, Math.random() * 256);
         }
         ctx.strokeStyle = '#8a94a6';
         ctx.globalAlpha = Math.random() * 0.4 + 0.2;
         ctx.lineWidth = Math.random() * 1.5 + 0.5;
         ctx.stroke();
       }
-      
-      // Tambahkan bintik halus agar terlihat seperti tekstur batu
       for (let i = 0; i < 100; i++) {
         ctx.beginPath();
         ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 1, 0, Math.PI * 2);
@@ -267,7 +254,6 @@
         ctx.globalAlpha = Math.random() * 0.3;
         ctx.fill();
       }
-      
       const texture = new THREE.CanvasTexture(canvas);
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
@@ -276,7 +262,8 @@
 
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xeef2f6);
+      // Background diubah menjadi gelap (slate-900) agar nuansa turnamen malam yang elegan
+      scene.background = new THREE.Color(0x0f172a);
       
       camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, 8, 8);
@@ -399,7 +386,7 @@
       });
     }
 
-    function createTextSprite(text, color = '#1e293b') {
+    function createTextSprite(text, color = '#e2e8f0') {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = 256; canvas.height = 256;
@@ -452,17 +439,15 @@
       const group = new THREE.Group();
       let material;
       if (color === 'w') {
-        // Material Marmer Putih Elegan
         const marbleTex = createMarbleTexture();
         material = new THREE.MeshPhongMaterial({ 
-          map: marbleTex,           // Tekstur urat marmer
-          bumpMap: marbleTex,       // Efek timbul pada urat
-          bumpScale: 0.05,
-          shininess: 40,           // Sedikit mengkilap seperti batu alam
+          map: marbleTex, 
+          bumpMap: marbleTex, 
+          bumpScale: 0.05, 
+          shininess: 40, 
           specular: 0x888888 
         });
       } else {
-        // Material Kayu Gelap (Walnut)
         const tex = createWoodTexture('#1a0d05', '#0a0502');
         material = new THREE.MeshPhongMaterial({ map: tex, shininess: 20, specular: 0x222222 });
       }
