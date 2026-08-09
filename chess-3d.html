@@ -72,7 +72,7 @@
 <body>
   <!-- Logo Kecil Pojok Kanan Atas -->
   <div id="logo-overlay">
-    <img src="/1.png" alt="Logo" onerror="this.src='https://i.postimg.cc/wMTWFGcY/1-m.jpg'">
+    <img src="/1.png" alt="Logo" onerror="this.src='https://i-postimg.cc/wMTWFGcY/1-m.jpg'">
     <span>One Aspal Chess</span>
   </div>
 
@@ -229,31 +229,45 @@
       return texture;
     }
 
+    // --- Fungsi Pembuat Tekstur Marmer Putih Silver Prosedural ---
     function createMarbleTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
+      
+      // Dasar putih bersih sangat terang
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, 256, 256);
-      for (let i = 0; i < 15; i++) {
+      
+      // Urat marmer abu-abu keperakan (silver) yang lebih gelap dan tegas
+      for (let i = 0; i < 20; i++) {
         ctx.beginPath();
         ctx.moveTo(Math.random() * 256, Math.random() * 256);
+        // Garis bersambung berkelok-kelok
         for (let j = 0; j < 5; j++) {
-          ctx.bezierCurveTo(Math.random() * 256, Math.random() * 256, Math.random() * 256, Math.random() * 256, Math.random() * 256, Math.random() * 256);
+          ctx.bezierCurveTo(
+            Math.random() * 256, Math.random() * 256,
+            Math.random() * 256, Math.random() * 256,
+            Math.random() * 256, Math.random() * 256
+          );
         }
-        ctx.strokeStyle = '#8a94a6';
-        ctx.globalAlpha = Math.random() * 0.4 + 0.2;
-        ctx.lineWidth = Math.random() * 1.5 + 0.5;
+        // Warna silver (abu-abu gelap kebiruan)
+        ctx.strokeStyle = '#4b5563'; 
+        ctx.globalAlpha = Math.random() * 0.5 + 0.3; // Opasitas lebih tinggi agar urat jelas
+        ctx.lineWidth = Math.random() * 2 + 1; // Urat lebih tebal
         ctx.stroke();
       }
-      for (let i = 0; i < 100; i++) {
+      
+      // Tambahkan bintik halus keperakan
+      for (let i = 0; i < 150; i++) {
         ctx.beginPath();
-        ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 1, 0, Math.PI * 2);
-        ctx.fillStyle = '#cbd5e1';
-        ctx.globalAlpha = Math.random() * 0.3;
+        ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#9ca3af';
+        ctx.globalAlpha = Math.random() * 0.4;
         ctx.fill();
       }
+      
       const texture = new THREE.CanvasTexture(canvas);
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
@@ -262,7 +276,6 @@
 
     function init() {
       scene = new THREE.Scene();
-      // Background diubah menjadi gelap (slate-900) agar nuansa turnamen malam yang elegan
       scene.background = new THREE.Color(0x0f172a);
       
       camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -439,13 +452,15 @@
       const group = new THREE.Group();
       let material;
       if (color === 'w') {
+        // Material Marmer Putih Silver Elegan
         const marbleTex = createMarbleTexture();
         material = new THREE.MeshPhongMaterial({ 
-          map: marbleTex, 
-          bumpMap: marbleTex, 
-          bumpScale: 0.05, 
-          shininess: 40, 
-          specular: 0x888888 
+          map: marbleTex,           // Tekstur urat marmer silver
+          bumpMap: marbleTex,       // Efek timbul pada urat
+          bumpScale: 0.08,          // Skala bump lebih tinggi agar urat terasa
+          shininess: 60,           // Lebih mengkilap seperti batu marmer yang dipernis
+          specular: 0xcccccc,      // Kilau silver terang
+          metalness: 0.2            // Sedikit efek logam silver
         });
       } else {
         const tex = createWoodTexture('#1a0d05', '#0a0502');
