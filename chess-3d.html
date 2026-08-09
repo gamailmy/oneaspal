@@ -6,13 +6,13 @@
   <title>Game Catur 3D Online</title>
   <style>
     body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Helvetica Neue', sans-serif; color: white; }
-    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 12px 15px; border-radius: 10px; font-size: 13px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 180px; }
+    #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 12px 15px; border-radius: 10px; font-size: 13px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; min-width: 200px; }
     #status { font-weight: bold; color: #fbbf24; margin-bottom: 4px; }
     #turn { font-size: 11px; color: #ccc; margin-bottom: 8px; }
     #reset-btn { background: #fbbf24; color: #000; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; box-sizing: border-box; }
     #reset-btn:active { transform: scale(0.95); }
     #canvas-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
-    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; }
+    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #ccc; text-align: center; }
   </style>
 </head>
 <body>
@@ -36,12 +36,12 @@
     let selectedPiece = null;
     let chess = new Chess();
     let raycaster, mouse;
-    let isMyTurn = false;
 
     let matchId = null;
     let playerId = null;
     let myColor = null;
     let isBoardReady = false;
+    let matchStatus = 'pending';
 
     const urlParams = new URLSearchParams(window.location.search);
     matchId = urlParams.get('matchId');
@@ -93,8 +93,6 @@
       createBoard();
 
       window.addEventListener('resize', onWindowResize);
-      
-      // Gunakan pointerdown agar tidak conflict dengan OrbitControls
       renderer.domElement.addEventListener('pointerdown', onPointerDown);
 
       document.getElementById('reset-btn').addEventListener('click', resetGame);
@@ -118,6 +116,8 @@
         
         if (match.whitePlayer && match.whitePlayer.id === playerId) myColor = 'w';
         if (match.blackPlayer && match.blackPlayer.id === playerId) myColor = 'b';
+        
+        matchStatus = match.status || 'pending';
         
         // Reset dan replay semua gerakan
         chess.reset();
@@ -215,7 +215,6 @@
       }
       
       group.position.set(x - 3.5, 0.1, z - 3.5);
-      // Set userData pada group dan semua child meshes
       const pieceData = { type, color, x, z, isPiece: true };
       group.userData = pieceData;
       group.traverse(child => {
@@ -270,16 +269,15 @@
 
     function onPointerDown(event) {
       if (!isBoardReady || !myColor) return;
+      if (matchStatus !== 'active') return; // Pastikan game sudah aktif
       if (chess.turn() !== myColor) return;
 
-      // Hitung koordinat mouse
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
       
-      // Cari bidak yang diklik
       const pieceIntersects = raycaster.intersectObjects(pieces, true);
       const squareIntersects = raycaster.intersectObjects(scene.children.filter(c => c.userData.isSquare !== undefined));
 
@@ -287,12 +285,10 @@
         const pieceData = pieceIntersects[0].object.userData;
         
         if (selectedPiece) {
-          // Jika sudah ada yang dipilih, coba pindahkan
           const from = String.fromCharCode(97 + selectedPiece.x) + (selectedPiece.z + 1);
           const to = String.fromCharCode(97 + pieceData.x) + (pieceData.z + 1);
           tryMove(from, to);
         } else {
-          // Pilih bidak jika itu warna kita
           if (pieceData.color === myColor) {
             selectedPiece = pieceData;
             clearHighlights();
@@ -316,7 +312,6 @@
       if (move) {
         selectedPiece = null;
         clearHighlights();
-        // Kirim gerakan ke Firebase
         db.ref('chessMatches/' + matchId + '/moves').push({
           from: from,
           to: to,
@@ -324,7 +319,6 @@
           player: playerId,
           timestamp: Date.now()
         });
-        // Update papan lokal
         updatePieces();
       } else {
         selectedPiece = null;
@@ -341,10 +335,15 @@
       }
       document.getElementById('status').innerText = statusText;
       
-      let turnText = "Menunggu Lawan...";
-      if (myColor) {
-        isMyTurn = chess.turn() === myColor;
-        turnText = isMyTurn ? "Giliran Anda!" : "Menunggu Lawan...";
+      let turnText = "";
+      if (matchStatus === 'pending') {
+        turnText = "Menunggu Lawan Menerima Undangan...";
+      } else if (matchStatus === 'active') {
+        if (chess.turn() === myColor) {
+          turnText = "Giliran Anda!";
+        } else {
+          turnText = "Menunggu Gerakan Lawan...";
+        }
       }
       document.getElementById('turn').innerText = turnText;
     }
