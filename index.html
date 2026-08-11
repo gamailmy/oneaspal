@@ -1517,21 +1517,35 @@
       
       const handleRundownUpload = async (file) => {
         if (!file) return null;
-        if (file.type !== 'application/pdf') { addN('File harus berformat PDF.', 'error'); return null; }
-        if (file.size > 5 * 1024 * 1024) { addN('Ukuran file PDF maksimal 5MB.', 'error'); return null; }
+        
+        // Validasi ketat jenis file
+        if (file.type !== 'application/pdf') { 
+          addN('File harus berformat PDF (.pdf).', 'error'); 
+          return null; 
+        }
+        // Validasi ukuran file (Maksimal 1MB untuk penyimpanan Realtime Database)
+        if (file.size > 1 * 1024 * 1024) { 
+          addN('Ukuran PDF maksimal 1MB. Silakan kompres PDF terlebih dahulu.', 'error'); 
+          return null; 
+        }
+        
         setUploadingRundown(true);
         try {
-          const storageRef = firebase.storage().ref();
-          const fileRef = storageRef.child(`rundowns/${Date.now()}_${file.name}`);
-          await fileRef.put(file);
-          const url = await fileRef.getDownloadURL();
+          // Konversi file PDF menjadi Base64 String
+          const base64String = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+          });
+          
           setUploadingRundown(false);
-          addN('Rundown PDF berhasil diunggah! 📄', 'success');
-          return url;
+          addN('Rundown PDF berhasil diproses! 📄', 'success');
+          return base64String; // Mengembalikan format Base64, bukan URL
         } catch (err) {
-          console.error(err);
+          console.error("Konversi Error:", err);
           setUploadingRundown(false);
-          addN('Gagal mengunggah PDF. Pastikan koneksi stabil.', 'error');
+          addN('Gagal memproses PDF. Coba lagi.', 'error');
           return null;
         }
       };
@@ -2990,7 +3004,8 @@
 
                     <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={newEvent.timestamp} onChange={(e)=>setNewEvent({...newEvent, timestamp: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div>
                     <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label><textarea value={newEvent.description} onChange={(e)=>setNewEvent({...newEvent, description: e.target.value})} rows="4" required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none" placeholder="Detail rendezvous, rute, dan informasi penting lainnya..."></textarea></div><button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95 flex items-center justify-center space-x-1"><I.Plus className="w-4 h-4" />
-                    <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Rundown Kegiatan (PDF - Opsional)</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Rundown Kegiatan (PDF - Maks 1MB)</label>
                       <input 
                         type="file" 
                         accept="application/pdf" 
@@ -2998,14 +3013,20 @@
                         onChange={async (e) => {
                           const file = e.target.files[0];
                           if(file) {
-                            const url = await handleRundownUpload(file);
-                            if(url) setNewEvent(prev => ({...prev, rundownUrl: url}));
+                            const base64 = await handleRundownUpload(file);
+                            if(base64) setNewEvent(prev => ({...prev, rundownUrl: base64}));
                           }
                         }} 
-                        className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"/>
-                      {uploadingRundown && <p className="text-[10px] text-blue-500 font-bold animate-pulse">Mengunggah PDF...</p>}
-                      {newEvent.rundownUrl && <p className="text-[10px] text-emerald-600 font-bold">PDF terunggah! ✓</p>}
-                    </div>  
+                        className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                      />
+                      {uploadingRundown && (
+                        <div className="flex items-center space-x-2 text-blue-500 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" strokeDasharray="40"></circle></svg>
+                          <p className="text-[10px] font-bold animate-pulse">Memproses PDF...</p>
+                        </div>
+                      )}
+                      {newEvent.rundownUrl && <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1"><I.CheckCircle2 className="w-3 h-3" /> PDF siap! Klik publikasikan untuk menyimpan.</p>}
+                    </div>
                       <span>Publikasikan Event</span></button></form></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Star className="w-4 h-4 text-amber-500" /> <span>Approval Poin Event</span></h4><div className="space-y-3">{events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).length > 0 ? events.filter(ev => ev.timestamp < (Date.now() - (24 * 60 * 60 * 1000)) && ev.checkins).map(ev => { const eventInfo = getEventPoints(ev.eventType); const pendingMembers = Object.keys(ev.checkins).filter(uid => !ev.ptsApproved || !ev.ptsApproved[uid]); if(pendingMembers.length === 0) return null; return ( <div key={ev.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-2"><div className="flex justify-between items-center mb-2"><h5 className="font-bold text-xs text-slate-900 truncate">{ev.title}</h5><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${eventInfo.color}`}>+{eventInfo.pts} Pts</span></div><div className="space-y-2">{pendingMembers.map(uid => { const m = members.find(mem => mem.id === uid); const isReady = ev.readiness && ev.readiness[uid] && Object.keys(ev.readiness[uid]).length === READINESS_ITEMS.length; return ( <div key={uid} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-101"><div className="flex items-center space-x-2"><MemberAvatar user={m || {}} size="w-7 h-7" textSize="text-xs" /><span className="text-[11px] font-bold text-slate-800">{m ? m.name : 'Anggota'}</span>{isReady && <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full font-bold">Siap</span>}</div><button onClick={() => approveMemberPoints(ev.id, uid, eventInfo.pts)} className="text-[10px] bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg active:scale-95 transition">Approve Poin</button></div> ); })}</div></div> ); }) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada poin event yang perlu di-approve.</p>}</div></div><div className="bg-white/50 border border-white/60 rounded-3xl p-4 shadow-sm"><h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2"><I.Calendar className="w-4 h-4 text-amber-500" /> <span>Daftar Event Mendatang</span></h4><div className="space-y-3">{events.length > 0 ? events.map(ev => ( <EventCard key={ev.id} event={ev} isAdmin={true} onDelete={() => deleteEvent(ev.id)} onEdit={() => handleEditEventClick(ev)} onToggleVisibility={toggleEventVisibility} checkinCount={ev.checkins ? Object.keys(ev.checkins).length : 0} totalMembers={totalApprovedMembers} onViewCheckins={openCheckinsModal} onViewDetails={openEventDetailModal} /> )) : <p className="text-xs text-slate-400 italic text-center py-4">Belum ada event.</p>}</div></div></div> )}
                       {adminTab === 'members' && ( 
                         <div className="space-y-4">
@@ -3577,32 +3598,43 @@
                   <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Tanggal & Waktu</label><input type="datetime-local" value={editingEvent.timestampLocal} onChange={(e)=>setEditingEvent({...editingEvent, timestampLocal: e.target.value})} required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200" /></div>
                   <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Informasi Event</label><textarea value={editingEvent.description} onChange={(e)=>setEditingEvent({...editingEvent, description: e.target.value})} rows="4" required className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 focus:bg-white transition-all duration-200 resize-none"></textarea></div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Rundown Kegiatan (PDF - Opsional)</label>
+                      <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Rundown Kegiatan (PDF - Maks 1MB)</label>
                       <input 
-                      type="file" 
-                      accept="application/pdf" 
-                      onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if(file) {
-                          const url = await handleRundownUpload(file);
-                          if(url) setEditingEvent(prev => ({...prev, rundownUrl: url}));
-                        }
-                      }} 
-                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
-                    />
-                    {uploadingRundown && <p className="text-[10px] text-blue-500 font-bold animate-pulse flex items-center gap-1"><svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" strokeDasharray="40"></circle></svg> Mengunggah PDF...</p>}
-                    {editingEvent.rundownUrl && (
-                      <div className="flex items-center justify-between bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                        <a href={editingEvent.rundownUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 font-bold underline flex items-center gap-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                          Lihat PDF saat ini
-                        </a>
-                        <button type="button" onClick={() => setEditingEvent(prev => ({...prev, rundownUrl: ''}))} className="text-[10px] text-rose-500 font-bold hover:underline flex items-center gap-1">
-                          <I.Trash className="w-3 h-3" /> Hapus
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                        type="file" 
+                        accept="application/pdf" 
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if(file) {
+                            const base64 = await handleRundownUpload(file);
+                            if(base64) {
+                              setEditingEvent(prev => ({...prev, rundownUrl: base64}));
+                              addN('Rundown PDF berhasil diperbarui!', 'success');
+                            }
+                            e.target.value = "";
+                          }
+                        }} 
+                        className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200 cursor-pointer"
+                      />
+                      
+                      {uploadingRundown && (
+                        <div className="flex items-center space-x-2 text-blue-500 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" strokeDasharray="40"></circle></svg>
+                          <p className="text-[10px] font-bold animate-pulse">Memproses PDF...</p>
+                        </div>
+                      )}
+                      
+                      {!uploadingRundown && editingEvent.rundownUrl && (
+                        <div className="flex items-center justify-between bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                          <a href={editingEvent.rundownUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 font-bold underline flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Lihat PDF saat ini
+                          </a>
+                          <button type="button" onClick={() => setEditingEvent(prev => ({...prev, rundownUrl: ''}))} className="text-[10px] text-rose-500 font-bold hover:underline flex items-center gap-1">
+                            <I.Trash className="w-3 h-3" /> Hapus
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                   <button type="submit" className="w-full bg-slate-900 text-white font-bold text-xs py-3 rounded-xl mt-2 active:scale-95">Simpan Perubahan</button>
                 </form>
