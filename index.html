@@ -444,11 +444,14 @@
             const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${BASE_CAMP_COORDS.lng},${BASE_CAMP_COORDS.lat};${destinationCoords.lng},${destinationCoords.lat}?overview=false`;
             const res = await fetch(osrmUrl);
             const data = await res.json();
-            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+              if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
               const distanceInMeters = data.routes[0].distance;
               if (isMounted) {
                 const calculatedKm = Math.round(distanceInMeters / 1000);
                 setDistanceKm(calculatedKm);
+                // === PERBAIKAN: Simpan hasil OSRM ke Firebase ===
+                // agar sinkron dengan perhitungan journey poin member
+                db.ref('events/' + event.id + '/distanceKm').set(calculatedKm).catch(()=>{});
               }
             } else {
               if (isMounted) setDistanceKm(null);
@@ -1611,7 +1614,8 @@
           requiresReadiness: ev.requiresReadiness !== undefined ? ev.requiresReadiness : true,
           province: ev.province || 'DKI Jakarta',
           city: ev.city || '',
-          mapLink: ev.mapLink || ''
+          mapLink: ev.mapLink || '',
+          originalMapLink: ev.mapLink || '' // simpan mapLink asli untuk deteksi perubahan
         }); 
         setShowEditEventModal(true); 
       };
@@ -1619,7 +1623,7 @@
       const saveEditedEvent = async (e) => { 
         e.preventDefault(); 
         if(!editingEvent.title || !editingEvent.timestampLocal || !editingEvent.description || !editingEvent.city) return; 
-        await db.ref('events/' + editingEvent.id).update({ 
+        const updates = { 
           title: editingEvent.title, 
           timestamp: new Date(editingEvent.timestampLocal).getTime(), 
           description: editingEvent.description, 
@@ -1628,8 +1632,14 @@
           province: editingEvent.province,
           city: editingEvent.city,
           mapLink: editingEvent.mapLink || '',
-          rundownUrl: editingEvent.rundownUrl || '', // Pastikan baris ini benar
-        }); 
+          rundownUrl: editingEvent.rundownUrl || '',
+        };
+        // === PERBAIKAN: Jika mapLink berubah, hapus distanceKm lama ===
+        // agar EventCard menghitung ulang jarak OSRM yang baru
+        if (editingEvent.mapLink !== editingEvent.originalMapLink) {
+          updates.distanceKm = null;
+        }
+        await db.ref('events/' + editingEvent.id).update(updates); 
         setShowEditEventModal(false); 
         addN('Event berhasil diperbarui! ✨','success'); 
       };
@@ -1654,10 +1664,17 @@
         events.forEach(ev => { 
           // Hanya hitung jika point sudah di-approve admin
           if (ev.ptsApproved && ev.ptsApproved[memberId]) { 
-            const coords = extractCoordsFromMapLink(ev.mapLink); 
-            if (coords) { 
-              totalKm += calculateDistance(BASE_CAMP_COORDS.lat, BASE_CAMP_COORDS.lng, coords.lat, coords.lng); 
-            } 
+            // === PERBAIKAN: Gunakan jarak OSRM yang tersimpan di Firebase ===
+            // agar SAMA PERSIS dengan jarak yang tampil di kartu Event
+            if (ev.distanceKm !== undefined && ev.distanceKm !== null) {
+              totalKm += ev.distanceKm;
+            } else {
+              // Fallback Haversine hanya jika belum dihitung OSRM
+              const coords = extractCoordsFromMapLink(ev.mapLink); 
+              if (coords) { 
+                totalKm += calculateDistance(BASE_CAMP_COORDS.lat, BASE_CAMP_COORDS.lng, coords.lat, coords.lng); 
+              } 
+            }
           } 
         }); 
         return totalKm; 
@@ -1668,9 +1685,16 @@
           if (ev.ptsApproved && ev.ptsApproved[memberId]) {
             const pts = getEventPoints(ev.eventType).pts;
             let dist = 0;
-            const coords = extractCoordsFromMapLink(ev.mapLink);
-            if (coords) {
-              dist = calculateDistance(BASE_CAMP_COORDS.lat, BASE_CAMP_COORDS.lng, coords.lat, coords.lng);
+            // === PERBAIKAN: Gunakan jarak OSRM dari Firebase ===
+            // agar SAMA PERSIS dengan jarak yang tampil di kartu Event
+            if (ev.distanceKm !== undefined && ev.distanceKm !== null) {
+              dist = ev.distanceKm;
+            } else {
+              // Fallback Haversine hanya jika belum dihitung OSRM
+              const coords = extractCoordsFromMapLink(ev.mapLink);
+              if (coords) {
+                dist = calculateDistance(BASE_CAMP_COORDS.lat, BASE_CAMP_COORDS.lng, coords.lat, coords.lng);
+              }
             }
             history.push({
               id: ev.id,
